@@ -1873,3 +1873,7 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
     - the `device_id` filter misses them.
   - `:shared:desktopTest` and `testDebugUnitTest` pass.
 - **Not covered:** the app has not been run end to end against a server holding removed-device history, and it has not been checked on the reporter's Deck. Android shares this code but was not run.
+- **Beta publish (owner: "Push and publish"):**
+  - Pushed 311679236, then ran `build-alpha.sh`; the installed jar has the new pull.
+  - Host walk against the owner's RomM: the first run completed a full account pass (`run: added=0 devices=5 full=true`) with no exceptions. That account already held its whole history, so nothing was added.
+  - Then `publish-repo.sh` (signed) → `push-pages.sh --step-close 5.4` (`gh-pages` 6e39a10, app commit 669919a2). Pages serves it, checked through a throwaway `FLATPAK_USER_DIR`.
