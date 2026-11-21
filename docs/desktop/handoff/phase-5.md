@@ -53,6 +53,10 @@ Triage of every upstream commit: `docs/desktop/upstream-2.31-triage.md` (uncommi
   5. Screenshots, lint, `--step-close 5.6`, Flathub PR (owner go-ahead).
 - The test shortcut "Argosy Desktop (test)" in the owner's Steam (backup `build/gamemode/shortcuts.vdf.bak-20261108`) is removed or replaced once the real shortcut works; edit only with Steam closed.
 
+## Phase close: history rewrite (owner decision 2026-11-21)
+
+Before the Phase 5 push: `node scripts/pii-scan.mjs history --write-rewrite-files` (inputs go to the private config folder, never the repo); in a **fresh clone**, `git filter-repo --replace-text … --replace-message … --mailmap …` over all branches; re-run `history` in the clone until our commits are clean (upstream's own commits keep their content); force-push `main` once, with the owner's confirmation. Pages (`gh-pages`) is not rewritten. PII Redaction Standard: `docs/standards/PII-REDACTION-STANDARD.md`.
+
 ## Carried from step 4 (not verified)
 
 - `HostGameProcess.stopAll` ending a Flatpak emulator on exit.
