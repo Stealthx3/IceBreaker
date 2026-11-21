@@ -289,9 +289,9 @@ Six phases over about 32 weeks; restructure first, then get every screen on the 
 | 2 · Desktop UI | 9–13 | Every screen runs on the desktop; SDL3 gamepad input; identical focus feel | — |
 | 3 · Linux services and alpha Flatpak | 14–19 | Emulator registry, host launch, save paths, Apps tab, Quick Settings; Flatpak from your own repo | Alpha: sync, download, play, save sync |
 | 4 · Linux adaptation | 20–28 | libmpv video wallpaper; Desktop removals (Steam / Jellyfin / Social / Android Settings); Linux emulator suggestions and managed installers; Host GPU screen; Flatpak permissions screen; Window title bar and full-screen setting; Controller input mode (Auto / Steam Input / SDL3); Navigation button mapping; Display profiles and wizard display setup | — |
-| 5 · Beta and Flathub | 29–32 | Linux desktop and Steam Game Mode compatibility (GNOME, KDE, SteamOS); Flathub submission | 1.0 live on Flathub |
+| 5 · Beta and Flathub | 29–32 | Linux desktop and Steam Game Mode compatibility (GNOME, KDE, SteamOS); upstream v2.31 merge and Linux adaptations; IceBreaker rename and Flathub submission | 1.0 live on Flathub |
 
-Status (2026-11-06): Phases 0–4 are complete. In Phase 5, steps 1–3 are done, step 4 (Linux desktop and Steam Game Mode compatibility) waits on the owner's Steam Deck checks, and step 5 (Flathub submission) has its groundwork done. The current beta release is 0.4.0, the build on the Pages Flatpak repo (owner decision, 2026-11-09).
+Status (2026-11-21): Phases 0–4 are complete. In Phase 5, steps 1–4 are done (step 4 closed on beta users' test data, owner 2026-11-21); step 5 (upstream v2.31 merge and Linux adaptations) is in progress; step 6 (IceBreaker rename and Flathub submission) has its groundwork done. The current beta release is 0.4.0, the build on the Pages Flatpak repo (owner decision, 2026-11-09).
 
 Exit criteria per phase:
 
@@ -332,11 +332,12 @@ Four decisions shape everything after Phase 0; settle them in the first two week
 - **Handheld/TV options.** Decided 2026-10-23: display profiles (Handheld/Desktop/TV), TV layout reuse, TV safe area, touch on handhelds, and a Display setup step with thumbnail previews in the first-run wizard.
 - **Emulator catalogue and managed installers.** Decided 2026-10-23: a database approach for emulator compatibility (a data-driven Linux emulator catalogue that emulator suggestions, managed installers and detection read from, instead of hard-coded seeds). Which emulators it starts with, its schema, where it lives and how it is updated are decided while planning Phase 4.
 
-Open owner decisions in Phase 5 (2026-11-06):
+Owner decisions in Phase 5 (2026-11-21):
 
-- **RetroArch cores.** A fresh Flathub RetroArch has no cores: Argosy installs the core a launch needs, or points to RetroArch's Core Downloader.
-- **App id and store listing.** The Flathub app id (`io.github.Stealthx3.argosy_desktop` proposed) and the store screenshots.
-- **Brightness.** Quick Settings Brightness is hidden on desktop: leave it out, or add backlight control for Linux handhelds and laptops.
+- **RetroArch cores.** Decided: the launcher installs the core a launch needs from the libretro buildbot into the RetroArch Flatpak's core folder.
+- **App id and store listing.** Decided: the app is renamed to IceBreaker in the Flathub submission step with app id `io.github.stealthx3.IceBreaker` and the repo renamed to `Stealthx3/IceBreaker`; the store screenshots are taken after the rename. IceBreaker adds itself to Steam with its art (Steam Shortcut Standard, `docs/standards/`).
+- **Brightness.** Decided: left out on desktop.
+- **Upstream merge.** Decided: upstream v2.31.0 is merged in step 5 with the Linux adaptations listed in `DEVLOG.md` (2026-11-21); v3.0 waits for its stable release.
 
 Phase 0 tasks:
 

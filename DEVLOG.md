@@ -1308,7 +1308,8 @@ Mapped ids: retroarch, dolphin, cemu, azahar, ryujinx (Ryubing), eden, melonds, 
 2. **Close Argosy in Quick Settings.** A desktop-only "Close Argosy" entry that asks for confirmation and then shuts the app down gracefully (input, sync and players stopped, window closed).
 3. **Game thumbnails from sync.** Cover art for games on Home and the platform selection screens is fetched and cached during the library sync on desktop (the desktop image cache is a stub today).
 4. **Linux desktop and Steam Game Mode compatibility.** Gamescope sessions: emulator and game launches from Argosy, and a clean exit when closed from the Steam overlay (fixes shipped in alpha 5.4). GNOME, KDE and SteamOS: install, wizard, sync, downloads, launches, save sync and a clean exit on each (VM test lab for Fedora GNOME, Fedora KDE and Ubuntu GNOME; the owner's Deck for Game Mode).
-5. **Flathub submission.** Lint clean (folder grants, `flatpak-spawn`, screenshots, app id), offline from-source build in CI for x86_64 and aarch64, Flathub PR.
+5. **Upstream v2.31 merge and Linux adaptations.** Merge upstream v2.31.0 (from our v2.24.0 base; triage in `docs/desktop/upstream-2.31-triage.md`), then build the Linux versions of the upstream features the owner picked (owner decisions 2026-11-21): screenshot upload to RomM, live hardware readings, catalog entries and Eden keys/firmware, the handheld seat picker, games kept running with Resume, the Connections page as status only, a Home combo that returns to the launcher, and RetroArch core installs.
+6. **Flathub submission with the IceBreaker rename.** The rename to IceBreaker (app id `io.github.stealthx3.IceBreaker`, repo `Stealthx3/IceBreaker`) and the switch to its art land first (`IceSuite/IceBreaker/rebrand/RENAME-CHECKLIST.md`; owner request 2026-11-14), with Add to Steam per the Steam Shortcut Standard, then lint clean (folder grants, `flatpak-spawn`, Steam folder grants, screenshots of the renamed app, the new app id), offline from-source build in CI for x86_64 and aarch64, Flathub PR.
 
 ### 2026-10-24 — Step 1: wizard emulator step wording; step closed
 
@@ -1877,3 +1878,31 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
   - Pushed 311679236, then ran `build-alpha.sh`; the installed jar has the new pull.
   - Host walk against the owner's RomM: the first run completed a full account pass (`run: added=0 devices=5 full=true`) with no exceptions. That account already held its whole history, so nothing was added.
   - Then `publish-repo.sh` (signed) → `push-pages.sh --step-close 5.4` (`gh-pages` 6e39a10, app commit 669919a2). Pages serves it, checked through a throwaway `FLATPAK_USER_DIR`.
+
+### 2026-11-14 — Step 5 plan: the IceBreaker rename and art switch go with the Flathub submission (owner request)
+
+- **Action:** step 5 of the Phase 5 plan now carries the rename to IceBreaker and the switch to its art, ahead of the Flathub PR. No code changed. The rename's work list is `IceSuite/IceBreaker/rebrand/RENAME-CHECKLIST.md`; the art is in `IceSuite/IceBreaker/brand/deployment/`.
+- **Owner decisions so far (IceBreaker `DECISIONS.md`):** Flathub name "IceBreaker" (D-002); brand colours Glacier, light `#80E5FF`, dark `#06445E` (D-003). The app id is still open (D-004); recommended `io.github.stealthx3.IceBreaker` with the repo renamed to `Stealthx3/IceBreaker`.
+- **Reasoning:**
+  - A new app id starts a new Flatpak data folder (`~/.var/app/<id>`) and a new ref in the beta repo, so beta users move once. Doing it before Flathub means no Flathub user ever has to move.
+  - Flathub treats an id rename after acceptance as a resubmission and accepts it only conservatively. The id has to be final in the first PR.
+  - The store screenshots and metainfo must show the name and art that ship, so they are taken after the rename.
+- **Order inside step 5:** see the Phase 5 handoff, "Step 5 (Flathub)".
+
+### 2026-11-21 — Step 4 closed; owner decisions for the upstream merge; new step 5 (owner request)
+
+- **Action:** step 4 (Linux desktop and Steam Game Mode compatibility) is closed: the owner has enough test data from beta users to clear it (owner, 2026-11-21). Development resumes after the Cowork pause. A new step 5 merges upstream v2.31.0 and builds the Linux versions of upstream's Android-only features; the Flathub submission with the IceBreaker rename moves to step 6.
+- **No republish for the step-4 close:** the build Pages serves (published 2026-11-13, issue #3 fix) is built from `311679236`, and nothing but this log changed in code since. A rebuild would publish the same app.
+- **Owner decisions (2026-11-21):**
+  - Merge target: upstream v2.31.0 now; v3.0 once it is stable, in a later step. The per-controller button layout in v3 beta 9 overlaps our per-button navigation mapping and is decided before that merge.
+  - Linux builds in step 5: screenshot upload to RomM; live CPU, GPU, fan and battery readings; Linux catalog entries (Vita3K, ScummVM, PICO-8, xemu, new save paths, multi-disc launch) plus Switch keys and firmware into Eden; the controller seat picker recognising handheld built-in pads.
+  - Games stay running when the player returns to the launcher, with Resume, **everywhere**, including Steam Game Mode (to be tested under gamescope).
+  - Quick Settings Connections page: status only (no Wi-Fi or Bluetooth control, no system-bus grants).
+  - Home combo: an SDL3 controller combo brings the launcher to the front and offers to quit or keep the running emulator. No overlay over the game.
+  - Brightness: left out on desktop.
+  - RetroArch cores: the launcher installs the core a launch needs from the libretro buildbot into the RetroArch Flatpak's core folder.
+  - App id `io.github.stealthx3.IceBreaker`, with the repo renamed to `Stealthx3/IceBreaker` (IceBreaker D-004).
+- **Steam Shortcut Standard adopted** (owner attached `ai-assets/STEAM-SHORTCUT-STANDARD.md` v1, 2026-11-21): IceBreaker adds itself to Steam with its brand-kit art. It is built in step 6, after the rename, because it needs the final app id and the IceBreaker art. Pre-work checks: the helper (`ai-assets/tools/steam-shortcut/add_to_steam.py`, VERSION 1) exists; the five Steam exports are in `IceSuite/IceBreaker/brand/deployment/steam/`; the Flatpak runtime (freedesktop 25.08) ships Python 3.13, so the helper is vendored unchanged. Copy of the standard: `docs/standards/STEAM-SHORTCUT-STANDARD.md`; adoption logged in `docs/DECISIONS.md`.
+- **Reasoning:**
+  - v2.31 before v3: v2.31 conflicts in 200 files against 515 for v3.0.0-beta.10, and v3 is still changing daily.
+  - The Steam shortcut writes the app id into Steam's `shortcuts.vdf`; doing it before the rename would leave beta users with a shortcut pointing at the old id.

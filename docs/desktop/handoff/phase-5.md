@@ -2,60 +2,78 @@
 
 Rewritten (not appended) at the end of every work unit, so a fresh session can start from it alone. History and reasoning live in `DEVLOG.md` (Phase 5 section). Earlier phases: `phase-0.md` … `phase-4.md`.
 
-**Updated:** 2026-11-08 (development paused by the owner for a Claude Cowork repo reorganization and documentation rework; brief in `cowork-brief.md`). Steps 1–3 done; step 4 in progress.
+**Updated:** 2026-11-21. Steps 1–4 done; step 5 in progress (unit 5a next).
 
-## Paused state (read first)
+## State
 
-- **Development is paused.** The owner asked to hand the repo to Claude Cowork for a reorganization and documentation rework. Do not resume step 4 until the owner says so. Pacer state: `waiting-owner`.
-- **Git:** local `main` merged `origin/main` (6ddef138e, docs only; local versions of the shared docs kept) and was pushed on 2026-11-09 at the owner's request, mid-phase. `docs/postmortem/` and `scripts/postmortem.mjs` are now tracked.
-- **Other sessions' uncommitted files:** `scripts/desktop/vmlab/lab.sh` (modified), `scripts/desktop/vmlab/gm-define.sh`, `scripts/desktop/vmlab/qemu-venus.sh` (SteamOS/Bazzite lab, closed by owner decision: Game Mode testing moved to the host).
-- **Current beta (owner decision, 2026-11-09):** the build Pages serves is the current beta release (0.4.0); labels say beta, not alpha. Republished 2026-11-09 with the beta metainfo: app commit 72eee22e, `gh-pages` b548dc6 (code as 663022ed). Earlier publish of 2026-11-08: app commit 490fc8d3. `main` itself is not pushed.
+- **Cowork pause is over:** the owner resumed development on 2026-11-21. Pacer state: `working`.
+- **Step 4 closed** on beta users' test data (owner, 2026-11-21). No republish: Pages already serves the build of `311679236` (issue #3 fix), and no code changed since.
+- **Git:** `main` is 1 commit ahead of `origin/main` before this unit's commit; push only at the phase close.
+- **Other sessions' uncommitted files:** `docs/desktop/flathub-plan.md` (app-id line from 2026-11-14), `scripts/desktop/vmlab/lab.sh`, `gm-define.sh`, `qemu-venus.sh`. Leave them alone.
 
 ## Scope and exit criterion
 
-Owner decision 2026-10-27: Linux adaptation and compatibility, not a 1:1 clone. `PORT_PLAN.md` Roadmap (Phase 5): Linux desktop and Steam Game Mode compatibility (GNOME, KDE, SteamOS); Flathub submission. Exit: install, wizard, sync, downloads, launches, save sync and a clean exit on GNOME, KDE and SteamOS (desktop and Game Mode); `flatpak-builder-lint` clean; offline CI build for x86_64 and aarch64; Flathub PR merged.
+Owner decision 2026-10-27: Linux adaptation and compatibility, not a 1:1 clone. Exit: install, wizard, sync, downloads, launches, save sync and a clean exit on GNOME, KDE and SteamOS (desktop and Game Mode); `flatpak-builder-lint` clean; offline CI build for x86_64 and aarch64; Flathub PR merged.
 
-Plan (`DEVLOG.md`, Phase 5 plan): 1 wizard wording, 2 Close Argosy, 3 thumbnails (done); 4 Linux desktop and Steam Game Mode compatibility (in progress); 5 Flathub submission.
+Plan (`DEVLOG.md`, Phase 5 plan): 1 wizard wording, 2 Close Argosy, 3 thumbnails, 4 Linux desktop and Steam Game Mode compatibility (done); 5 upstream v2.31 merge and Linux adaptations (in progress); 6 Flathub submission with the IceBreaker rename.
 
-## Step 4: done since the first beta build (all in the current beta, 663022ed)
+## Step 5: units
 
-- TV layout tweaks; grey edge strips under gamescope fixed; TV navigation and focus parts now on every desktop profile; Game Mode picks the TV profile over a saved Desktop one.
-- Setup folder picker: Home plus mounted drives, Back in the hint row. Controller Layout choices (Auto, Xbox, PlayStation, Nintendo, Steam) and per-controller glyphs.
-- Linux emulator database v2: 21 desktop-only emulators (VBA-M removed), VM-tested; Dolphin snap command detected.
-- Emulators manager (desktop Settings > Managed Installers): every compatible emulator by platform, per-emulator submenu (status, package, EmuDeck, logs, data folder, Assign BIOS, install/uninstall).
-- GitHub AppImage installs fixed (`java.net.http` was missing from the jlink runtime; broken in every build including Beta 1).
-- Game Mode emulator launches: environment forwarding to `flatpak-spawn --host` plus `GameModeWindowTagger` (`STEAM_GAME` on emulator windows). Proven in nested Game Mode on the host with the Dolphin Flatpak: emulator in front, back to Argosy on close.
-- Setup wizard: Start presses Next, a clickable hint bar on every step, Display step rows (Full Screen, Safe Area with TV, UI Scale) and layout selection that no longer advances; emulator list scroll indicator. The LB/RB top-row switcher is gone on desktop; a clickable "Menu" hint at the left of the hint bar opens the left menu (DEVLOG, "Start is Next").
-- Desktop UI sounds (were a no-op): Ogg/WAV through `libvorbisfile` + `libpulse-simple`. Game Mode audio proven with Dolphin (video and audio) once Steam Game Recording is off; with it on, the nested setup stalls all PipeWire audio (DEVLOG, "desktop UI sounds").
+Triage of every upstream commit: `docs/desktop/upstream-2.31-triage.md` (uncommitted until owner says; read it first). Owner decisions: `DEVLOG.md`, 2026-11-21.
 
-## Step 4: open
+- **5a. Merge v2.31.0 (next).**
+  - Work in a worktree on branch `merge/upstream-2.31`; fast-forward `main` once verified.
+  - Dry run: `git merge-tree --write-tree -X find-renames=40% main origin/upstream` gives 200 conflicts (90 content, 87 file location, 25 delete, 2 rename/rename) and 319 clean merges.
+  - Rules:
+    - Bucket 2 (Android-only) takes upstream's side; accept upstream's Steam/Xbox deletions.
+    - New upstream files go in `commonMain` unless they import Android.
+    - Keep our issue #2 decoder and both sides of the play-session pull (upstream's deletion cutoffs plus our full account pass).
+    - DB 214 → 222 applies as is.
+  - Every new settings row or entry point from upstream needs a `PlatformFeatures` gate when the feature is Android-only (Select as Back, Motion, Gyro, Steam launchers, root, Magisk).
+- **5b. Verify the merge:** push gate (`:shared:desktopTest`, `testDebugUnitTest`), host walk, testbed save-sync live check (`GET /api/saves`, negotiate no_op twice), and the session-end rework (launch, quit, relaunch during upload).
+- **5c. Catalog and Eden:**
+  - Catalog (data, served from GitHub): Vita3K, ScummVM, PICO-8, xemu; Flycast VMU, Azahar/Lime3DS and PPSSPP save paths; m3u multi-disc launch per emulator.
+  - Eden: Switch keys and firmware installed into Eden's folders.
+- **5d. RetroArch core installs:** fetch the core a launch needs from the libretro buildbot into the RetroArch Flatpak's `cores/` folder. Check the Flatpak folder grant first.
+- **5e. Screenshot upload:** watch each emulator's screenshot folder (new catalog field) during the supervised session, then hand off to upstream's shared upload queue.
+- **5f. Live hardware readings** (`/proc`, `/sys/class/hwmon`, `power_supply`, `gpu_busy_percent`) and the **Connections page as status only**.
+- **5g. Handheld seat picker:** SDL3 built-in pad detection (Deck 28de:1205, Legion Go, ROG Ally, MSI Claw).
+- **5h. Games kept running and Resume, everywhere including Game Mode; the Home combo** (SDL3 combo raises the launcher and offers quit or keep).
+- **Not in step 5:** Brightness stays out. Connections control, Wayland overlays and v3.0 are not part of this step.
+- **Step close:** `build-alpha.sh` → `publish-repo.sh` → `push-pages.sh --step-close 5.5`.
 
-- Published 2026-11-08 (Pages app commit 3d10438a): wizard and Menu-hint changes. Republished the same day (Pages app commit 663022ed): Steam controller variables forwarded to emulators (owner's Deck report: no RetroArch input in Game Mode) and the quiet return from a game (`GameInputGate`, window raise); both need the Deck to confirm. Dev host now has the RetroArch Flatpak plus Gambatte core (owner OK).
-- Owner's Deck checks in real Game Mode (launch GameCube/Switch/PS and GBA games, exit from the Steam overlay, Steam keyboard), now on a build with the tagger.
-- Not verified: `HostGameProcess.stopAll` ending a Flatpak emulator on Argosy exit; EmuDeck detection on the owner's host; Assign BIOS with real RomM firmware; the folder picker's Back row on screen.
-- Snap emulators: tagged and focused but rendered black and cannot be signalled from outside snap confinement.
-- Check on the Deck whether Steam Game Recording stalls audio in real Game Mode (it does in nested gamescope on the owner's host; owner set recording Off in that Steam during the test).
-- Test Steam shortcut "Argosy Desktop (test)" stays in the owner's Steam library (backup of the original `shortcuts.vdf`: `build/gamemode/shortcuts.vdf.bak-20261108`; edit only with Steam closed).
-- Step 4 closes with `--step-close 5.4` (republish) after the Deck checks.
+## Step 6 (IceBreaker rename and Flathub)
 
-## Open owner questions
+- **Rename:**
+  - App id `io.github.stealthx3.IceBreaker`; repo renamed to `Stealthx3/IceBreaker` (owner, 2026-11-21).
+  - Work list: `IceSuite/IceBreaker/rebrand/RENAME-CHECKLIST.md`. Art: `IceSuite/IceBreaker/brand/deployment/`.
+  - Update IceBreaker `DECISIONS.md` D-004 to decided when the rename starts.
+- **Order:**
+  1. Rename in code (desktop only).
+  2. Move beta users with an end-of-life rebase.
+  3. Update links.
+  4. **Add to Steam** (`docs/standards/STEAM-SHORTCUT-STANDARD.md`): vendor the helper unchanged, copy the five Steam PNGs, write `steam-shortcut.json`, add the manifest module and the three Steam `finish-args`, build the first-run offer and Settings rows in Compose, run the fake-root test, then test with real Steam in the VM lab and in Game Mode.
+  5. Screenshots, lint, `--step-close 5.6`, Flathub PR (owner go-ahead).
+- The test shortcut "Argosy Desktop (test)" in the owner's Steam (backup `build/gamemode/shortcuts.vdf.bak-20261108`) is removed or replaced once the real shortcut works; edit only with Steam closed.
 
-1. Quick Settings Brightness on desktop: leave out, or add backlight control?
-2. Fresh Flathub RetroArch has no cores: install cores for the user, or point to RetroArch's downloader?
-3. App-id rename `io.github.Stealthx3.argosy_desktop` and the Flathub screenshots.
+## Carried from step 4 (not verified)
 
-## Step 5 (Flathub) groundwork
-
-`docs/desktop/flathub-plan.md`. The from-source manifest builds offline locally; lint shows only owner-gated items; CI draft `.github/workflows/flatpak.yml` untested until the phase-close push. Remaining work needs the owner (app id, screenshots, CI run, Flathub PR).
+- `HostGameProcess.stopAll` ending a Flatpak emulator on exit.
+- EmuDeck detection on the owner's host.
+- Assign BIOS with real RomM firmware.
+- The folder picker's Back row on screen.
+- Snap emulators render black under the tagger.
+- Steam Game Recording stalling audio in nested gamescope.
 
 ## Gotchas
 
-- Never run two bundle builds at once: they share `desktopApp/build` and the second packages a stale build.
-- Nested Game Mode on the host: `gamescope -W 1920 -H 1080 -w 1920 -h 1080 -e -- steam -gamepadui` (close normal Steam first); launch the shortcut with `steam steam://rungameid/<id>`; screenshots only with `GAMESCOPE_WAYLAND_DISPLAY=gamescope-0 gamescopectl screenshot <file>`, never full-desktop captures.
-- Walks: Close Argosy from Home is `DPAD_LEFT DOWN*8 A RIGHT A`. Dev data downloads go to the real `~/Games/Argosy`.
+- Never run two Gradle or bundle builds at once (they share `desktopApp/build`).
+- A filtered test run must target `:app:testDebugUnitTest`; `quiet.sh` can print exit 0 on a failed build. Check for BUILD SUCCESSFUL and the test XML.
+- Nested Game Mode: `gamescope -W 1920 -H 1080 -w 1920 -h 1080 -e -- steam -gamepadui`. Screenshots only through `gamescopectl screenshot`, never full-desktop captures.
+- Walks: `scripts/desktop/check/pad-walk.sh flatpak <out> ...`; run log `build/desktop-logs/*desktop-run.log`.
 
 ## Where things are
 
-- Desktop code `shared/src/desktopMain`, app `desktopApp/`, Flatpak `desktopApp/flatpak/`, scripts `scripts/desktop/` (VM lab `vmlab/`, walks `check/`); JDK `JAVA_HOME=~/.jdks/jdk-21.0.12.1+1`.
+- Desktop code `shared/src/desktopMain`, app `desktopApp/`, Flatpak `desktopApp/flatpak/`, scripts `scripts/desktop/`; JDK `JAVA_HOME=~/.jdks/jdk-21.0.12.1+1`.
 - Desktop data `~/.local/share/argosy-desktop` (never delete without the owner); Flatpak data `~/.var/app/io.github.stealthx3.ArgosyDesktop`.
-- Beta republish at a step close: `build-alpha.sh` → `publish-repo.sh` → `push-pages.sh --step-close 5.<n>`.
+- Upstream refs: `origin/upstream` (v2.31.0), `rommapp/main` (fetched from rommapp; v3 betas).
