@@ -47,7 +47,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.isImeVisible
+import com.nendo.argosy.ui.util.isImeVisible
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.layout.Row
@@ -749,7 +749,7 @@ private fun RommLoginStep(
     val codeComplete = normalizedCode.length == 8
     var wasUrlFocused by remember { mutableStateOf(false) }
 
-    val compact = WindowInsets.isImeVisible && focusedIndex in 0..2
+    val compact = isImeVisible() && focusedIndex in 0..2
     val roomMs = if (LocalMotionTier.current == MotionTier.Reduced) 0 else MotionTokens.Tween.drawerMs
     val roomEnter = remember(roomMs) { roomEnterVertical(roomMs) }
     val roomExit = remember(roomMs) { roomExitVertical(roomMs) }

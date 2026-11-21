@@ -26,7 +26,7 @@ class SteamPathResolver @Inject constructor(
      * forgotten only when its parent is reachable and the path itself is absent; an unmounted
      * volume or a missing storage grant leaves the row untouched.
      */
-    suspend fun isGameInstalled(game: GameEntity): Boolean {
+    actual suspend fun isGameInstalled(game: GameEntity): Boolean {
         if (game.isExternallyManaged) return true
         val path = game.localPath ?: return false
         if (File(path, DOWNLOAD_COMPLETE_MARKER).exists() ||

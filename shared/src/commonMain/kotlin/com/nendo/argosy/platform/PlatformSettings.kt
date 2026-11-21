@@ -9,6 +9,7 @@ expect object PlatformSettings {
     val ACTION_APP_NOTIFICATION_SETTINGS: String
     val ACTION_MANAGE_OVERLAY_PERMISSION: String
     val ACTION_MANAGE_WRITE_SETTINGS: String
+    val ACTION_ACCESSIBILITY_SETTINGS: String
     val ACTION_SETTINGS: String
     val ACTION_USAGE_ACCESS_SETTINGS: String
     val EXTRA_APP_PACKAGE: String

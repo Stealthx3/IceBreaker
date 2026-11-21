@@ -9,7 +9,6 @@ enum class HapticPattern {
     BOUNDARY_HIT,
     DOWNLOAD_START,
     DOWNLOAD_COMPLETE,
-    LAUNCH_GAME,
     ERROR,
     STRENGTH_PREVIEW
 }

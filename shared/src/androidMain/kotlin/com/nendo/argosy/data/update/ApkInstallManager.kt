@@ -33,13 +33,6 @@ private const val TAG = "ApkInstallManager"
 private const val PUSHED_PREFS = "apk_install_pushed"
 private const val PUSHED_IDS = "game_ids"
 
-sealed class ApkInstallState {
-    data object Idle : ApkInstallState()
-    data class WaitingForInstall(val gameId: Long, val apkPath: String) : ApkInstallState()
-    data class InstallComplete(val gameId: Long, val packageName: String) : ApkInstallState()
-    data class InstallFailed(val gameId: Long, val reason: String) : ApkInstallState()
-}
-
 @Singleton
 actual class ApkInstallManager @Inject constructor(
     @ApplicationContext private val context: Context,

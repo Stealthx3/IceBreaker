@@ -38,18 +38,6 @@ private const val TAG = "ManagedInstaller"
 private const val BUFFER_SIZE = 64 * 1024
 private const val CACHE_DIR_NAME = "managed_installer_apks"
 
-sealed class InstallerJobState {
-    data object Idle : InstallerJobState()
-    data object Checking : InstallerJobState()
-    data class Downloading(val progress: Float) : InstallerJobState()
-    data object WaitingForInstall : InstallerJobState()
-    data class NeedsVariantChoice(val assets: List<GitHubAsset>) : InstallerJobState()
-    data class Failed(val reason: InstallerFailure) : InstallerJobState()
-}
-
-
-data class InstallerJob(val installerId: Long, val state: InstallerJobState)
-
 @Singleton
 actual class ManagedInstallerManager @Inject constructor(
     @ApplicationContext private val context: Context,

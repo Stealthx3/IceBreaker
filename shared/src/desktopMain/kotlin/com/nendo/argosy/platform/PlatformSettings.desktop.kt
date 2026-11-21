@@ -14,6 +14,7 @@ actual object PlatformSettings {
     actual val ACTION_APP_NOTIFICATION_SETTINGS: String = "android.settings.APP_NOTIFICATION_SETTINGS"
     actual val ACTION_MANAGE_OVERLAY_PERMISSION: String = "android.settings.action.MANAGE_OVERLAY_PERMISSION"
     actual val ACTION_MANAGE_WRITE_SETTINGS: String = "android.settings.action.MANAGE_WRITE_SETTINGS"
+    actual val ACTION_ACCESSIBILITY_SETTINGS: String = \"android.settings.ACCESSIBILITY_SETTINGS\"
     actual val ACTION_SETTINGS: String = "android.settings.SETTINGS"
     actual val ACTION_USAGE_ACCESS_SETTINGS: String = "android.settings.USAGE_ACCESS_SETTINGS"
     actual val EXTRA_APP_PACKAGE: String = "android.provider.extra.APP_PACKAGE"

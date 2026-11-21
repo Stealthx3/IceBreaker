@@ -10,6 +10,7 @@ actual interface PlatformSharedPreferences {
     actual fun getLong(key: String?, defValue: Long): Long
     actual fun getBoolean(key: String?, defValue: Boolean): Boolean
     actual fun contains(key: String?): Boolean
+    actual fun getAll(): Map<String, *>
     actual fun edit(): Editor
 
     actual interface Editor {
@@ -46,6 +47,14 @@ private class FilePreferences(private val file: File) : PlatformSharedPreference
     override fun getBoolean(key: String?, defValue: Boolean): Boolean =
         stored[key.orEmpty()]?.removePrefix("b:")?.toBooleanStrictOrNull() ?: defValue
     override fun contains(key: String?): Boolean = stored.containsKey(key.orEmpty())
+    override fun getAll(): Map<String, *> = stored.mapValues { (_, raw) ->
+        when {
+            raw.startsWith("i:") -> raw.removePrefix("i:").toIntOrNull()
+            raw.startsWith("l:") -> raw.removePrefix("l:").toLongOrNull()
+            raw.startsWith("b:") -> raw.removePrefix("b:").toBooleanStrictOrNull()
+            else -> raw.removePrefix("s:")
+        }
+    }
     override fun edit(): PlatformSharedPreferences.Editor = FileEditor()
 
     @Synchronized

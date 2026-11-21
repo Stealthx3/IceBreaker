@@ -1,5 +1,7 @@
 package com.nendo.argosy.ui.screens.common
 
+import com.nendo.argosy.platform.getBooleanExtra
+
 import com.nendo.argosy.platform.PlatformIntentType as Intent
 import com.nendo.argosy.platform.action
 import com.nendo.argosy.platform.addFlags

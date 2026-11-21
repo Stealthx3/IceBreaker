@@ -46,6 +46,8 @@ expect val PlatformIntentType.`package`: String?
 
 expect fun PlatformIntentType.getStringExtra(name: String): String?
 
+expect fun PlatformIntentType.getBooleanExtra(name: String, defaultValue: Boolean): Boolean
+
 expect val PlatformIntentType.action: String?
 
 expect var PlatformIntentType.data: PlatformUri?

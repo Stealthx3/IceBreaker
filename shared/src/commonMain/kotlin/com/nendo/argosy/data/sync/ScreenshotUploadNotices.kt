@@ -28,7 +28,7 @@ import com.nendo.argosy.platform.resources
 import com.nendo.argosy.res.ArgosyR as R
 import com.nendo.argosy.core.locale.LocaleHelper
 import com.nendo.argosy.data.preferences.SessionStateStore
-import com.nendo.argosy.data.social.SocialOverlayService
+import com.nendo.argosy.platform.TransientNotice
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.di.ApplicationContext
 import javax.inject.Inject
@@ -46,9 +46,9 @@ class ScreenshotUploadNotices @Inject constructor(
             val uploadedLine = res.getQuantityString(R.plurals.sync_screenshot_uploaded, uploaded, uploaded)
             val rejectedLine = res.getQuantityString(R.plurals.sync_screenshot_rejected, rejected, rejected)
             when {
-                uploaded > 0 && rejected > 0 -> SocialOverlayService.show(context, uploadedLine, rejectedLine)
-                uploaded > 0 -> SocialOverlayService.show(context, uploadedLine)
-                else -> SocialOverlayService.show(context, rejectedLine)
+                uploaded > 0 && rejected > 0 -> TransientNotice.show(context, uploadedLine, rejectedLine)
+                uploaded > 0 -> TransientNotice.show(context, uploadedLine)
+                else -> TransientNotice.show(context, rejectedLine)
             }
         } catch (e: Exception) {
             Logger.warn(TAG, "Could not show the screenshot upload notice", e)

@@ -23,6 +23,7 @@ val appBuildConfigFields: Map<String, Map<String, Pair<String, String>>> = appBu
         "DEBUG" to ("boolean" to (type == "debug").toString()),
         "VERSION_NAME" to ("String" to "\"${appAndroid.defaultConfig.versionName}\""),
         "VERSION_CODE" to ("int" to appAndroid.defaultConfig.versionCode.toString()),
+        "APPLICATION_ID" to ("String" to "\"${appAndroid.defaultConfig.applicationId}${appAndroid.buildTypes.getByName(type).applicationIdSuffix.orEmpty()}\""),
     )
 }
 

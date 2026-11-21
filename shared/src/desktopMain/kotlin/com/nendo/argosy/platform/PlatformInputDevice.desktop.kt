@@ -46,3 +46,5 @@ actual object PlatformInputDevices {
     actual fun getDevice(id: Int): PlatformInputDevice? = devices[id]
     actual fun getDeviceIds(): IntArray = devices.keys.sorted().toIntArray()
 }
+
+actual fun PlatformInputDevice.supportsSource(source: Int): Boolean = (sources and source) == source

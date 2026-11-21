@@ -778,7 +778,6 @@ actual class StorageAttributionRepository @Inject constructor(
     ): CategoryUsage {
         val total = UsageAccumulator()
         val stagingRoots = listOf(
-            AppPaths.steamStagingRoot(context.filesDir),
             File(context.filesDir, "steam_downloads")
         )
         for (root in stagingRoots) {

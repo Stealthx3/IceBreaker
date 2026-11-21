@@ -45,7 +45,7 @@ import com.nendo.argosy.platform.displayId
 import com.nendo.argosy.data.access.PrivilegedAccess
 import com.nendo.argosy.data.wallpaper.LockScreenScenes
 import com.nendo.argosy.hardware.FanController
-import com.nendo.argosy.hardware.FocusAccessibilityService
+import com.nendo.argosy.platform.AccessibilityServiceState
 import com.nendo.argosy.hardware.LEDController
 import com.nendo.argosy.hardware.ScreenCaptureManager
 import com.nendo.argosy.ui.screens.settings.PermissionsState
@@ -138,7 +138,7 @@ class PermissionsSettingsDelegate @Inject constructor(
         val hasScreenCapture = screenCaptureManager.hasPermission.value
         val isLedAvailable = ledController.isAvailable
         val hasDisplayOverlay = Settings.canDrawOverlays(application)
-        val hasAccessibilityService = FocusAccessibilityService.isEnabled(application)
+        val hasAccessibilityService = AccessibilityServiceState.isEnabled(application)
 
         _state.update {
             it.copy(

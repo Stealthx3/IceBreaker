@@ -56,7 +56,7 @@ class ScreenshotUploadLedger @Inject constructor(
     ) {
         val cutoff = now - RETENTION_MS
         val editor = prefs.edit()
-        prefs.all.forEach { (key, value) ->
+        prefs.getAll().forEach { (key, value) ->
             if ((value as? Long ?: 0L) < cutoff) editor.remove(key)
         }
         editor.putLong(keyOf(ownerUserId, rommId, sourcePath, sourceModifiedAt), now)

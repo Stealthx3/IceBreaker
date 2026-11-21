@@ -6,6 +6,7 @@ expect interface PlatformSharedPreferences {
     fun getLong(key: String?, defValue: Long): Long
     fun getBoolean(key: String?, defValue: Boolean): Boolean
     fun contains(key: String?): Boolean
+    fun getAll(): Map<String, *>
     fun edit(): Editor
 
     interface Editor {

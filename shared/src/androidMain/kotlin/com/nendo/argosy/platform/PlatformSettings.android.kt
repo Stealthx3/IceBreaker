@@ -12,6 +12,7 @@ actual object PlatformSettings {
     actual val ACTION_APP_NOTIFICATION_SETTINGS: String get() = Settings.ACTION_APP_NOTIFICATION_SETTINGS
     actual val ACTION_MANAGE_OVERLAY_PERMISSION: String get() = Settings.ACTION_MANAGE_OVERLAY_PERMISSION
     actual val ACTION_MANAGE_WRITE_SETTINGS: String get() = Settings.ACTION_MANAGE_WRITE_SETTINGS
+    actual val ACTION_ACCESSIBILITY_SETTINGS: String get() = Settings.ACTION_ACCESSIBILITY_SETTINGS
     actual val ACTION_SETTINGS: String get() = Settings.ACTION_SETTINGS
     actual val ACTION_USAGE_ACCESS_SETTINGS: String get() = Settings.ACTION_USAGE_ACCESS_SETTINGS
     actual val EXTRA_APP_PACKAGE: String get() = Settings.EXTRA_APP_PACKAGE

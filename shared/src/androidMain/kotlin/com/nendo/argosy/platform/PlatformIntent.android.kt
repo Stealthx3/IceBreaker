@@ -44,6 +44,8 @@ actual val PlatformIntentType.`package`: String? get() = `package`
 
 actual fun PlatformIntentType.getStringExtra(name: String): String? = getStringExtra(name)
 
+actual fun PlatformIntentType.getBooleanExtra(name: String, defaultValue: Boolean): Boolean = getBooleanExtra(name, defaultValue)
+
 actual val PlatformIntentType.action: String? get() = action
 
 actual var PlatformIntentType.data: PlatformUri?

@@ -48,7 +48,7 @@ class BackgroundGameStore @Inject constructor(application: Application) {
     private val prefs = application.getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
 
     fun all(): List<BackgroundGame> =
-        prefs.all.mapNotNull { (key, value) ->
+        prefs.getAll().mapNotNull { (key, value) ->
             if (!key.startsWith(KEY_PREFIX)) return@mapNotNull null
             decode(key.removePrefix(KEY_PREFIX), value as? String ?: return@mapNotNull null)
         }
