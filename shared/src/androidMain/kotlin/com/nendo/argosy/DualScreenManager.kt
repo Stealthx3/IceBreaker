@@ -1824,7 +1824,7 @@ actual class DualScreenManager(
      * asked again every [EMULATOR_SETTLE_MS], up to [EMULATOR_SETTLE_CHECKS] times, while
      * [launcherStillInFront] holds.
      */
-    suspend fun emulatorLeftScreen(
+    actual suspend fun emulatorLeftScreen(
         context: Context,
         onGameDisplay: Boolean,
         launcherStillInFront: () -> Boolean

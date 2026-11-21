@@ -225,10 +225,6 @@ expect class DualScreenManager {
 
     val mediaPlayback: StateFlow<com.nendo.argosy.data.media.ActiveMediaPlayback?>
 
-    val mediaSignedIn: StateFlow<Boolean>
-
-    val companionMediaVisible: StateFlow<Boolean>
-
     val mediaPlayerDisplay: StateFlow<Int?>
 
     var mediaPlayerDisplayId: Int?
@@ -236,10 +232,6 @@ expect class DualScreenManager {
     val mediaPlayerControlsLocked: StateFlow<Boolean>
 
     fun setMediaPlayerControlsLocked(locked: Boolean)
-
-    fun toggleCompanionMediaView()
-
-    fun setCompanionMediaVisible(visible: Boolean)
 
     val mediaInfoRequest: StateFlow<String?>
 
@@ -277,7 +269,7 @@ expect class DualScreenManager {
 
     val liveSwapAvailable: StateFlow<Boolean>
 
-    suspend fun emulatorLeftScreen(context: Context, launcherStillInFront: () -> Boolean): Boolean
+    suspend fun emulatorLeftScreen(context: Context, onGameDisplay: Boolean, launcherStillInFront: () -> Boolean): Boolean
 
     fun endSessionAfterEmulatorLeft()
 

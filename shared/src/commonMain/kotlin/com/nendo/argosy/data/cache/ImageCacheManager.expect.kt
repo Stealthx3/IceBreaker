@@ -11,7 +11,7 @@ expect class ImageCacheManager {
 
     enum class BoxFace { BACK, SPINE, LOGO, BOX_3D }
 
-    val gameArt: StateFlow<Map<Long, ResolvedGameArt>>
+    val gameArt: StateFlow<GameArtSnapshot>
 
     fun artFor(gameId: Long): ResolvedGameArt?
 

@@ -37,13 +37,13 @@ actual class ImageCacheManager @Inject constructor(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    actual val gameArt: StateFlow<Map<Long, ResolvedGameArt>> = gameArtDao.observeRowCount()
+    actual val gameArt: StateFlow<GameArtSnapshot> = gameArtDao.observeRowCount()
         .conflate()
         .transform {
-            emit(gameArtDao.getAll().toResolvedArtByGame())
+            emit(GameArtSnapshot(gameArtDao.getAll().toResolvedArtByGame()))
             delay(ART_MODEL_RELOAD_INTERVAL_MS)
         }
-        .stateIn(scope, SharingStarted.Lazily, emptyMap())
+        .stateIn(scope, SharingStarted.Lazily, GameArtSnapshot.EMPTY)
 
     actual fun artFor(gameId: Long): ResolvedGameArt? = gameArt.value[gameId]
 

@@ -9,8 +9,6 @@ import kotlinx.coroutines.flow.StateFlow
 
 expect class SteamService {
     companion object {
-        val EXTRA_AUTO_CONNECT: String
-
         val EXTRA_FORCE_CONNECT: String
 
         val EXTRA_CONNECT_FOR_AUTH: String
@@ -29,8 +27,5 @@ expect class SteamService {
     fun getSteamApps(): SteamApps?
 
     fun getCallbackManager(): CallbackManager?
-
-    fun getContentManager(): SteamContentManager
-
     fun getLibraryManager(): SteamLibraryManager
 }

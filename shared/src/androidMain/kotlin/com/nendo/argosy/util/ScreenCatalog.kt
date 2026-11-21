@@ -44,6 +44,9 @@ actual class ScreenCatalog @Inject constructor(
     }
 
     actual companion object {
+        actual fun builtInScreenCount(context: Context): Int =
+            ScreenCatalog(context.applicationContext).attachedScreens().count { it.builtIn }
+
         internal fun chooseSecondScreen(screens: List<AttachedScreen>, gameDisplayId: Int): AttachedScreen? =
             screens
                 .filter { it.displayId != gameDisplayId }

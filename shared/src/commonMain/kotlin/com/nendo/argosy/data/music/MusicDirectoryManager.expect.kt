@@ -17,7 +17,7 @@ expect class MusicDirectoryManager {
 
     suspend fun countFiles(): Int
 
-    suspend fun relocate(source: File, destination: File)
+    suspend fun relocate(source: File, destination: File): com.nendo.argosy.util.TreeRelocator.Result
 
     fun scanFile(file: File)
 }

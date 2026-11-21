@@ -20,9 +20,6 @@ actual object SteamLaunchers {
     actual fun promptOptionFor(packageName: String): LaunchPromptOption? = null
 
     actual fun forPromptOption(option: LaunchPromptOption): SteamLauncher? = null
-
-    actual fun launchChoices(pinned: Boolean, reporting: List<String>, isInstalled: (String) -> Boolean): List<String> = emptyList()
-
     actual fun displayNameForPackage(launcherPackage: String?): String = ""
 
     actual fun getMarkOptions(context: Context): List<MarkOption> = emptyList()

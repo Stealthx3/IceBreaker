@@ -79,7 +79,7 @@ actual class MusicDirectoryManager @Inject constructor(
         if (dir.exists()) dir.walkTopDown().count { it.isFile } else 0
     }
 
-    suspend fun relocate(source: File, destination: File): TreeRelocator.Result = withContext(Dispatchers.IO) {
+    actual suspend fun relocate(source: File, destination: File): TreeRelocator.Result = withContext(Dispatchers.IO) {
         val result = TreeRelocator.relocate(source, destination)
         if (result.moved.isNotEmpty()) {
             MediaScannerConnection.scanFile(context, result.moved.toTypedArray(), null, null)

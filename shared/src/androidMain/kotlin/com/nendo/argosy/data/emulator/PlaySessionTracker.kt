@@ -160,7 +160,7 @@ actual class PlaySessionTracker @Inject constructor(
      * Emits the emulator package once a session with [LaunchOrigin.EXTERNAL] has closed and its
      * save work has returned. No replay.
      */
-    val externalSessionClosed: SharedFlow<String> = _externalSessionClosed.asSharedFlow()
+    actual val externalSessionClosed: SharedFlow<String> = _externalSessionClosed.asSharedFlow()
 
     private fun signalSessionClosed(session: ActiveSession) {
         if (session.origin != LaunchOrigin.EXTERNAL) return

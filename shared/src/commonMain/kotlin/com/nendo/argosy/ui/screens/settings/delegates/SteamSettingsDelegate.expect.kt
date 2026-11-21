@@ -72,9 +72,6 @@ expect class SteamSettingsDelegate {
     fun bindService(service: SteamService, scope: CoroutineScope)
 
     fun loadSteamSettings(context: Context, scope: CoroutineScope)
-
-    fun cycleSteamInstallVolume(scope: CoroutineScope, direction: Int = 1)
-
     fun installSteamLauncher(emulatorId: String, scope: CoroutineScope)
 
     fun connectToSteam(context: Context, scope: CoroutineScope)
@@ -93,11 +90,23 @@ expect class SteamSettingsDelegate {
 
     fun resetLibrary(scope: CoroutineScope)
 
-    fun showAddSteamGameDialog()
+    fun showAddSteamGameDialog(launcherPackage: String?)
 
     fun dismissAddSteamGameDialog()
 
     fun setAddGameAppId(appId: String)
 
-    fun confirmAddSteamGame(context: Context, scope: CoroutineScope, launcherPackage: String = (com.nendo.argosy.data.launcher.GameNativeLauncher as com.nendo.argosy.data.launcher.SteamLauncher).packageName)
+    fun confirmAddSteamGame(context: Context, scope: CoroutineScope)
+
+    suspend fun refreshLauncherAvailability(context: Context)
+
+    fun refreshMetadata(scope: CoroutineScope)
+
+    fun moveVariantFocus(delta: Int)
+
+    fun confirmVariant()
+
+    fun dismissVariantPicker()
+
+    fun selectVariantAt(index: Int)
 }

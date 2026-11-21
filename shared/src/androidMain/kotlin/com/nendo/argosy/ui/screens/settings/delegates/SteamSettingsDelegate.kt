@@ -266,7 +266,7 @@ actual class SteamSettingsDelegate @Inject constructor(
         }
     }
 
-    suspend fun refreshLauncherAvailability(context: Context) = withContext(Dispatchers.IO) {
+    actual suspend fun refreshLauncherAvailability(context: Context) = withContext(Dispatchers.IO) {
         val gnInstalled = isGnInstalled(context)
         val installed = SteamLaunchers.getInstalled(context)
         val installedRegistryIds = installed.mapNotNull { it.registryId }.toSet()
@@ -396,7 +396,7 @@ actual class SteamSettingsDelegate @Inject constructor(
         }
     }
 
-    fun moveVariantFocus(delta: Int) {
+    actual fun moveVariantFocus(delta: Int) {
         _state.update { state ->
             val info = state.variantPickerInfo ?: return@update state
             val maxIndex = (info.variants.size - 1).coerceAtLeast(0)
@@ -404,16 +404,16 @@ actual class SteamSettingsDelegate @Inject constructor(
         }
     }
 
-    fun dismissVariantPicker() {
+    actual fun dismissVariantPicker() {
         _state.update { it.copy(variantPickerInfo = null, variantPickerFocusIndex = 0) }
     }
 
-    fun selectVariantAt(index: Int) {
+    actual fun selectVariantAt(index: Int) {
         _state.update { it.copy(variantPickerFocusIndex = index) }
         confirmVariant()
     }
 
-    fun confirmVariant() {
+    actual fun confirmVariant() {
         val state = _state.value
         val info = state.variantPickerInfo ?: return
         val variant = info.variants.getOrNull(state.variantPickerFocusIndex) ?: return
@@ -427,7 +427,7 @@ actual class SteamSettingsDelegate @Inject constructor(
         )
     }
 
-    fun refreshMetadata(scope: CoroutineScope) {
+    actual fun refreshMetadata(scope: CoroutineScope) {
         if (_state.value.isSyncing) return
         _state.update { it.copy(isSyncing = true, syncingLauncher = REFRESH_SYNC_KEY) }
         scope.launch {
@@ -604,7 +604,7 @@ actual class SteamSettingsDelegate @Inject constructor(
         }
     }
 
-    fun showAddSteamGameDialog(launcherPackage: String?) {
+    actual fun showAddSteamGameDialog(launcherPackage: String?) {
         _state.update {
             it.copy(
                 showAddGameDialog = true,
@@ -638,7 +638,7 @@ actual class SteamSettingsDelegate @Inject constructor(
      * GameEntity.steamLauncher and drives the launch intent as well as the Unlink-from-X
      * affordance.
      */
-    fun confirmAddSteamGame(context: Context, scope: CoroutineScope) {
+    actual fun confirmAddSteamGame(context: Context, scope: CoroutineScope) {
         val launcherPackage = _state.value.addGameLauncherPackage
             ?: com.nendo.argosy.data.launcher.GameNativeLauncher.packageName
         val appIdStr = _state.value.addGameAppId.trim()

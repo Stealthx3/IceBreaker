@@ -76,10 +76,14 @@ actual class MusicDirectoryManager @Inject constructor(
         if (dir.exists()) dir.walkTopDown().count { it.isFile } else 0
     }
 
-    actual suspend fun relocate(source: File, destination: File): Unit = withContext(Dispatchers.IO) {
-        if (!source.exists() || source.absolutePath == destination.absolutePath) return@withContext
-        moveTree(source, destination)
-    }
+    actual suspend fun relocate(source: File, destination: File): com.nendo.argosy.util.TreeRelocator.Result =
+        withContext(Dispatchers.IO) {
+            if (!source.exists() || source.absolutePath == destination.absolutePath) {
+                com.nendo.argosy.util.TreeRelocator.Result(emptyList(), emptyList())
+            } else {
+                com.nendo.argosy.util.TreeRelocator.relocate(source, destination)
+            }
+        }
 
     private fun moveTree(source: File, destination: File) {
         destination.mkdirs()

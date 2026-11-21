@@ -86,7 +86,13 @@ expect class SocialRepository {
 
     suspend fun logout()
 
-    fun sendPresence(status: PresenceStatus, gameIgdbId: Int? = null, gameTitle: String? = null, media: MediaPresence? = null): Boolean
+    fun sendPresence(
+        status: PresenceStatus,
+        gameIgdbId: Int? = null,
+        gameTitle: String? = null,
+        media: MediaPresence? = null,
+        externalNetplay: com.nendo.argosy.data.netplay.external.ExternalNetplay? = null
+    ): Boolean
 
     fun isConnected(): Boolean
 
@@ -96,9 +102,9 @@ expect class SocialRepository {
 
     fun sendFriendRequest(userId: String): Boolean
 
-    fun acceptFriend(userId: String)
+    fun acceptFriend(userId: String): Boolean
 
-    fun removeFriend(userId: String)
+    fun removeFriend(userId: String): Boolean
 
     fun requestQuayPassCheckins()
 
@@ -106,13 +112,13 @@ expect class SocialRepository {
 
     fun toggleFavoriteFriend(friendId: String): Boolean
 
-    fun toggleGameVisibility(igdbGameId: Int?, steamAppId: Int? = null, isCurrentlyHidden: Boolean = false)
+    fun toggleGameVisibility(igdbGameId: Int?, steamAppId: Int? = null, isCurrentlyHidden: Boolean = false): Boolean
 
     fun requestFriendCode()
 
-    fun regenerateFriendCode()
+    fun regenerateFriendCode(): Boolean
 
-    fun addFriendByCode(code: String)
+    fun addFriendByCode(code: String): Boolean
 
     suspend fun backfillRomMPlaySessions(): PlaySessionBackfill.Summary
 
@@ -132,9 +138,9 @@ expect class SocialRepository {
 
     fun loadMoreFeed()
 
-    fun likeEvent(eventId: String)
+    fun likeEvent(eventId: String): Boolean
 
-    fun hideEvent(eventId: String)
+    fun hideEvent(eventId: String): Boolean
 
     fun reportEvent(eventId: String, reason: String? = null): Boolean
 
@@ -142,9 +148,9 @@ expect class SocialRepository {
 
     fun loadMoreNotifications()
 
-    fun markNotificationRead(notificationId: String)
+    fun markNotificationRead(notificationId: String): Boolean
 
-    fun markAllNotificationsRead()
+    fun markAllNotificationsRead(): Boolean
 
     fun getEvent(eventId: String)
 
@@ -160,17 +166,17 @@ expect class SocialRepository {
 
     fun requestCommunityFollows()
 
-    fun followCommunity(igdbGameId: Int, isPrivate: Boolean = false, anonymous: Boolean = false)
+    fun followCommunity(igdbGameId: Int, isPrivate: Boolean = false, anonymous: Boolean = false): Boolean
 
-    fun unfollowCommunity(igdbGameId: Int)
+    fun unfollowCommunity(igdbGameId: Int): Boolean
 
-    fun updateCommunityFollow(igdbGameId: Int, isPrivate: Boolean, anonymous: Boolean)
+    fun updateCommunityFollow(igdbGameId: Int, isPrivate: Boolean, anonymous: Boolean): Boolean
 
     fun requestUserSettings()
 
-    fun updateUserSettings(communityAutoShare: Boolean? = null)
+    fun updateUserSettings(communityAutoShare: Boolean? = null): Boolean
 
-    fun updateEventVisibility(eventId: String, public: Boolean)
+    fun updateEventVisibility(eventId: String, public: Boolean): Boolean
 
     fun emitAchievementUnlocked(igdbId: Long?, raGameId: Long?, gameTitle: String, achievementRaId: Long, achievementName: String, achievementDescription: String?, points: Int, badgeName: String?, isHardcore: Boolean, earnedCount: Int, totalCount: Int, unlockedAt: Long): Boolean
 

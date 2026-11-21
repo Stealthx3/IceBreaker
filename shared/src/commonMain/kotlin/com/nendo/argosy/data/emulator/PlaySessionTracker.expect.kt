@@ -19,7 +19,7 @@ expect class PlaySessionTracker {
 
     fun clearPendingSessionConflict()
 
-    val externalSessionClosed: SharedFlow<Unit>
+    val externalSessionClosed: SharedFlow<String>
 
     suspend fun checkOrphanedSession()
 

@@ -61,10 +61,6 @@ actual class SteamSettingsDelegate @Inject constructor() {
 
     actual fun loadSteamSettings(context: Context, scope: CoroutineScope) {
     }
-
-    actual fun cycleSteamInstallVolume(scope: CoroutineScope, direction: Int) {
-    }
-
     actual fun installSteamLauncher(emulatorId: String, scope: CoroutineScope) {
     }
 
@@ -92,7 +88,7 @@ actual class SteamSettingsDelegate @Inject constructor() {
     actual fun resetLibrary(scope: CoroutineScope) {
     }
 
-    actual fun showAddSteamGameDialog() {
+    actual fun showAddSteamGameDialog(launcherPackage: String?) {
     }
 
     actual fun dismissAddSteamGameDialog() {
@@ -101,8 +97,20 @@ actual class SteamSettingsDelegate @Inject constructor() {
     actual fun setAddGameAppId(appId: String) {
     }
 
-    actual fun confirmAddSteamGame(context: Context, scope: CoroutineScope, launcherPackage: String) {
+    actual fun confirmAddSteamGame(context: Context, scope: CoroutineScope) {
     }
 
     actual val downloadProgress: kotlinx.coroutines.flow.Flow<com.nendo.argosy.data.emulator.EmulatorDownloadProgress?> = kotlinx.coroutines.flow.flowOf(null)
+
+    actual suspend fun refreshLauncherAvailability(context: Context) = Unit
+
+    actual fun refreshMetadata(scope: CoroutineScope) = Unit
+
+    actual fun moveVariantFocus(delta: Int) = Unit
+
+    actual fun confirmVariant() = Unit
+
+    actual fun dismissVariantPicker() = Unit
+
+    actual fun selectVariantAt(index: Int) = Unit
 }

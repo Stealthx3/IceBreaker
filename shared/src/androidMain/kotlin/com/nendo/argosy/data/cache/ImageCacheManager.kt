@@ -139,7 +139,7 @@ actual class ImageCacheManager @Inject constructor(
 ) {
     private val artModelScope = SafeCoroutineScope(Dispatchers.IO, "GameArtModel")
 
-    val gameArt: StateFlow<GameArtSnapshot> = gameArtDao.observeRowCount()
+    actual val gameArt: StateFlow<GameArtSnapshot> = gameArtDao.observeRowCount()
         .conflate()
         .transform {
             emit(gameArtDao.getAll().toResolvedArtByGame())

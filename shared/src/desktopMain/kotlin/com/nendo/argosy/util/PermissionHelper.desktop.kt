@@ -32,7 +32,7 @@ actual class PermissionHelper @Inject constructor() {
 
     actual fun lastForegroundTimestamps(context: Context, packageNames: Set<String>, lookbackMs: Long): Map<String, Long> = emptyMap()
 
-    actual fun isPackageOnScreen(context: Context, packageName: String, lookbackMs: Long): Boolean? = null
+    actual fun isPackageOnScreen(context: Context, packageName: String): Boolean? = null
 
     actual fun isPackageOnScreenOrRecent(context: Context, packageName: String, recencyMs: Long): Boolean = false
 

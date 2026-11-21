@@ -752,12 +752,12 @@ actual class SocialRepository @Inject constructor(
         return sent
     }
 
-    fun sendPresence(
+    actual fun sendPresence(
         status: PresenceStatus,
-        gameIgdbId: Int? = null,
-        gameTitle: String? = null,
-        media: MediaPresence? = null,
-        externalNetplay: ExternalNetplay? = null
+        gameIgdbId: Int?,
+        gameTitle: String?,
+        media: MediaPresence?,
+        externalNetplay: ExternalNetplay?
     ): Boolean {
         if (!socialService.isConnected()) return false
         return socialService.sendPresence(status, gameIgdbId, gameTitle, android.os.Build.MODEL, media, externalNetplay)
@@ -780,14 +780,14 @@ actual class SocialRepository @Inject constructor(
     actual fun sendFriendRequest(userId: String): Boolean =
         sendWrite { socialService.sendFriendRequest(userId) }
 
-    fun acceptFriend(userId: String): Boolean =
+    actual fun acceptFriend(userId: String): Boolean =
         sendWrite { socialService.acceptFriend(userId) }
 
     /**
      * Declines a received request, cancels a sent one, or unfriends. The server
      * routes by the relationship, so the caller does not distinguish them.
      */
-    fun removeFriend(userId: String): Boolean =
+    actual fun removeFriend(userId: String): Boolean =
         sendWrite { socialService.removeFriend(userId) }
 
     actual fun requestQuayPassCheckins() {
@@ -805,7 +805,7 @@ actual class SocialRepository @Inject constructor(
     actual fun toggleFavoriteFriend(friendId: String): Boolean =
         sendWrite { socialService.toggleFavoriteFriend(friendId) }
 
-    fun toggleGameVisibility(igdbGameId: Int?, steamAppId: Int? = null, isCurrentlyHidden: Boolean = false): Boolean {
+    actual fun toggleGameVisibility(igdbGameId: Int?, steamAppId: Int?, isCurrentlyHidden: Boolean): Boolean {
         if (igdbGameId != null && igdbGameId != 0) {
             val isHidden = igdbGameId in _hiddenGameIds.value
             val sent = sendWrite {
@@ -841,10 +841,10 @@ actual class SocialRepository @Inject constructor(
         }
     }
 
-    fun regenerateFriendCode(): Boolean =
+    actual fun regenerateFriendCode(): Boolean =
         sendWrite { socialService.regenerateFriendCode() }
 
-    fun addFriendByCode(code: String): Boolean =
+    actual fun addFriendByCode(code: String): Boolean =
         sendWrite { socialService.addFriendByCode(code) }
 
     /**
@@ -1127,7 +1127,7 @@ actual class SocialRepository @Inject constructor(
         }
     }
 
-    fun likeEvent(eventId: String): Boolean {
+    actual fun likeEvent(eventId: String): Boolean {
         Log.d(TAG, "likeEvent: eventId=$eventId, connected=${socialService.isConnected()}")
         if (!sendWrite { socialService.likeEvent(eventId) }) return false
         _feedEvents.update { events ->
@@ -1141,7 +1141,7 @@ actual class SocialRepository @Inject constructor(
         return true
     }
 
-    fun hideEvent(eventId: String): Boolean {
+    actual fun hideEvent(eventId: String): Boolean {
         Log.d(TAG, "hideEvent: eventId=$eventId, connected=${socialService.isConnected()}")
         if (!sendWrite { socialService.hideEvent(eventId) }) return false
         _feedEvents.update { events -> events.filter { it.id != eventId } }
@@ -1175,7 +1175,7 @@ actual class SocialRepository @Inject constructor(
         }
     }
 
-    fun markNotificationRead(notificationId: String): Boolean {
+    actual fun markNotificationRead(notificationId: String): Boolean {
         if (!sendWrite { socialService.markNotificationRead(notificationId = notificationId) }) return false
         _notifications.update { notifications ->
             notifications.map {
@@ -1187,7 +1187,7 @@ actual class SocialRepository @Inject constructor(
         return true
     }
 
-    fun markAllNotificationsRead(): Boolean {
+    actual fun markAllNotificationsRead(): Boolean {
         if (!sendWrite { socialService.markAllNotificationsRead() }) return false
         val now = java.time.Instant.now().toString()
         _notifications.update { notifications ->
@@ -1265,16 +1265,16 @@ actual class SocialRepository @Inject constructor(
         }
     }
 
-    fun followCommunity(igdbGameId: Int, isPrivate: Boolean = false, anonymous: Boolean = false): Boolean =
+    actual fun followCommunity(igdbGameId: Int, isPrivate: Boolean, anonymous: Boolean): Boolean =
         sendWrite { socialService.followCommunity(igdbGameId, isPrivate, anonymous) }
 
-    fun unfollowCommunity(igdbGameId: Int): Boolean {
+    actual fun unfollowCommunity(igdbGameId: Int): Boolean {
         if (!sendWrite { socialService.unfollowCommunity(igdbGameId) }) return false
         _communityFollows.update { follows -> follows.filter { it.igdbGameId != igdbGameId } }
         return true
     }
 
-    fun updateCommunityFollow(igdbGameId: Int, isPrivate: Boolean, anonymous: Boolean): Boolean =
+    actual fun updateCommunityFollow(igdbGameId: Int, isPrivate: Boolean, anonymous: Boolean): Boolean =
         sendWrite { socialService.updateCommunityFollow(igdbGameId, isPrivate, anonymous) }
 
     actual fun requestUserSettings() {
@@ -1283,7 +1283,7 @@ actual class SocialRepository @Inject constructor(
         }
     }
 
-    fun updateUserSettings(communityAutoShare: Boolean? = null): Boolean {
+    actual fun updateUserSettings(communityAutoShare: Boolean?): Boolean {
         if (!sendWrite { socialService.updateUserSettings(communityAutoShare) }) return false
         if (communityAutoShare != null) {
             _userSettings.update { it.copy(communityAutoShare = communityAutoShare) }
@@ -1291,7 +1291,7 @@ actual class SocialRepository @Inject constructor(
         return true
     }
 
-    fun updateEventVisibility(eventId: String, public: Boolean): Boolean =
+    actual fun updateEventVisibility(eventId: String, public: Boolean): Boolean =
         sendWrite { socialService.updateEventVisibility(eventId, public) }
 
     actual fun emitAchievementUnlocked(

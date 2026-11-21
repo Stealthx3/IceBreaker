@@ -190,10 +190,6 @@ actual class DualScreenManager @Inject constructor() {
 
     actual val mediaPlayback: StateFlow<com.nendo.argosy.data.media.ActiveMediaPlayback?> = kotlinx.coroutines.flow.MutableStateFlow(null)
 
-    actual val mediaSignedIn: StateFlow<Boolean> = kotlinx.coroutines.flow.MutableStateFlow(false)
-
-    actual val companionMediaVisible: StateFlow<Boolean> = kotlinx.coroutines.flow.MutableStateFlow(false)
-
     actual val mediaPlayerDisplay: StateFlow<Int?> = kotlinx.coroutines.flow.MutableStateFlow(null)
 
     actual var mediaPlayerDisplayId: Int? = null
@@ -201,12 +197,6 @@ actual class DualScreenManager @Inject constructor() {
     actual val mediaPlayerControlsLocked: StateFlow<Boolean> = kotlinx.coroutines.flow.MutableStateFlow(false)
 
     actual fun setMediaPlayerControlsLocked(locked: Boolean) {
-    }
-
-    actual fun toggleCompanionMediaView() {
-    }
-
-    actual fun setCompanionMediaVisible(visible: Boolean) {
     }
 
     actual val mediaInfoRequest: StateFlow<String?> = kotlinx.coroutines.flow.MutableStateFlow(null)
@@ -244,7 +234,7 @@ actual class DualScreenManager @Inject constructor() {
 
     actual val liveSwapAvailable: StateFlow<Boolean> = kotlinx.coroutines.flow.MutableStateFlow(false)
 
-    actual suspend fun emulatorLeftScreen(context: Context, launcherStillInFront: () -> Boolean): Boolean = false
+    actual suspend fun emulatorLeftScreen(context: Context, onGameDisplay: Boolean, launcherStillInFront: () -> Boolean): Boolean = false
 
     actual fun endSessionAfterEmulatorLeft() {
     }

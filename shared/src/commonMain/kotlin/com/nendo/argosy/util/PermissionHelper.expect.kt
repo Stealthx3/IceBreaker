@@ -46,7 +46,7 @@ expect class PermissionHelper {
 
     fun lastForegroundTimestamps(context: Context, packageNames: Set<String>, lookbackMs: Long = 24 * 60 * 60 * 1000L): Map<String, Long>
 
-    fun isPackageOnScreen(context: Context, packageName: String, lookbackMs: Long = 10 * 60 * 1000L): Boolean?
+    fun isPackageOnScreen(context: Context, packageName: String): Boolean?
 
     fun isPackageOnScreenOrRecent(context: Context, packageName: String, recencyMs: Long = 15_000): Boolean
 

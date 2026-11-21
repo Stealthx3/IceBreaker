@@ -89,7 +89,7 @@ actual class PermissionHelper @Inject constructor() {
      * tracked separately because a package hands off between its own activities, and the one being
      * torn down can report STOPPED after its successor has already resumed.
      */
-    fun isPackageOnScreen(context: Context, packageName: String): Boolean? {
+    actual fun isPackageOnScreen(context: Context, packageName: String): Boolean? {
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) return null
         if (!hasUsageStatsPermission(context)) return null
         val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager

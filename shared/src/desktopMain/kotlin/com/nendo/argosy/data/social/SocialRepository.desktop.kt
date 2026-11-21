@@ -90,7 +90,7 @@ actual class SocialRepository @Inject constructor() {
     actual suspend fun logout() {
     }
 
-    actual fun sendPresence(status: PresenceStatus, gameIgdbId: Int?, gameTitle: String?, media: MediaPresence?): Boolean = false
+    actual fun sendPresence(status: PresenceStatus, gameIgdbId: Int?, gameTitle: String?, media: MediaPresence?, externalNetplay: com.nendo.argosy.data.netplay.external.ExternalNetplay?): Boolean = false
 
     actual fun isConnected(): Boolean = false
 
@@ -101,11 +101,9 @@ actual class SocialRepository @Inject constructor() {
 
     actual fun sendFriendRequest(userId: String): Boolean = false
 
-    actual fun acceptFriend(userId: String) {
-    }
+    actual fun acceptFriend(userId: String): Boolean = false
 
-    actual fun removeFriend(userId: String) {
-    }
+    actual fun removeFriend(userId: String): Boolean = false
 
     actual fun requestQuayPassCheckins() {
     }
@@ -115,17 +113,14 @@ actual class SocialRepository @Inject constructor() {
 
     actual fun toggleFavoriteFriend(friendId: String): Boolean = false
 
-    actual fun toggleGameVisibility(igdbGameId: Int?, steamAppId: Int?, isCurrentlyHidden: Boolean) {
-    }
+    actual fun toggleGameVisibility(igdbGameId: Int?, steamAppId: Int?, isCurrentlyHidden: Boolean): Boolean = false
 
     actual fun requestFriendCode() {
     }
 
-    actual fun regenerateFriendCode() {
-    }
+    actual fun regenerateFriendCode(): Boolean = false
 
-    actual fun addFriendByCode(code: String) {
-    }
+    actual fun addFriendByCode(code: String): Boolean = false
 
     actual suspend fun backfillRomMPlaySessions(): PlaySessionBackfill.Summary = TODO("desktop: backfillRomMPlaySessions")
 
@@ -151,11 +146,9 @@ actual class SocialRepository @Inject constructor() {
     actual fun loadMoreFeed() {
     }
 
-    actual fun likeEvent(eventId: String) {
-    }
+    actual fun likeEvent(eventId: String): Boolean = false
 
-    actual fun hideEvent(eventId: String) {
-    }
+    actual fun hideEvent(eventId: String): Boolean = false
 
     actual fun reportEvent(eventId: String, reason: String?): Boolean = false
 
@@ -165,11 +158,9 @@ actual class SocialRepository @Inject constructor() {
     actual fun loadMoreNotifications() {
     }
 
-    actual fun markNotificationRead(notificationId: String) {
-    }
+    actual fun markNotificationRead(notificationId: String): Boolean = false
 
-    actual fun markAllNotificationsRead() {
-    }
+    actual fun markAllNotificationsRead(): Boolean = false
 
     actual fun getEvent(eventId: String) {
     }
@@ -191,23 +182,18 @@ actual class SocialRepository @Inject constructor() {
     actual fun requestCommunityFollows() {
     }
 
-    actual fun followCommunity(igdbGameId: Int, isPrivate: Boolean, anonymous: Boolean) {
-    }
+    actual fun followCommunity(igdbGameId: Int, isPrivate: Boolean, anonymous: Boolean): Boolean = false
 
-    actual fun unfollowCommunity(igdbGameId: Int) {
-    }
+    actual fun unfollowCommunity(igdbGameId: Int): Boolean = false
 
-    actual fun updateCommunityFollow(igdbGameId: Int, isPrivate: Boolean, anonymous: Boolean) {
-    }
+    actual fun updateCommunityFollow(igdbGameId: Int, isPrivate: Boolean, anonymous: Boolean): Boolean = false
 
     actual fun requestUserSettings() {
     }
 
-    actual fun updateUserSettings(communityAutoShare: Boolean?) {
-    }
+    actual fun updateUserSettings(communityAutoShare: Boolean?): Boolean = false
 
-    actual fun updateEventVisibility(eventId: String, public: Boolean) {
-    }
+    actual fun updateEventVisibility(eventId: String, public: Boolean): Boolean = false
 
     actual fun emitAchievementUnlocked(igdbId: Long?, raGameId: Long?, gameTitle: String, achievementRaId: Long, achievementName: String, achievementDescription: String?, points: Int, badgeName: String?, isHardcore: Boolean, earnedCount: Int, totalCount: Int, unlockedAt: Long): Boolean = false
 

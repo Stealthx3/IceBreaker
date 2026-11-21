@@ -97,8 +97,8 @@ actual class PlaySessionTracker @Inject constructor(
         _pendingSessionConflict.value = null
     }
 
-    private val _externalSessionClosed = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    actual val externalSessionClosed: SharedFlow<Unit> = _externalSessionClosed.asSharedFlow()
+    private val _externalSessionClosed = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    actual val externalSessionClosed: SharedFlow<String> = _externalSessionClosed.asSharedFlow()
 
     private val _saveWrites = MutableSharedFlow<Unit>(
         extraBufferCapacity = 1,
@@ -269,7 +269,7 @@ actual class PlaySessionTracker @Inject constructor(
                 releaseSession(keepRecord = true)
                 SessionEndResult.Error(e.message ?: "Unknown error")
             }
-            _externalSessionClosed.tryEmit(Unit)
+            _externalSessionClosed.tryEmit(session.emulatorPackage)
             return outcome
         } finally {
             saveRecoveryGate.releaseSessionEnd()
@@ -453,7 +453,7 @@ actual class PlaySessionTracker @Inject constructor(
         scope.launch {
             try {
                 releaseSession(keepRecord = false)
-                _externalSessionClosed.tryEmit(Unit)
+                _externalSessionClosed.tryEmit(session.emulatorPackage)
             } finally {
                 saveRecoveryGate.releaseSessionEnd()
             }
