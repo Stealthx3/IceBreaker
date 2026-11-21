@@ -290,7 +290,7 @@ class PlaySessionPullTest {
         coEvery { playSessionDao.getHeldRommSessionIds(any()) } returns emptyList()
         coEvery { playSessionDao.existsForOwnerByGameAndStart(7L, -99L, Instant.parse("2026-05-15T12:00:00Z")) } returns true
 
-        val added = pull.insertMissing(listOf(remote(9)), otherDevice, 7L, unresolved)
+        val added = pull.insertMissing(listOf(remote(9)), otherDevice, 7L, PlayRecordCutoffs.NONE, unresolved)
 
         assertEquals(0, added)
         coVerify(exactly = 0) { playSessionDao.insert(any()) }

@@ -44,12 +44,12 @@ class DesktopDatabaseFactoryTest {
     }
 
     @Test
-    fun createdDatabaseIsAtSchemaVersion214() = runBlocking {
+    fun createdDatabaseIsAtSchemaVersion222() = runBlocking {
         db.platformDao().getAllPlatforms()
         val version = db.useReaderConnection { conn ->
             conn.usePrepared("PRAGMA user_version") { it.step(); it.getLong(0) }
         }
-        assertEquals(214L, version)
+        assertEquals(222L, version)
     }
 
     @Test

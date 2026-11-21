@@ -22,21 +22,25 @@ private fun qualifierFor(tag: String): String {
 
 class AppLanguageWiringTest {
 
-    private val resRoot = listOf(File("src/main/res"), File("app/src/main/res"))
-        .first { it.isDirectory }
+    private val resRoots = listOf(
+        File("src/main/res"),
+        File("app/src/main/res"),
+        File("../shared/src/androidMain/res"),
+        File("shared/src/androidMain/res")
+    ).filter { it.isDirectory }
 
     private val launcherTags = AppLanguage.entries.map { it.tag } - AppLanguage.SYSTEM.tag
 
     /** English needs no directory of its own: it is the base `values`. */
     private val translatedTags = launcherTags - AppLanguage.ENGLISH.tag
 
-    private fun directoryNames() = resRoot.listFiles().orEmpty()
+    private fun directoryNames() = resRoots.flatMap { it.listFiles().orEmpty().toList() }
         .filter { it.isDirectory && it.name.startsWith("values") }
         .map { it.name }
         .toSet()
 
     private fun configuredTags(): Set<String> {
-        val config = File(resRoot, "xml/locales_config.xml")
+        val config = resRoots.map { File(it, "xml/locales_config.xml") }.first { it.isFile }
         return Regex("<locale[^>]*android:name=\"([^\"]+)\"")
             .findAll(config.readText())
             .map { it.groupValues[1].trim() }
