@@ -11,5 +11,6 @@ object DesktopDatabaseFactory {
         Room.databaseBuilder<ALauncherDatabase>(name = file.absolutePath)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
+            .addMigrations(*DesktopMigrations.ALL)
             .build()
 }
