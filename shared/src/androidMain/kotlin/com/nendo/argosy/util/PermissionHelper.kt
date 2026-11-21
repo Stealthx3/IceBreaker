@@ -46,7 +46,7 @@ actual class PermissionHelper @Inject constructor() {
         return fresh
     }
 
-    fun lastForegroundTimestamp(context: Context, packageName: String): Long? =
+    actual fun lastForegroundTimestamp(context: Context, packageName: String): Long? =
         lastForegroundTimestamps(context, setOf(packageName))[packageName]
 
     /**
@@ -220,7 +220,7 @@ actual class PermissionHelper @Inject constructor() {
 
     data class ActivityTransition(val timestamp: Long, val className: String, val resumed: Boolean)
 
-    fun getSessionDurations(context: Context, packageName: String, fromMs: Long, toMs: Long): SessionDurations {
+    actual fun getSessionDurations(context: Context, packageName: String, fromMs: Long, toMs: Long): SessionDurations {
         if (!hasUsageStatsPermission(context)) return SessionDurations(-1, -1)
 
         val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager

@@ -140,7 +140,7 @@ actual class PlaySessionTracker @Inject constructor(
      * True while a session end, live or recovered, holds the save recovery claim, whichever caller
      * started it. Its conflict, if any, is already in [pendingSessionConflict] when this turns false.
      */
-    val sessionEnding: StateFlow<Boolean> = saveRecoveryGate.sessionEnding
+    actual val sessionEnding: StateFlow<Boolean> = saveRecoveryGate.sessionEnding
 
     private val _pendingSessionConflict = MutableStateFlow<SaveConflictEvent?>(null)
 
@@ -274,7 +274,7 @@ actual class PlaySessionTracker @Inject constructor(
         return outcome
     }
 
-    suspend fun checkOrphanedSession() {
+    actual suspend fun checkOrphanedSession() {
         if (_activeSession.value != null) {
             saveRecoveryGate.markComplete()
             return

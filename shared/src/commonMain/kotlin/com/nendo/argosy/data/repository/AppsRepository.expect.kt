@@ -24,4 +24,8 @@ expect class AppsRepository {
     fun getAppLabel(packageName: String): String?
 
     fun isArgosy(packageName: String): Boolean
+
+    fun isPackageUpdating(packageName: String): Boolean
+
+    fun isPackageMissing(packageName: String): Boolean
 }

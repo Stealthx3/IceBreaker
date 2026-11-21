@@ -178,7 +178,7 @@ actual class AmbientLedManager @Inject constructor(
         }
     }
 
-    fun setUiColors(primary: Color, secondary: Color?) {
+    actual fun setUiColors(primary: Color, secondary: Color?) {
         _state.update {
             it.copy(
                 uiLeftColor = primary,

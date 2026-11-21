@@ -5,7 +5,9 @@ import javax.inject.Singleton
 
 @Singleton
 actual class ScreenCatalog @Inject constructor() {
-    actual companion object {}
+    actual companion object {
+        actual fun builtInScreenCount(context: com.nendo.argosy.platform.PlatformContext): Int = 1
+    }
 
     actual fun attachedScreens(): List<AttachedScreen> = emptyList()
 

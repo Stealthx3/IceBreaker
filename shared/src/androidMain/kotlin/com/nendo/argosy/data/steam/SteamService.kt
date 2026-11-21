@@ -159,8 +159,8 @@ actual class SteamService : Service() {
     }
 
     companion object {
-        const val EXTRA_FORCE_CONNECT = "force_connect"
-        const val EXTRA_CONNECT_FOR_AUTH = "connect_for_auth"
+        actual const val EXTRA_FORCE_CONNECT = "force_connect"
+        actual const val EXTRA_CONNECT_FOR_AUTH = "connect_for_auth"
         private const val MAX_RECONNECT_ATTEMPTS = 5
         private const val NOTIFICATION_ID = ServiceNotificationIds.STEAM
     }
@@ -451,9 +451,9 @@ actual class SteamService : Service() {
         }
     }
 
-    fun getSteamClient(): SteamClient? = steamClient
-    fun getSteamUser(): SteamUser? = steamUser
-    fun getSteamApps(): SteamApps? = steamApps
-    fun getCallbackManager(): CallbackManager? = callbackManager
-    fun getLibraryManager(): SteamLibraryManager = steamLibraryManager
+    actual fun getSteamClient(): SteamClient? = steamClient
+    actual fun getSteamUser(): SteamUser? = steamUser
+    actual fun getSteamApps(): SteamApps? = steamApps
+    actual fun getCallbackManager(): CallbackManager? = callbackManager
+    actual fun getLibraryManager(): SteamLibraryManager = steamLibraryManager
 }

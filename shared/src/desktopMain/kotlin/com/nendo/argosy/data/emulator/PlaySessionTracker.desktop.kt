@@ -476,6 +476,9 @@ actual class PlaySessionTracker @Inject constructor(
         if (session.gameId != gameId || session.variantFileId != variantFileId) return false
         return HostGameProcess.running.value?.packageName == session.emulatorPackage
     }
+
+    actual val sessionEnding: kotlinx.coroutines.flow.StateFlow<Boolean> =
+        kotlinx.coroutines.flow.MutableStateFlow(false)
 }
 
 private fun ActiveSession.toSaveInput() = SessionSaveInput(

@@ -97,11 +97,9 @@ actual class SocialRepository @Inject constructor() {
     actual fun reconnectIfNeeded() {
     }
 
-    actual fun requestUserProfile(userId: String?) {
-    }
+    actual fun requestUserProfile(userId: String?): Boolean = false
 
-    actual fun sendFriendRequest(userId: String) {
-    }
+    actual fun sendFriendRequest(userId: String): Boolean = false
 
     actual fun acceptFriend(userId: String) {
     }
@@ -115,8 +113,7 @@ actual class SocialRepository @Inject constructor() {
     actual fun requestDiscordTokens() {
     }
 
-    actual fun toggleFavoriteFriend(friendId: String) {
-    }
+    actual fun toggleFavoriteFriend(friendId: String): Boolean = false
 
     actual fun toggleGameVisibility(igdbGameId: Int?, steamAppId: Int?, isCurrentlyHidden: Boolean) {
     }
@@ -160,8 +157,7 @@ actual class SocialRepository @Inject constructor() {
     actual fun hideEvent(eventId: String) {
     }
 
-    actual fun reportEvent(eventId: String, reason: String?) {
-    }
+    actual fun reportEvent(eventId: String, reason: String?): Boolean = false
 
     actual fun requestNotifications(limit: Int) {
     }
@@ -181,8 +177,7 @@ actual class SocialRepository @Inject constructor() {
     actual fun requestEventComments(eventId: String) {
     }
 
-    actual fun commentEvent(eventId: String, content: String) {
-    }
+    actual fun commentEvent(eventId: String, content: String): Boolean = false
 
     actual fun createPost(body: String, canvasSize: Int?, doodleData: String?, igdbId: Int?, gameTitle: String?, public: Boolean) {
     }

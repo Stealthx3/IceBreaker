@@ -53,7 +53,6 @@ import javax.inject.Inject
 
 private const val GN_PACKAGE = "app.gamenative"
 private const val QR_CONNECT_TIMEOUT_MS = 75_000L
-internal const val REFRESH_SYNC_KEY = "refresh"
 
 actual class SteamSettingsDelegate @Inject constructor(
     private val steamRepository: SteamRepository,
@@ -298,7 +297,7 @@ actual class SteamSettingsDelegate @Inject constructor(
         }
     }
 
-    fun loadSteamSettings(context: Context, scope: CoroutineScope) {
+    actual fun loadSteamSettings(context: Context, scope: CoroutineScope) {
         bindScope = scope
         scope.launch {
             refreshLauncherAvailability(context)
@@ -341,7 +340,7 @@ actual class SteamSettingsDelegate @Inject constructor(
         }
     }
 
-    fun installSteamLauncher(emulatorId: String, scope: CoroutineScope) {
+    actual fun installSteamLauncher(emulatorId: String, scope: CoroutineScope) {
         val def = EmulatorRegistry.getById(emulatorId) ?: return
 
         if (def.releaseSource == null) {
@@ -488,7 +487,7 @@ actual class SteamSettingsDelegate @Inject constructor(
         }
     }
 
-    fun startQrAuth() {
+    actual fun startQrAuth() {
         if (pendingQrAuth) return
         steamAuthManager.startQrAuth()
     }

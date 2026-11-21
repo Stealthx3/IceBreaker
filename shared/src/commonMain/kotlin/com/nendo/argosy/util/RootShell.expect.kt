@@ -27,7 +27,7 @@ import com.nendo.argosy.platform.getString
 import com.nendo.argosy.platform.resources
 
 expect object RootShell {
-    class Result {
+    class Result(exitCode: Int?, output: List<String>) {
         val exitCode: Int?
         val output: List<String>
         val succeeded: Boolean

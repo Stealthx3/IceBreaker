@@ -39,9 +39,9 @@ actual class AppsRepository @Inject constructor(
     private val packageManager: PackageManager = context.packageManager
     private val updatingPackages = MutableStateFlow<Set<String>>(emptySet())
 
-    fun isPackageUpdating(packageName: String): Boolean = packageName in updatingPackages.value
+    actual fun isPackageUpdating(packageName: String): Boolean = packageName in updatingPackages.value
 
-    fun isPackageMissing(packageName: String): Boolean {
+    actual fun isPackageMissing(packageName: String): Boolean {
         if (isPackageUpdating(packageName)) return false
         return try {
             packageManager.getPackageInfo(packageName, 0)

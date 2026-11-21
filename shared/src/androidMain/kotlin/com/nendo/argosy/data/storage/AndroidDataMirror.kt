@@ -59,7 +59,7 @@ actual class AndroidDataMirror @Inject constructor(
         else -> RootShell.appDataShell?.let { Transport.Shell(it) }
     }
 
-    val isActive: Boolean
+    actual val isActive: Boolean
         get() {
             if (!outsideDataGroup || transport() == null) return false
             if (!activated) activate()

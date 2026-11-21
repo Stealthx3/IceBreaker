@@ -149,7 +149,7 @@ actual class MediaDownloadManager @Inject constructor(
      * dropping either would strand both. Dismissing one is [removeFromCompleted], which is a
      * deliberate act on that title rather than a sweep of everything finished.
      */
-    fun clearCompletedDownloads() {
+    actual fun clearCompletedDownloads() {
         _completedDownloads.update { completed ->
             completed.filter {
                 it.state is MediaDownloadState.Failed
@@ -169,7 +169,7 @@ actual class MediaDownloadManager @Inject constructor(
         }
     }
 
-    fun removeFromCompleted(itemId: String) {
+    actual fun removeFromCompleted(itemId: String) {
         _completedDownloads.update { completed -> completed.filterNot { it.itemId == itemId } }
         scope.launch {
             val owner = mediaRepository.currentUserId() ?: return@launch

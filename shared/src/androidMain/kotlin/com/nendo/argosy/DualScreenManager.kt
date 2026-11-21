@@ -202,7 +202,7 @@ actual class DualScreenManager(
      * is off and DeX is not running. Launcher surfaces skip the panel's camera cutout inset then
      * and draw to its edge, the frame the external display shows.
      */
-    val panelMirroredToExternal: StateFlow<Boolean> =
+    actual val panelMirroredToExternal: StateFlow<Boolean> =
         kotlinx.coroutines.flow.combine(
             preferencesRepository.userPreferences
                 .map { it.dualScreenEnabled }
@@ -276,10 +276,9 @@ actual class DualScreenManager(
         com.nendo.argosy.hardware.DisplayBadgeOverlay(appContext)
     }
 
-    fun showScreenNumbers(
-        size: com.nendo.argosy.hardware.DisplayBadgeSize =
-            com.nendo.argosy.hardware.DisplayBadgeSize.LARGE,
-        inContentDisplayId: Int? = null
+    actual fun showScreenNumbers(
+        size: com.nendo.argosy.hardware.DisplayBadgeSize,
+        inContentDisplayId: Int?
     ) {
         val screens = attachedScreens()
         val numbers = screens.associate { it.displayId to it.number }
@@ -933,7 +932,7 @@ actual class DualScreenManager(
     private val companionHosts =
         com.nendo.argosy.ui.dualscreen.DisplayHostRegistry<CompanionHost>()
 
-    fun registerCompanionHost(displayId: Int, host: CompanionHost) {
+    actual fun registerCompanionHost(displayId: Int, host: CompanionHost) {
         companionHosts.register(displayId, host)?.finishCompanion()
     }
 
@@ -980,7 +979,7 @@ actual class DualScreenManager(
      * The displays a viewer can hand input to, in screen-number order, each with the number the
      * badge draws for it.
      */
-    fun focusableDisplays(): List<com.nendo.argosy.util.AttachedScreen> =
+    actual fun focusableDisplays(): List<com.nendo.argosy.util.AttachedScreen> =
         attachedScreens().filter { displayAffinityHelper.usableDisplayId(it.displayId) != null }
 
     /**
@@ -1038,7 +1037,7 @@ actual class DualScreenManager(
      * events rather than going through the dispatcher, so without this it is silent and still while
      * the main screen is not.
      */
-    val inputFeedback = com.nendo.argosy.ui.input.InputFeedbackPlayer(hapticManager, soundManager)
+    actual val inputFeedback = com.nendo.argosy.ui.input.InputFeedbackPlayer(hapticManager, soundManager)
 
     private val _companionDetails =
         MutableStateFlow<List<Pair<com.nendo.argosy.ui.dualscreen.SlotOwner, CompanionDetail>>>(emptyList())
@@ -1934,7 +1933,7 @@ actual class DualScreenManager(
     actual fun cancelDockReorder(token: Long) = dockCoordinator.cancel(token)
     actual fun saveDockReorder(token: Long) = dockCoordinator.save(token)
 
-    suspend fun installedAppLabels(): List<Pair<String, String>> {
+    actual suspend fun installedAppLabels(): List<Pair<String, String>> {
         val prefs = preferencesRepository.preferences.first()
         return com.nendo.argosy.data.repository.AppListFilter.visibleThenHidden(
             appsRepository.getInstalledApps(includeSystemApps = true),

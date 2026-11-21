@@ -670,7 +670,7 @@ actual class SaveStateManager actual constructor(
         return performSlotLoad(retroView, newest)
     }
 
-    fun performSlotSave(slotNumber: Int, stateData: ByteArray, screenshot: Bitmap? = null): Boolean {
+    actual fun performSlotSave(slotNumber: Int, stateData: ByteArray, screenshot: Bitmap?): Boolean {
         if (stateData.isEmpty()) {
             Log.e(TAG, "Refusing to save an empty state to slot $slotNumber; the core produced nothing")
             return false
@@ -750,7 +750,7 @@ actual class SaveStateManager actual constructor(
         return AutoLoadOutcome.KEPT_SAVE
     }
 
-    fun deleteSlot(slotNumber: Int): Boolean {
+    actual fun deleteSlot(slotNumber: Int): Boolean {
         return try {
             val stateFile = getSlotFile(slotNumber)
             val screenshotFile = getSlotScreenshotFile(slotNumber)

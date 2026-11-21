@@ -136,7 +136,7 @@ actual class ApkInstallManager @Inject constructor(
     }
 
     private val _pushedPrompt = MutableStateFlow<PushedApkPrompt?>(null)
-    val pushedPrompt: StateFlow<PushedApkPrompt?> = _pushedPrompt.asStateFlow()
+    actual val pushedPrompt: StateFlow<PushedApkPrompt?> = _pushedPrompt.asStateFlow()
 
     private val pushedPrefs by lazy { context.getSharedPreferences(PUSHED_PREFS, Context.MODE_PRIVATE) }
 
@@ -152,7 +152,7 @@ actual class ApkInstallManager @Inject constructor(
         return true
     }
 
-    fun confirmPushedInstall() {
+    actual fun confirmPushedInstall() {
         val prompt = _pushedPrompt.value ?: return
         _pushedPrompt.value = null
         val apk = File(prompt.apkPath)
@@ -161,7 +161,7 @@ actual class ApkInstallManager @Inject constructor(
         appInstaller.installApk(context, apk)
     }
 
-    fun dismissPushedInstall() {
+    actual fun dismissPushedInstall() {
         _pushedPrompt.value = null
     }
 

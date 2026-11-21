@@ -92,9 +92,9 @@ expect class SocialRepository {
 
     fun reconnectIfNeeded()
 
-    fun requestUserProfile(userId: String? = null)
+    fun requestUserProfile(userId: String? = null): Boolean
 
-    fun sendFriendRequest(userId: String)
+    fun sendFriendRequest(userId: String): Boolean
 
     fun acceptFriend(userId: String)
 
@@ -104,7 +104,7 @@ expect class SocialRepository {
 
     fun requestDiscordTokens()
 
-    fun toggleFavoriteFriend(friendId: String)
+    fun toggleFavoriteFriend(friendId: String): Boolean
 
     fun toggleGameVisibility(igdbGameId: Int?, steamAppId: Int? = null, isCurrentlyHidden: Boolean = false)
 
@@ -136,7 +136,7 @@ expect class SocialRepository {
 
     fun hideEvent(eventId: String)
 
-    fun reportEvent(eventId: String, reason: String? = null)
+    fun reportEvent(eventId: String, reason: String? = null): Boolean
 
     fun requestNotifications(limit: Int = 20)
 
@@ -150,7 +150,7 @@ expect class SocialRepository {
 
     fun requestEventComments(eventId: String)
 
-    fun commentEvent(eventId: String, content: String)
+    fun commentEvent(eventId: String, content: String): Boolean
 
     fun createPost(body: String, canvasSize: Int? = null, doodleData: String? = null, igdbId: Int? = null, gameTitle: String? = null, public: Boolean = false)
 

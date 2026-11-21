@@ -45,4 +45,11 @@ expect object SteamLaunchers {
     fun getMarkOptions(context: Context): List<MarkOption>
 
     fun displayNameForPackage(launcherPackage: String?): String
+
+    fun launchCandidates(
+        storedPackage: String?,
+        pinned: Boolean,
+        reporting: List<String>,
+        isInstalled: (String) -> Boolean
+    ): List<String>
 }

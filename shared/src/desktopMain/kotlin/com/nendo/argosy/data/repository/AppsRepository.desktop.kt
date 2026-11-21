@@ -50,6 +50,10 @@ actual class AppsRepository @Inject constructor() {
 
     actual fun isArgosy(packageName: String): Boolean =
         packageName == ARGOSY_DESKTOP_ID || packageName.startsWith("$ARGOSY_DESKTOP_ID.")
+
+    actual fun isPackageUpdating(packageName: String): Boolean = false
+
+    actual fun isPackageMissing(packageName: String): Boolean = false
 }
 
 private const val ARGOSY_DESKTOP_ID = "io.github.stealthx3.ArgosyDesktop"

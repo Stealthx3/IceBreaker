@@ -1,5 +1,7 @@
 package com.nendo.argosy.ui.screens.library
 
+import com.nendo.argosy.data.preferences.LibraryListStyle
+
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle

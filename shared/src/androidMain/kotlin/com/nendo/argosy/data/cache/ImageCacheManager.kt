@@ -1085,13 +1085,13 @@ actual class ImageCacheManager @Inject constructor(
         cacheScreenshotRows(request.gameId, "ss_${request.rommId}", maxWidth = 480, quality = 75)
     }
 
-    suspend fun userScreenshotTargetFile(rommId: Long, screenshotId: Long, version: String, extension: String): File {
+    actual suspend fun userScreenshotTargetFile(rommId: Long, screenshotId: Long, version: String, extension: String): File {
         val slug = resolveRommPlatformSlug(rommId)
         val name = "${userScreenshotFileStem(rommId, screenshotId, version)}.$extension"
         return File(platformDir(slug, "screenshots"), name)
     }
 
-    fun pruneStaleUserScreenshots(rommId: Long, screenshotId: Long, keep: File) {
+    actual fun pruneStaleUserScreenshots(rommId: Long, screenshotId: Long, keep: File) {
         val idPrefix = userScreenshotIdPrefix(rommId, screenshotId)
         keep.parentFile?.listFiles()?.forEach { file ->
             if (file.name.startsWith(idPrefix) && file.name != keep.name) file.delete()

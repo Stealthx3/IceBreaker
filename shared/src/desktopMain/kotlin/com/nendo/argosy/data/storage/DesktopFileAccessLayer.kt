@@ -83,7 +83,7 @@ class DesktopFileAccessLayer @Inject constructor() : FileAccessLayer {
 
     override fun getTransformedFile(path: String): File = File(path)
 
-    override fun prepareSaveAccess(vararg paths: String?) = Unit
+    override fun prepareSaveAccess(vararg paths: String?): Boolean = true
 
     override fun commitSaveAccess(vararg paths: String?): Boolean = true
 

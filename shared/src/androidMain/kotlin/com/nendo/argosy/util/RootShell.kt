@@ -45,7 +45,7 @@ actual object RootShell {
     val hasVendorRoute: Boolean
         get() = PServerExecutor.isAvailable || XsuExecutor.isAvailable
 
-    val isAvailable: Boolean
+    actual val isAvailable: Boolean
         get() = hasVendorRoute || enabledRoot != null
 
     /**
@@ -57,7 +57,7 @@ actual object RootShell {
         appDataShell = appData
     }
 
-    fun execute(command: String): kotlin.Result<String?> = when {
+    actual fun execute(command: String): kotlin.Result<String?> = when {
         PServerExecutor.isAvailable -> PServerExecutor.execute(command)
         XsuExecutor.isAvailable -> XsuExecutor.execute(command)
         else -> enabledRoot?.execute(command)
@@ -66,7 +66,7 @@ actual object RootShell {
 
     actual fun quote(value: String): String = "'" + value.replace("'", "'\\''") + "'"
 
-    fun run(context: Context, body: String): Result? {
+    actual fun run(context: Context, body: String): Result? {
         if (hasVendorRoute) return runThroughVendor(context, body)
         return enabledRoot?.runScript(body)
     }

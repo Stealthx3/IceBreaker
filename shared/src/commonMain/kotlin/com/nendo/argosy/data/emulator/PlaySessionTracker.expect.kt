@@ -50,4 +50,6 @@ expect class PlaySessionTracker {
     fun forceStopService()
 
     fun canResumeSession(gameId: Long, variantFileId: Long? = null): Boolean
+
+    val sessionEnding: kotlinx.coroutines.flow.StateFlow<Boolean>
 }

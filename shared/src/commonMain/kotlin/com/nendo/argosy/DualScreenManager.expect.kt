@@ -88,7 +88,10 @@ expect class DualScreenManager {
 
     val screenNumbers: StateFlow<Map<Int, Int>>
 
-    fun showScreenNumbers(size: com.nendo.argosy.hardware.DisplayBadgeSize = com.nendo.argosy.hardware.DisplayBadgeSize.LARGE)
+    fun showScreenNumbers(
+        size: com.nendo.argosy.hardware.DisplayBadgeSize = com.nendo.argosy.hardware.DisplayBadgeSize.LARGE,
+        inContentDisplayId: Int? = null
+    )
 
     fun hideScreenNumbers()
 
@@ -357,4 +360,8 @@ expect class DualScreenManager {
     fun unregisterReceivers()
 
     fun refocusSession()
+
+    val panelMirroredToExternal: kotlinx.coroutines.flow.StateFlow<Boolean>
+
+    val inputFeedback: com.nendo.argosy.ui.input.InputFeedbackPlayer
 }

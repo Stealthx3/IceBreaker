@@ -77,4 +77,10 @@ actual class DisplayAffinityHelper @Inject constructor() {
     actual fun getActivityOptions(forEmulator: Boolean, rolesSwapped: Boolean, overrideDisplayId: Int?): Bundle? = null
 
     actual fun isPhysicalDisplay(displayId: Int): Boolean = false
+
+    actual fun usableDisplayId(displayId: Int?): Int? = displayId
+
+    actual fun launchDisplayId(forEmulator: Boolean, rolesSwapped: Boolean, overrideDisplayId: Int?): Int? = null
+
+    actual fun bothScreensDisplayId(host: com.nendo.argosy.data.emulator.BothScreensHost): Int? = null
 }

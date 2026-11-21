@@ -16,7 +16,8 @@ enum class InstallerFailure {
     NO_APK,
     DOWNLOAD,
     RATE_LIMITED,
-    NOT_FOUND
+    NOT_FOUND,
+    WRONG_PACKAGE
 }
 
 data class InstallerJob(val installerId: Long, val state: InstallerJobState)

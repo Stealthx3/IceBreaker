@@ -113,7 +113,7 @@ object ControllerArt {
         if (builtInScreens > 1) ControllerKind.DUAL_SCREEN else ControllerKind.HANDHELD
 
     private fun builtInScreenCount(context: Context): Int =
-        ScreenCatalog(context.applicationContext).attachedScreens().count { it.builtIn }
+        ScreenCatalog.builtInScreenCount(context)
 
     fun externalKind(vendorId: Int, productId: Int, name: String?, sdlTypes: Map<Int, String>): ControllerKind {
         if (vendorId == NINTENDO) nintendoProducts[productId]?.let { return it }

@@ -46,7 +46,7 @@ actual object SteamLaunchers {
      * Installed launch candidates. Multiple reports retain the launch-time choice;
      * one candidate can launch directly.
      */
-    fun launchCandidates(
+    actual fun launchCandidates(
         storedPackage: String?,
         pinned: Boolean,
         reporting: List<String>,

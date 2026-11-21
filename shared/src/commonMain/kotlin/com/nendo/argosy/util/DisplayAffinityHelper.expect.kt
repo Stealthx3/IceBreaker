@@ -94,4 +94,10 @@ expect class DisplayAffinityHelper {
     fun getActivityOptions(forEmulator: Boolean, rolesSwapped: Boolean = false, overrideDisplayId: Int? = null): Bundle?
 
     fun isPhysicalDisplay(displayId: Int): Boolean
+
+    fun usableDisplayId(displayId: Int?): Int?
+
+    fun launchDisplayId(forEmulator: Boolean, rolesSwapped: Boolean = false, overrideDisplayId: Int? = null): Int?
+
+    fun bothScreensDisplayId(host: com.nendo.argosy.data.emulator.BothScreensHost): Int?
 }

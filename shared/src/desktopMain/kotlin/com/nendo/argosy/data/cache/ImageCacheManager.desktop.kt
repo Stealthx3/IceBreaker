@@ -138,7 +138,7 @@ actual class ImageCacheManager @Inject constructor(
 
     actual suspend fun cacheSingleScreenshot(gameId: Long, url: String, index: Int): String? = null
 
-    actual suspend fun userScreenshotTargetFile(rommId: Long, screenshotId: Long, version: String): File =
+    actual suspend fun userScreenshotTargetFile(rommId: Long, screenshotId: Long, version: String, extension: String): File =
         DesktopDirectories.cache.resolve("screenshots").resolve(rommId.toString())
             .also { it.mkdirs() }
             .resolve("${screenshotId}_$version")

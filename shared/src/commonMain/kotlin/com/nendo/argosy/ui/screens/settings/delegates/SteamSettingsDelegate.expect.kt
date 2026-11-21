@@ -34,6 +34,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
+internal const val REFRESH_SYNC_KEY = "refresh"
+
 expect class SteamSettingsDelegate {
     val state: StateFlow<SteamSettingsState>
 

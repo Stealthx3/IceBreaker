@@ -135,7 +135,7 @@ actual class AndroidDataAccessor @Inject constructor(
         return mirror.realFileSizes(mirror.realPathOf(path) ?: path)
     }
 
-    fun transformPath(path: String): String {
+    actual fun transformPath(path: String): String {
         if (mirror.isActive) {
             if (mirror.isMirrorPath(path)) {
                 mirror.realPathOf(path)?.let { mirror.mirrorPathFor(it) }

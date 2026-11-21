@@ -85,7 +85,7 @@ expect class ImageCacheManager {
 
     suspend fun cacheSingleScreenshot(gameId: Long, url: String, index: Int): String?
 
-    suspend fun userScreenshotTargetFile(rommId: Long, screenshotId: Long, version: String): File
+    suspend fun userScreenshotTargetFile(rommId: Long, screenshotId: Long, version: String, extension: String): File
 
     fun pruneStaleUserScreenshots(rommId: Long, screenshotId: Long, keep: File)
 

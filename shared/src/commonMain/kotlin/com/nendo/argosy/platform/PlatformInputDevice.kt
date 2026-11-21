@@ -12,6 +12,14 @@ const val SOURCE_JOYSTICK: Int = 16777232
 
 const val SOURCE_KEYBOARD: Int = 257
 
+const val SOURCE_MOUSE: Int = 8194
+
+const val SOURCE_MOUSE_RELATIVE: Int = 131076
+
+const val SOURCE_TOUCHPAD: Int = 1048584
+
+expect fun PlatformInputDevice.supportsSource(source: Int): Boolean
+
 expect class PlatformInputDevice
 
 expect val PlatformInputDevice.id: Int

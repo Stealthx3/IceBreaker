@@ -376,7 +376,7 @@ actual class JellyfinDeviceProfileBuilder @Inject constructor() {
          * mandatory aac decoder handles 5.1, with the audio pipeline downmixing to whatever the
          * output device actually is. Direct play is not gated by this value at all.
          */
-        const val DEFAULT_MAX_AUDIO_CHANNELS = 6
+        actual const val DEFAULT_MAX_AUDIO_CHANNELS = 6
 
         /**
          * Streaming ceiling, in bits per second, declared for a tier that sets none.

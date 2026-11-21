@@ -47,14 +47,6 @@ sealed class InstallerJobState {
     data class Failed(val reason: InstallerFailure) : InstallerJobState()
 }
 
-enum class InstallerFailure {
-    NO_RELEASE,
-    NO_APK,
-    DOWNLOAD,
-    RATE_LIMITED,
-    NOT_FOUND,
-    WRONG_PACKAGE
-}
 
 data class InstallerJob(val installerId: Long, val state: InstallerJobState)
 

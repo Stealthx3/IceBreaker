@@ -17,4 +17,11 @@ actual class ApkInstallManager @Inject constructor() {
     }
 
     actual suspend fun installApkForGame(gameId: Long): Boolean = false
+
+    actual val pushedPrompt: kotlinx.coroutines.flow.StateFlow<com.nendo.argosy.data.model.PushedApkPrompt?> =
+        kotlinx.coroutines.flow.MutableStateFlow(null)
+
+    actual fun confirmPushedInstall() = Unit
+
+    actual fun dismissPushedInstall() = Unit
 }

@@ -54,7 +54,7 @@ actual class DualScreenManager @Inject constructor() {
 
     actual val screenNumbers: StateFlow<Map<Int, Int>> = kotlinx.coroutines.flow.MutableStateFlow(emptyMap())
 
-    actual fun showScreenNumbers(size: com.nendo.argosy.hardware.DisplayBadgeSize) {
+    actual fun showScreenNumbers(size: com.nendo.argosy.hardware.DisplayBadgeSize, inContentDisplayId: Int?) {
     }
 
     actual fun hideScreenNumbers() {
@@ -405,4 +405,10 @@ actual class DualScreenManager @Inject constructor() {
     actual val controlCompanion: CompanionHost? = null
 
     actual var isOverlayFocused: Boolean = false
+
+    actual val panelMirroredToExternal: kotlinx.coroutines.flow.StateFlow<Boolean> =
+        kotlinx.coroutines.flow.MutableStateFlow(false)
+
+    actual val inputFeedback: com.nendo.argosy.ui.input.InputFeedbackPlayer =
+        com.nendo.argosy.ui.input.InputFeedbackPlayer()
 }

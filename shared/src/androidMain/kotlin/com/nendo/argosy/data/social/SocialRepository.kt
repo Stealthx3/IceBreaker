@@ -769,7 +769,7 @@ actual class SocialRepository @Inject constructor(
         socialService.reconnectIfNeeded()
     }
 
-    fun requestUserProfile(userId: String? = null): Boolean {
+    actual fun requestUserProfile(userId: String? = null): Boolean {
         if (!socialService.isConnected()) return false
         _isLoadingProfile.update { true }
         val sent = socialService.requestUserProfile(userId)
@@ -777,7 +777,7 @@ actual class SocialRepository @Inject constructor(
         return sent
     }
 
-    fun sendFriendRequest(userId: String): Boolean =
+    actual fun sendFriendRequest(userId: String): Boolean =
         sendWrite { socialService.sendFriendRequest(userId) }
 
     fun acceptFriend(userId: String): Boolean =
@@ -802,7 +802,7 @@ actual class SocialRepository @Inject constructor(
         }
     }
 
-    fun toggleFavoriteFriend(friendId: String): Boolean =
+    actual fun toggleFavoriteFriend(friendId: String): Boolean =
         sendWrite { socialService.toggleFavoriteFriend(friendId) }
 
     fun toggleGameVisibility(igdbGameId: Int?, steamAppId: Int? = null, isCurrentlyHidden: Boolean = false): Boolean {
@@ -1148,7 +1148,7 @@ actual class SocialRepository @Inject constructor(
         return true
     }
 
-    fun reportEvent(eventId: String, reason: String? = null): Boolean {
+    actual fun reportEvent(eventId: String, reason: String? = null): Boolean {
         Log.d(TAG, "reportEvent: eventId=$eventId, reason=$reason, connected=${socialService.isConnected()}")
         return sendWrite { socialService.reportEvent(eventId, reason) }
     }
@@ -1221,7 +1221,7 @@ actual class SocialRepository @Inject constructor(
         }
     }
 
-    fun commentEvent(eventId: String, content: String): Boolean {
+    actual fun commentEvent(eventId: String, content: String): Boolean {
         Log.d(TAG, "commentEvent: eventId=$eventId, connected=${socialService.isConnected()}")
         return sendWrite { socialService.commentEvent(eventId, content) }
     }
