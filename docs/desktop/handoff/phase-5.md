@@ -2,7 +2,7 @@
 
 Rewritten (not appended) at the end of every work unit, so a fresh session can start from it alone. History and reasoning live in `DEVLOG.md` (Phase 5 section). Earlier phases: `phase-0.md` … `phase-4.md`.
 
-**Updated:** 2026-11-21 (parked for usage mid-unit 5a). Steps 1–4 done; step 5 in progress.
+**Updated:** 2026-11-21. Steps 1–4 done; step 5 in progress (units 5a and 5b done; 5c next).
 
 ## State
 
@@ -21,13 +21,8 @@ Plan (`DEVLOG.md`, Phase 5 plan): 1 wizard wording, 2 Close Argosy, 3 thumbnails
 
 Triage of every upstream commit: `docs/desktop/upstream-2.31-triage.md` (uncommitted until owner says; read it first). Owner decisions: `DEVLOG.md`, 2026-11-21.
 
-- **5a. Merge v2.31.0: merged and building (2026-11-21).**
-  - Worktree `../argosy-desktop-merge` (next to this checkout), branch `merge/upstream-2.31`, head `1f2cd7391`. It also contains `main` up to `67c1a03b5` (PII adoption), merged in, so `main` can fast-forward to it.
-  - Desktop, Android and desktop-app builds compile; push gate green: 5,691 tests (Android + desktop), 0 failures, 1 skipped. `scripts/desktop/merge/landing_check.py 98562a1e7 origin/upstream` reports only the expected `UserPreferencesRepository` line.
-  - How it was done (helpers in `scripts/desktop/merge/`, README there): conflicts resolved; expect/actual drift synced both ways (`expect_drift.py`, `expect_orphans.py`, `sigdiff.py`); blocks Phase 1 had extracted were rehomed (`rehome_blocks.py`, `extracted_deletions.py`); new seams: `BackgroundGames`, `HardwareStatsReader`, `LidSleepGuard`, `RadioController`, `PrivilegedAccess`, `GameLaunchOptions`, `padBattery()`, `hostIsChangingConfigurations()`, `RomScanActivity`, `TransientNotice`, `AccessibilityServiceState`, `isImeVisible()`, `stackedScreenshotTransformation()`; the image wrapper gained `newBuilder`, `memoryCacheKey`, `placeholderMemoryCacheKey`, `transformations`.
-  - Known desktop gaps (Android unchanged): stacked DS/3DS screenshot crop and showcase crossfade-from-previous are Android-only; pad battery, hardware readings, radio status and background games are desktop stand-ins until units 5f/5h.
-- **5b. Verify the merge (next):** build the merged debug APK (`:app:assembleDebug` in the worktree) and a plain upstream v2.31.0 APK, run `scripts/desktop/check/save-proof.sh` for both on `emulator-5556` (start it per `gotchas.md`) and compare with `proof-diff.sh`; then push gate (`:shared:desktopTest`, `testDebugUnitTest`), host walk, testbed save-sync live check (`GET /api/saves`, negotiate no_op twice), and the session-end rework (launch, quit, relaunch during upload).
-- **5c. Catalog and Eden:**
+- **5a/5b. Upstream v2.31.0 merged and verified (done 2026-11-21).** `main` contains it. Details and known desktop gaps: DEVLOG 2026-11-21 ("Units 5a and 5b done"). Merge helpers: `scripts/desktop/merge/` (README). After each upstream merge, regenerate desktop migrations: `python3 -I scripts/desktop/gen_desktop_migrations.py`. Worktrees `../argosy-desktop-merge` and `../argosy-upstream-2.31` can be removed once 5c starts.
+- **5c next. Catalog and Eden:**
   - Catalog (data, served from GitHub): Vita3K, ScummVM, PICO-8, xemu; Flycast VMU, Azahar/Lime3DS and PPSSPP save paths; m3u multi-disc launch per emulator.
   - Eden: Switch keys and firmware installed into Eden's folders.
 - **5d. RetroArch core installs:** fetch the core a launch needs from the libretro buildbot into the RetroArch Flatpak's `cores/` folder. Check the Flatpak folder grant first.
@@ -70,7 +65,8 @@ Before the Phase 5 push: `node scripts/pii-scan.mjs history --write-rewrite-file
 - Never run two Gradle or bundle builds at once (they share `desktopApp/build`).
 - A filtered test run must target `:app:testDebugUnitTest`; `quiet.sh` can print exit 0 on a failed build. Check for BUILD SUCCESSFUL and the test XML.
 - Nested Game Mode: `gamescope -W 1920 -H 1080 -w 1920 -h 1080 -e -- steam -gamepadui`. Screenshots only through `gamescopectl screenshot`, never full-desktop captures.
-- Walks: `scripts/desktop/check/pad-walk.sh flatpak <out> ...`; run log `build/desktop-logs/*desktop-run.log`.
+- Walks: `scripts/desktop/check/pad-walk.sh flatpak <out> ...`; run log `build/desktop-logs/*desktop-run.log`. Shots go through the key pipe now. On Home, A is Play (it launches the game); use X for Details.
+- VM lab (if reopened for IceBreaker): new guests and base volumes go in libvirt pool `VMDisks` (`LAB_POOL=VMDisks`), per the master VM lab standard (2026-11-21).
 
 ## Where things are
 
