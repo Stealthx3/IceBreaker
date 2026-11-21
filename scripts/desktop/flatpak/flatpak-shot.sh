@@ -5,7 +5,7 @@ set -u
 out=$1
 settle=${2:-20}
 size=${3:-1920x1080}
-app_id=io.github.stealthx3.ArgosyDesktop
+app_id=io.github.stealthx3.IceBreaker
 root="$(cd "$(dirname "$0")/../../.." && pwd)"
 cd "$root"
 mkdir -p build/desktop-logs "$(dirname "$out")"
@@ -14,13 +14,13 @@ flatpak run --env=JAVA_TOOL_OPTIONS=-Dskiko.vsync.enabled=false "$app_id" --wind
 run=$!
 win=""
 for _ in $(seq 1 120); do
-  win=$(xwininfo -root -tree 2>/dev/null | awk '/"Argosy"/ {print $1; exit}')
+  win=$(xwininfo -root -tree 2>/dev/null | awk '/"IceBreaker"/ {print $1; exit}')
   [ -n "$win" ] && break
   kill -0 $run 2>/dev/null || break
   sleep 1
 done
 if [ -z "$win" ]; then
-  echo "no Argosy window appeared; log $log"
+  echo "no IceBreaker window appeared; log $log"
   flatpak kill "$app_id" 2>/dev/null
   exit 1
 fi

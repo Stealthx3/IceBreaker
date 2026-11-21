@@ -18,13 +18,13 @@ log="build/desktop-logs/$(date +%Y%m%d-%H%M%S)-desktop-run.log"
 gradle=$!
 win=""
 for _ in $(seq 1 240); do
-  win=$(xwininfo -root -tree 2>/dev/null | awk '/"Argosy"/ {print $1; exit}')
+  win=$(xwininfo -root -tree 2>/dev/null | awk '/"IceBreaker"/ {print $1; exit}')
   [ -n "$win" ] && break
   kill -0 $gradle 2>/dev/null || break
   sleep 1
 done
 if [ -z "$win" ]; then
-  echo "no Argosy window appeared; log $log"
+  echo "no IceBreaker window appeared; log $log"
   kill $gradle 2>/dev/null
   exit 1
 fi

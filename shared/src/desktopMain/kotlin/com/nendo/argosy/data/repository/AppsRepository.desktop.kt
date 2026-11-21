@@ -56,5 +56,5 @@ actual class AppsRepository @Inject constructor() {
     actual fun isPackageMissing(packageName: String): Boolean = false
 }
 
-private const val ARGOSY_DESKTOP_ID = "io.github.stealthx3.ArgosyDesktop"
+private const val ARGOSY_DESKTOP_ID = "io.github.stealthx3.IceBreaker"
 private const val CHANGE_POLL_MS = 10_000L

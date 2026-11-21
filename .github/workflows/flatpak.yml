@@ -1,6 +1,6 @@
 # Argosy Desktop: the Flathub from-source build, run offline the way Flathub runs it.
 #
-# Builds desktopApp/flatpak/io.github.stealthx3.ArgosyDesktop.flathub.yml for x86_64 and aarch64
+# Builds desktopApp/flatpak/io.github.stealthx3.IceBreaker.flathub.yml for x86_64 and aarch64
 # (aarch64 under QEMU) in the freedesktop 25.08 builder image, uploads each bundle, then lints the
 # manifest. The manifest's Gradle dependencies come from generated/gradle-sources.json
 # (scripts/desktop/flatpak/regen-gradle-sources.sh), so the build itself needs no network.
@@ -56,7 +56,7 @@ jobs:
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: argosy-desktop-${{ matrix.arch }}.flatpak
-          manifest-path: desktopApp/flatpak/io.github.stealthx3.ArgosyDesktop.flathub.yml
+          manifest-path: desktopApp/flatpak/io.github.stealthx3.IceBreaker.flathub.yml
           cache-key: flatpak-builder-${{ matrix.arch }}-${{ hashFiles('desktopApp/flatpak/generated/gradle-sources.json') }}
           arch: ${{ matrix.arch }}
 
@@ -74,4 +74,4 @@ jobs:
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
           flatpak install --user -y flathub org.flatpak.Builder
           flatpak run --command=flatpak-builder-lint org.flatpak.Builder \
-            manifest desktopApp/flatpak/io.github.stealthx3.ArgosyDesktop.flathub.yml
+            manifest desktopApp/flatpak/io.github.stealthx3.IceBreaker.flathub.yml

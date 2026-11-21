@@ -35,6 +35,8 @@ Triage of every upstream commit: `docs/desktop/upstream-2.31-triage.md` (uncommi
 
 ## Step 6 (IceBreaker rename and Flathub)
 
+**Started 2026-11-21 (owner: "Begin branding conversion"), ahead of 5c–5h.** Unit 1 (identity) done. Next: unit 2, in-app text and art (checklist sections 3 and 4: desktop-only "Argosy" → "IceBreaker" at string generation with a credits exclusion list; splash and About lockup from `brand/deployment/app/`). Then unit 3, moving beta users (end-of-life rebase from the old Pages repo; test in a throwaway home folder), unit 4 Steam shortcut, unit 5 links and repo rename, unit 6 screenshots, lint and the first icesuite-test publish (PR #4 adds the catalog entry; the owner merges it).
+
 - **Rename:**
   - App id `io.github.stealthx3.IceBreaker`; repo renamed to `Stealthx3/IceBreaker` (owner, 2026-11-21).
   - Work list: `IceSuite/IceBreaker/rebrand/RENAME-CHECKLIST.md`. Art: `IceSuite/IceBreaker/brand/deployment/`.

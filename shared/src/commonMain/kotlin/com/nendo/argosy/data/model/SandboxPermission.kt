@@ -17,7 +17,7 @@ enum class SandboxPermission(val flag: String, val isPortal: Boolean = false) {
     DISPLAY("--socket=wayland");
 
     companion object {
-        const val APP_ID = "io.github.stealthx3.ArgosyDesktop"
+        const val APP_ID = "io.github.stealthx3.IceBreaker"
 
         fun overrideArgs(flags: List<String>): List<String> = listOf("flatpak", "override", "--user") + flags + APP_ID
     }

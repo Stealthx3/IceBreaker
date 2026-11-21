@@ -35,8 +35,18 @@ object DesktopDirectories {
     private fun xdg(variable: String, fallback: String): java.io.File =
         java.io.File(System.getenv(variable)?.takeIf { it.isNotBlank() } ?: (System.getProperty("user.home") + fallback))
 
-    val data: java.io.File get() = xdg("XDG_DATA_HOME", "/.local/share").resolve("argosy-desktop")
-    val cache: java.io.File get() = xdg("XDG_CACHE_HOME", "/.cache").resolve("argosy-desktop")
+    val data: java.io.File get() = renamed(xdg("XDG_DATA_HOME", "/.local/share"))
+    val cache: java.io.File get() = renamed(xdg("XDG_CACHE_HOME", "/.cache"))
+
+    private fun renamed(base: java.io.File): java.io.File {
+        val current = base.resolve(APP_FOLDER)
+        val previous = base.resolve(PREVIOUS_APP_FOLDER)
+        if (!current.exists() && previous.isDirectory) previous.renameTo(current)
+        return current
+    }
+
+    private const val APP_FOLDER = "icebreaker"
+    private const val PREVIOUS_APP_FOLDER = "argosy-desktop"
 }
 
 actual fun PlatformContext.getString(resId: Int): String = platformResources.text(resId)

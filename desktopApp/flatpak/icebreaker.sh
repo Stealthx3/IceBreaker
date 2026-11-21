@@ -1,7 +1,7 @@
 #!/bin/sh
 trap 'kill -TERM "$pid" 2>/dev/null' TERM INT
 while :; do
-    /app/lib/argosy-desktop/bin/argosy-desktop "$@" &
+    /app/lib/icebreaker/bin/icebreaker "$@" &
     pid=$!
     wait "$pid"
     status=$?

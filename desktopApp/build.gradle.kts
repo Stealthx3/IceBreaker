@@ -56,7 +56,7 @@ compose.desktop {
         jvmArgs += packagedLibraryPath
 
         nativeDistributions {
-            packageName = "argosy-desktop"
+            packageName = "icebreaker"
             packageVersion = "0.4.0"
             modules(
                 "java.instrument",

@@ -1,11 +1,12 @@
 [Desktop Entry]
 Type=Application
-Name=Argosy
+Name=IceBreaker
 GenericName=Game Launcher
-Comment=Controller-first game launcher for your RomM library
-Exec=argosy-desktop
-Icon=io.github.stealthx3.ArgosyDesktop
+Comment=Browse and play your game library
+Exec=icebreaker
+Icon=io.github.stealthx3.IceBreaker
 Terminal=false
 Categories=Game;
-Keywords=RomM;emulator;retro;launcher;
+Keywords=RomM;emulation;emulator;launcher;frontend;retro;ROM;RetroArch;Steam Deck;gamepad;controller;
 StartupWMClass=com-nendo-argosy-desktop-MainKt
+X-Flatpak-RenamedFrom=io.github.stealthx3.ArgosyDesktop.desktop;

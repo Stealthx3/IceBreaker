@@ -19,7 +19,7 @@ export JAVA_HOME=${JAVA_HOME:-$HOME/.jdks/jdk-21.0.12.1+1}
 export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Dskiko.vsync.enabled=false"
 mkdir -p build/desktop-logs "$outdir"
 log="build/desktop-logs/$(date +%Y%m%d-%H%M%S)-desktop-run.log"
-app_id=io.github.stealthx3.ArgosyDesktop
+app_id=io.github.stealthx3.IceBreaker
 if [ "${DRIVE_TARGET:-}" = flatpak ]; then
   # The installed Flatpak sees only its own ~/.var/app tree, so the pipe lives there.
   fifo="$HOME/.var/app/$app_id/cache/key-pipe"
@@ -34,13 +34,13 @@ fi
 gradle=$!
 win=""
 for _ in $(seq 1 240); do
-  win=$(xwininfo -root -tree 2>/dev/null | awk '/"Argosy"/ {print $1; exit}')
+  win=$(xwininfo -root -tree 2>/dev/null | awk '/"IceBreaker"/ {print $1; exit}')
   [ -n "$win" ] && break
   kill -0 $gradle 2>/dev/null || break
   sleep 1
 done
 if [ -z "$win" ]; then
-  echo "no Argosy window appeared; log $log"
+  echo "no IceBreaker window appeared; log $log"
   kill $gradle 2>/dev/null
   [ "${DRIVE_TARGET:-}" = flatpak ] && flatpak kill "$app_id" 2>/dev/null
   exit 1

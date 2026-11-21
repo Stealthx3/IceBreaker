@@ -1,11 +1,11 @@
 # Beta manifest: packages the jlink distributable that `./gradlew :desktopApp:createDistributable`
 # builds on the host (scripts/desktop/flatpak/build-alpha.sh). The offline, from-source build
 # Flathub needs is Phase 5. SDL3, libdbus and libsecret come from the 25.08 runtime.
-app-id: io.github.stealthx3.ArgosyDesktop
+app-id: io.github.stealthx3.IceBreaker
 runtime: org.freedesktop.Platform
 runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
-command: argosy-desktop
+command: icebreaker
 finish-args:
   - --share=network
   - --share=ipc
@@ -115,7 +115,7 @@ modules:
           -DJAVA_INCLUDE_PATH=$PWD/jni-include -DJAVA_INCLUDE_PATH2=$PWD/jni-include/linux
           -DJAVA_AWT_INCLUDE_PATH=$PWD/jni-include -DJAVA_AWT_LIBRARY=unused -DJAVA_JVM_LIBRARY=unused
       - cmake --build build --target sigil_jni_host -j $FLATPAK_BUILDER_N_JOBS
-      - install -Dm755 build/bindings/libsigil-jni.so -t /app/lib/argosy-desktop/lib/app
+      - install -Dm755 build/bindings/libsigil-jni.so -t /app/lib/icebreaker/lib/app
     sources:
       - type: dir
         path: ../../sigil
@@ -123,29 +123,25 @@ modules:
       - type: dir
         path: ../build/jni-include
         dest: jni-include
-  - name: argosy-desktop
+  - name: icebreaker
     buildsystem: simple
     build-commands:
-      - mkdir -p /app/lib/argosy-desktop
-      - cp -a distributable/. /app/lib/argosy-desktop/
-      - install -Dm755 argosy-desktop.sh /app/bin/argosy-desktop
-      - install -Dm644 io.github.stealthx3.ArgosyDesktop.desktop -t /app/share/applications
-      - install -Dm644 io.github.stealthx3.ArgosyDesktop.metainfo.xml -t /app/share/metainfo
-      - install -Dm644 argosy_icon.svg /app/share/icons/hicolor/scalable/apps/io.github.stealthx3.ArgosyDesktop.svg
-      - for size in 128 256; do
-          mkdir -p /app/share/icons/hicolor/${size}x${size}/apps;
-          rsvg-convert -w $size -h $size argosy_icon.svg
-            -o /app/share/icons/hicolor/${size}x${size}/apps/io.github.stealthx3.ArgosyDesktop.png;
-        done
+      - mkdir -p /app/lib/icebreaker
+      - cp -a distributable/. /app/lib/icebreaker/
+      - install -Dm755 icebreaker.sh /app/bin/icebreaker
+      - install -Dm644 io.github.stealthx3.IceBreaker.desktop -t /app/share/applications
+      - install -Dm644 io.github.stealthx3.IceBreaker.metainfo.xml -t /app/share/metainfo
+      - mkdir -p /app/share/icons && cp -r icons/hicolor /app/share/icons/
     sources:
       - type: dir
-        path: ../build/compose/binaries/main/app/argosy-desktop
+        path: ../build/compose/binaries/main/app/icebreaker
         dest: distributable
       - type: file
-        path: argosy-desktop.sh
+        path: icebreaker.sh
       - type: file
-        path: io.github.stealthx3.ArgosyDesktop.desktop
+        path: io.github.stealthx3.IceBreaker.desktop
       - type: file
-        path: io.github.stealthx3.ArgosyDesktop.metainfo.xml
-      - type: file
-        path: ../../argosy_icon.svg
+        path: io.github.stealthx3.IceBreaker.metainfo.xml
+      - type: dir
+        path: icons
+        dest: icons

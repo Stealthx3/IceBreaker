@@ -12,7 +12,7 @@ object FactoryResetWipe {
     const val RESTART_EXIT_CODE = 75
 
     private val marker: File
-        get() = DesktopDirectories.data.resolveSibling("argosy-desktop-factory-reset")
+        get() = DesktopDirectories.data.resolveSibling("icebreaker-factory-reset")
 
     fun schedule() {
         marker.parentFile?.mkdirs()

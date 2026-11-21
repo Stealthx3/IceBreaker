@@ -104,7 +104,7 @@ fun main(args: Array<String>) {
         )
         Window(
             onCloseRequest = ::exitApplication,
-            title = "Argosy",
+            title = "IceBreaker",
             state = state,
             undecorated = gamescope,
             onPreviewKeyEvent = { event ->

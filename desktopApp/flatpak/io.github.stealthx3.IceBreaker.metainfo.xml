@@ -1,27 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.stealthx3.ArgosyDesktop</id>
+  <id>io.github.stealthx3.IceBreaker</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
-  <name>Argosy</name>
-  <summary>Controller-first game launcher for your RomM library</summary>
+  <name>IceBreaker</name>
+  <summary>Browse and play your game library</summary>
   <developer id="io.github.stealthx3">
-    <name>Argosy Desktop contributors</name>
+    <name>Stealthx3</name>
   </developer>
   <description>
     <p>
-      Argosy Desktop is the Linux port of the Argosy launcher. It browses and downloads games
-      from a RomM server, launches them in the emulators installed on your system, and keeps
-      saves, play time and achievements in sync with RomM.
+      IceBreaker connects to your RomM server and turns your game collection into a launcher you can
+      drive with a controller from the couch. Pick a game and IceBreaker downloads it, starts the
+      right emulator and brings you back when you are done. Your saves go back to RomM, so you can
+      pick up where you left off on another device.
+    </p>
+    <p>
+      It adapts to where you play: a desktop with mouse and keyboard, a TV, or a handheld in Steam
+      Game Mode. IceBreaker finds the emulators you already have and can install the ones you need
+      from Flathub.
+    </p>
+    <p>
+      Game launcher for RomM. A port of Argosy for desktop: based on Argosy by the RomM team.
+      IceBreaker is an independent port and is not affiliated with or endorsed by rommapp.
     </p>
     <p>This is a beta build.</p>
   </description>
-  <launchable type="desktop-id">io.github.stealthx3.ArgosyDesktop.desktop</launchable>
-  <url type="homepage">https://github.com/Stealthx3/argosy-desktop</url>
-  <url type="bugtracker">https://github.com/Stealthx3/argosy-desktop/issues</url>
+  <launchable type="desktop-id">io.github.stealthx3.IceBreaker.desktop</launchable>
+  <provides>
+    <id>io.github.stealthx3.ArgosyDesktop</id>
+  </provides>
+  <url type="homepage">https://github.com/Stealthx3/IceBreaker</url>
+  <url type="bugtracker">https://github.com/Stealthx3/IceBreaker/issues</url>
+  <url type="vcs-browser">https://github.com/Stealthx3/IceBreaker</url>
+  <branding>
+    <color type="primary" scheme_preference="light">#80e5ff</color>
+    <color type="primary" scheme_preference="dark">#06445e</color>
+  </branding>
   <categories>
     <category>Game</category>
   </categories>
+  <keywords>
+    <keyword>RomM</keyword>
+    <keyword>emulator</keyword>
+    <keyword>launcher</keyword>
+    <keyword>frontend</keyword>
+    <keyword>retro</keyword>
+    <keyword>gamepad</keyword>
+  </keywords>
   <supports>
     <control>gamepad</control>
     <control>keyboard</control>

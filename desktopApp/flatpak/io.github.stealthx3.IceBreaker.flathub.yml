@@ -1,14 +1,14 @@
-# Flathub manifest: builds Argosy Desktop from source with no network. Gradle runs --offline against
+# Flathub manifest: builds IceBreaker from source with no network. Gradle runs --offline against
 # offline-repository/, laid out from generated/gradle-sources.json (scripts/desktop/flatpak/
 # gradle-sources.py); -Pargosy.desktopOnly=true with an empty ANDROID_HOME skips everything Android.
 # For Flathub, the two git sources take the release tag and commit instead of path: ../..
-app-id: io.github.stealthx3.ArgosyDesktop
+app-id: io.github.stealthx3.IceBreaker
 runtime: org.freedesktop.Platform
 runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.openjdk21
-command: argosy-desktop
+command: icebreaker
 finish-args:
   - --share=network
   - --share=ipc
@@ -118,7 +118,7 @@ modules:
           -DJAVA_INCLUDE_PATH=$JDK/include -DJAVA_INCLUDE_PATH2=$JDK/include/linux
           -DJAVA_AWT_INCLUDE_PATH=$JDK/include -DJAVA_AWT_LIBRARY=unused -DJAVA_JVM_LIBRARY=unused
       - cmake --build build --target sigil_jni_host -j $FLATPAK_BUILDER_N_JOBS
-      - install -Dm755 build/bindings/libsigil-jni.so -t /app/lib/argosy-desktop/lib/app
+      - install -Dm755 build/bindings/libsigil-jni.so -t /app/lib/icebreaker/lib/app
     build-options:
       env:
         JDK: /usr/lib/sdk/openjdk21/jvm/openjdk-21
@@ -127,33 +127,28 @@ modules:
         path: ../../sigil
         branch: HEAD
         dest: sigil
-  - name: argosy-desktop
+  - name: icebreaker
     buildsystem: simple
     build-options:
       append-path: /usr/lib/sdk/openjdk21/bin
       env:
         JAVA_HOME: /usr/lib/sdk/openjdk21/jvm/openjdk-21
-        GRADLE_USER_HOME: /run/build/argosy-desktop/gradle-home
-        ANDROID_HOME: /run/build/argosy-desktop/empty-sdk
-        ARGOSY_OFFLINE_REPOSITORY: /run/build/argosy-desktop/offline-repository
+        GRADLE_USER_HOME: /run/build/icebreaker/gradle-home
+        ANDROID_HOME: /run/build/icebreaker/empty-sdk
+        ARGOSY_OFFLINE_REPOSITORY: /run/build/icebreaker/offline-repository
     build-commands:
       - mkdir -p empty-sdk
       - gradle-dist/bin/gradle --no-daemon --offline --console=plain
           --init-script desktopApp/flatpak/offline.init.gradle.kts
           -Pargosy.desktopOnly=true :desktopApp:createDistributable
-      - mkdir -p /app/lib/argosy-desktop
-      - cp -a desktopApp/build/compose/binaries/main/app/argosy-desktop/. /app/lib/argosy-desktop/
-      - rm -rf /app/lib/argosy-desktop/bin /app/lib/argosy-desktop/lib/runtime
+      - mkdir -p /app/lib/icebreaker
+      - cp -a desktopApp/build/compose/binaries/main/app/icebreaker/. /app/lib/icebreaker/
+      - rm -rf /app/lib/icebreaker/bin /app/lib/icebreaker/lib/runtime
       - /usr/lib/sdk/openjdk21/install.sh
-      - install -Dm755 desktopApp/flatpak/argosy-desktop-jre.sh /app/bin/argosy-desktop
-      - install -Dm644 desktopApp/flatpak/io.github.stealthx3.ArgosyDesktop.desktop -t /app/share/applications
-      - install -Dm644 desktopApp/flatpak/io.github.stealthx3.ArgosyDesktop.metainfo.xml -t /app/share/metainfo
-      - install -Dm644 argosy_icon.svg /app/share/icons/hicolor/scalable/apps/io.github.stealthx3.ArgosyDesktop.svg
-      - for size in 128 256; do
-          mkdir -p /app/share/icons/hicolor/${size}x${size}/apps;
-          rsvg-convert -w $size -h $size argosy_icon.svg
-            -o /app/share/icons/hicolor/${size}x${size}/apps/io.github.stealthx3.ArgosyDesktop.png;
-        done
+      - install -Dm755 desktopApp/flatpak/icebreaker-jre.sh /app/bin/icebreaker
+      - install -Dm644 desktopApp/flatpak/io.github.stealthx3.IceBreaker.desktop -t /app/share/applications
+      - install -Dm644 desktopApp/flatpak/io.github.stealthx3.IceBreaker.metainfo.xml -t /app/share/metainfo
+      - mkdir -p /app/share/icons && cp -r icons/hicolor /app/share/icons/
     sources:
       - type: git
         path: ../..

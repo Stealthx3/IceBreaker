@@ -2,7 +2,7 @@ package com.nendo.argosy.platform.mpv
 
 /**
  * Plays [path] without a window for [seconds] and reports what libmpv produced, for checking a
- * build where only the Flatpak has libmpv: `argosy-desktop --probe-video=<file>`.
+ * build where only the Flatpak has libmpv: `icebreaker --probe-video=<file>`.
  */
 object MpvProbe {
     fun run(path: String, seconds: Long = 4): String {
