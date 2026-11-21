@@ -31,7 +31,7 @@ Triage of every upstream commit: `docs/desktop/upstream-2.31-triage.md` (uncommi
 - **5g. Handheld seat picker:** SDL3 built-in pad detection (Deck 28de:1205, Legion Go, ROG Ally, MSI Claw).
 - **5h. Games kept running and Resume, everywhere including Game Mode; the Home combo** (SDL3 combo raises the launcher and offers quit or keep).
 - **Not in step 5:** Brightness stays out. Connections control, Wayland overlays and v3.0 are not part of this step.
-- **Step close:** `build-alpha.sh` → `publish-repo.sh` → `push-pages.sh --step-close 5.5`.
+- **Step close:** build, then publish to the IceSuite test repo (owner rule 2026-11-21; recipe in `gotchas.md`).
 
 ## Step 6 (IceBreaker rename and Flathub)
 

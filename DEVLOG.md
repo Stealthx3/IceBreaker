@@ -1937,3 +1937,10 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Known desktop gaps (Android unchanged):** the stacked DS/3DS screenshot crop and the showcase crossfade-from-previous are Android-only for now; pad battery, hardware readings, radio status and background games are desktop stand-ins until units 5f and 5h.
 - **Gotcha:** on Home, A is Play; a walk that presses A launches the game for real (Dolphin was started three times and closed afterwards).
 
+### 2026-11-21 — IceBreaker rename started; test builds move to the IceSuite test repository (owner)
+
+- **Owner decisions:** "Approved. Begin branding conversion": the rename to IceBreaker starts now, ahead of step 5's remaining units (5c–5h stay pending). And new Flatpak builds go to the IceSuite test repository ([Stealthx3/icesuite-test](https://github.com/Stealthx3/icesuite-test)) instead of this project's Pages repo, following that repository's rules.
+- **Action:** `CLAUDE.md` rule, `docs/DECISIONS.md`, the publish recipe in `docs/desktop/gotchas.md` and the README install section now point at icesuite-test (remote `icesuite-test`, app id `io.github.stealthx3.IceBreaker`). IceBreaker's D-004 is recorded as decided in the IceBreaker decision log.
+- **icesuite-test rules that shape the work:** an app joins through `catalog/<slug>.json` and its icon by pull request (CI runs the end-to-end test on every catalog file); publishing runs `tools/icesuite.py sync → publish-flatpak → check → push` where the signing key lives (the IceFin lab guest), pushes from the host, keeps three commits per ref and must stay under 950 MB with no file of 100 MB or more (IceFin Player uses about 220 MB). Nothing is published mid-step: the first IceBreaker upload is at the rename step's close.
+- **The old repo** (`stealthx3.github.io/argosy-desktop`) stays online for the move: beta users get `io.github.stealthx3.ArgosyDesktop` marked end-of-life with a rebase to IceBreaker. How the rebase reaches a ref in another remote is worked out (and tested in a throwaway home folder) in the user-move unit.
+

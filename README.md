@@ -48,10 +48,17 @@ What the desktop version adds:
 
 You need Flatpak (preinstalled on Fedora, SteamOS, Bazzite and Linux Mint; on Ubuntu, `sudo apt install flatpak`).
 
+Test builds come from the IceSuite test repository ([Stealthx3/icesuite-test](https://github.com/Stealthx3/icesuite-test)), which serves every IceSuite app. Add its remote once, then install:
+
 ```bash
-flatpak install --user --from https://stealthx3.github.io/argosy-desktop/io.github.stealthx3.ArgosyDesktop.flatpakref
-flatpak run io.github.stealthx3.ArgosyDesktop
+flatpak remote-add --user --if-not-exists icesuite-test https://stealthx3.github.io/icesuite-test/flatpak/icesuite-test.flatpakrepo
 ```
+
+```bash
+flatpak install --user icesuite-test io.github.stealthx3.IceBreaker
+```
+
+Beta testers who installed `io.github.stealthx3.ArgosyDesktop` from the old project repo are moved to IceBreaker by `flatpak update`; their settings and library come along.
 
 The setup wizard asks for your RomM server, signs you in, picks a display profile and lists the emulators Argosy can manage. RetroArch is the usual first one:
 
