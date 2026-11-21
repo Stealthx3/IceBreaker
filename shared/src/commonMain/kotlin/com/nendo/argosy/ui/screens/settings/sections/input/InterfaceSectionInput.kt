@@ -58,6 +58,10 @@ internal class InterfaceSectionInput(
         when (interfaceItemAtFocusIndex(state.focusedIndex, layoutState)) {
             InterfaceItem.Language -> { viewModel.cycleAppLanguage(direction); return InputResult.HANDLED }
             InterfaceItem.UiScale -> { viewModel.adjustUiScale(direction * 5); return InputResult.HANDLED }
+            InterfaceItem.ScreenOrientation -> {
+                viewModel.cycleScreenOrientation(direction)
+                return InputResult.HANDLED
+            }
             InterfaceItem.CompactFooter -> return toggleLeftRight(direction, state.display.compactFooter) {
                 viewModel.setCompactFooter(it)
             }
@@ -73,6 +77,10 @@ internal class InterfaceSectionInput(
             InterfaceItem.HideSystemStatusBar ->
                 return toggleLeftRight(direction, state.display.hideSystemStatusBar) {
                     viewModel.setHideSystemStatusBar(it)
+                }
+            InterfaceItem.QuickPanelInEmulators ->
+                return toggleLeftRight(direction, state.display.quickPanelInEmulators) {
+                    viewModel.setQuickPanelInEmulators(it)
                 }
             InterfaceItem.LockScreenArt -> return toggleLeftRight(direction, state.display.lockScreenArt) {
                 viewModel.setLockScreenArt(it)

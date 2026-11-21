@@ -37,6 +37,15 @@ abstract class DesktopAppModule {
     @ApplicationContext
     abstract fun bindApplicationContext(application: PlatformApplication): PlatformContext
 
+    @Binds
+    abstract fun bindAppEventFeedback(impl: com.nendo.argosy.ui.input.SoundFeedbackManager): com.nendo.argosy.core.input.AppEventFeedback
+
+    @Binds
+    abstract fun bindSfxCacheCleaner(impl: com.nendo.argosy.ui.input.SoundFeedbackManager): com.nendo.argosy.core.media.SfxCacheCleaner
+
+    @Binds
+    abstract fun bindLibrarySyncNotifier(impl: com.nendo.argosy.ui.screens.common.LibrarySyncBus): com.nendo.argosy.domain.usecase.sync.LibrarySyncNotifier
+
     @Multibinds
     abstract fun preLaunchRecapOverrides(): Set<PreLaunchRecapOverride>
 
@@ -44,6 +53,13 @@ abstract class DesktopAppModule {
     abstract fun monthlyRecapOverrides(): Set<MonthlyRecapOverride>
 
     companion object {
+        @Provides
+        @Singleton
+        fun provideRomScanActivity(): com.nendo.argosy.data.scanner.RomScanActivity =
+            object : com.nendo.argosy.data.scanner.RomScanActivity {
+                override val isScanning: kotlinx.coroutines.flow.Flow<Boolean> = kotlinx.coroutines.flow.flowOf(false)
+            }
+
         @Provides
         @Singleton
         fun provideMoshi(): Moshi = Moshi.Builder().build()

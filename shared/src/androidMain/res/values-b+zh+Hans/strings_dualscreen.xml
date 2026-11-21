@@ -52,7 +52,7 @@
     <string name="dual_companion_saves_dirty">有新存档数据</string>
     <string name="dual_companion_saves_synced">存档已同步</string>
 
-    <string name="dual_companion_app_drawer_title">全部应用</string>
+    <string name="dual_companion_app_drawer_title">应用</string>
     <string name="dual_companion_app_bar_keyboard_description">键盘</string>
     <string name="dual_companion_app_bar_swap_description">交换屏幕</string>
     <string name="dual_companion_app_bar_focus_description">将输入发送到某个屏幕</string>
@@ -101,7 +101,7 @@
 
     <string name="dual_home_hint_app_bar_select">选择</string>
     <string name="dual_home_hint_app_bar_open_top">在顶屏打开</string>
-    <string name="dual_home_hint_app_bar_all_apps">全部应用</string>
+    <string name="dual_home_hint_app_bar_all_apps">应用</string>
 
     <string name="dual_home_hint_carousel_platform">平台</string>
     <string name="dual_home_hint_carousel_details">详情</string>
@@ -148,6 +148,7 @@
     <string name="dual_media_episodes_empty_title">这里还没有剧集</string>
 
     <string name="dual_media_cast_header">演员表</string>
+    <string name="dual_media_related_header">更多类似内容</string>
     <string name="dual_media_browse_back_description">返回</string>
     <plurals name="dual_media_browse_episode_count">
         <item quantity="other">%d集</item>
@@ -386,7 +387,6 @@
     <string name="dual_detail_file_picker_choose_title">选择文件</string>
 
     <string name="dual_detail_steam_install_heading">安装位置</string>
-    <string name="dual_detail_steam_install_argosy">通过Argosy下载</string>
     <string name="dual_detail_steam_install_external">标记为已安装</string>
     <string name="dual_detail_steam_install_managed_by">由%1$s管理</string>
 

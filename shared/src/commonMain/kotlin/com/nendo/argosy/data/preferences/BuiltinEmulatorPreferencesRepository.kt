@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.nendo.argosy.data.emulator.GpuDriverToken
 import com.nendo.argosy.data.local.entity.FastForwardMode
+import com.nendo.argosy.data.local.entity.SelectAsBackMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
@@ -32,6 +33,10 @@ class BuiltinEmulatorPreferencesRepository @Inject constructor(
         val BUILTIN_AUDIO_VOLUME = intPreferencesKey("builtin_audio_volume")
         val BUILTIN_FORCE_SOFTWARE_TIMING = booleanPreferencesKey("builtin_force_software_timing")
         val BUILTIN_RUMBLE_ENABLED = booleanPreferencesKey("builtin_rumble_enabled")
+        val BUILTIN_MOTION_ENABLED = booleanPreferencesKey("builtin_motion_enabled")
+        val BUILTIN_GYRO_AIM_INVERT_X = booleanPreferencesKey("builtin_gyro_aim_invert_x")
+        val BUILTIN_GYRO_AIM_INVERT_Y = booleanPreferencesKey("builtin_gyro_aim_invert_y")
+        val BUILTIN_GYRO_AIM_SENSITIVITY = intPreferencesKey("builtin_gyro_aim_sensitivity")
         val BUILTIN_BLACK_FRAME_INSERTION = booleanPreferencesKey("builtin_black_frame_insertion")
         val BUILTIN_LIMIT_HOTKEYS_TO_PLAYER1 = booleanPreferencesKey("builtin_limit_hotkeys_to_player1")
         val BUILTIN_ANALOG_AS_DPAD = booleanPreferencesKey("builtin_analog_as_dpad")
@@ -40,6 +45,8 @@ class BuiltinEmulatorPreferencesRepository @Inject constructor(
         val BUILTIN_FAST_FORWARD_ENABLED = booleanPreferencesKey("builtin_fast_forward_enabled")
         val BUILTIN_FAST_FORWARD_SPEED = intPreferencesKey("builtin_fast_forward_speed")
         val BUILTIN_FAST_FORWARD_MODE = stringPreferencesKey("builtin_fast_forward_mode")
+        val BUILTIN_SELECT_AS_BACK = stringPreferencesKey("builtin_select_as_back")
+        val BUILTIN_DUAL_SCREEN_MATCH_SIZE = booleanPreferencesKey("builtin_dual_screen_match_size")
         val BUILTIN_FAST_FORWARD_PRESERVE_PITCH = booleanPreferencesKey("builtin_fast_forward_preserve_pitch")
         val BUILTIN_ROTATION = intPreferencesKey("builtin_rotation")
         val BUILTIN_OVERSCAN_CROP = intPreferencesKey("builtin_overscan_crop")
@@ -58,6 +65,7 @@ class BuiltinEmulatorPreferencesRepository @Inject constructor(
         val BUILTIN_CUSTOM_STATE_PATH = stringPreferencesKey("builtin_custom_state_path")
         val BUILTIN_MIGRATION_V1 = booleanPreferencesKey("builtin_migration_v2")
         val BUILTIN_PS2_STANDALONE_PIN_DONE = booleanPreferencesKey("builtin_ps2_standalone_pin_done")
+        val BUILTIN_PRIORITY_PIN_DONE = booleanPreferencesKey("builtin_priority_pin_done")
         val BUILTIN_ARCHITECTURE_OVERRIDE = stringPreferencesKey("builtin_architecture_override")
         val BUILTIN_GPU_DRIVER = stringPreferencesKey("builtin_gpu_driver")
         val TOUCH_SHOW_WHEN_NO_GAMEPAD = booleanPreferencesKey("builtin_touch_show_when_no_gamepad")
@@ -100,6 +108,10 @@ class BuiltinEmulatorPreferencesRepository @Inject constructor(
             lowLatencyAudio = prefs[Keys.BUILTIN_LOW_LATENCY_AUDIO] ?: true,
             forceSoftwareTiming = prefs[Keys.BUILTIN_FORCE_SOFTWARE_TIMING] ?: false,
             rumbleEnabled = prefs[Keys.BUILTIN_RUMBLE_ENABLED] ?: true,
+            motionEnabled = prefs[Keys.BUILTIN_MOTION_ENABLED] ?: true,
+            gyroAimInvertX = prefs[Keys.BUILTIN_GYRO_AIM_INVERT_X] ?: false,
+            gyroAimInvertY = prefs[Keys.BUILTIN_GYRO_AIM_INVERT_Y] ?: false,
+            gyroAimSensitivity = prefs[Keys.BUILTIN_GYRO_AIM_SENSITIVITY] ?: GyroAimSensitivity.DEFAULT,
             blackFrameInsertion = prefs[Keys.BUILTIN_BLACK_FRAME_INSERTION] ?: false,
             framesEnabled = prefs[Keys.BUILTIN_FRAMES_ENABLED] ?: false,
             limitHotkeysToPlayer1 = prefs[Keys.BUILTIN_LIMIT_HOTKEYS_TO_PLAYER1] ?: true,
@@ -109,6 +121,8 @@ class BuiltinEmulatorPreferencesRepository @Inject constructor(
             fastForwardEnabled = prefs[Keys.BUILTIN_FAST_FORWARD_ENABLED] ?: true,
             fastForwardSpeed = prefs[Keys.BUILTIN_FAST_FORWARD_SPEED] ?: 4,
             fastForwardMode = FastForwardMode.fromString(prefs[Keys.BUILTIN_FAST_FORWARD_MODE]),
+            selectAsBack = SelectAsBackMode.fromString(prefs[Keys.BUILTIN_SELECT_AS_BACK]),
+            dualScreenMatchSize = prefs[Keys.BUILTIN_DUAL_SCREEN_MATCH_SIZE] ?: false,
             fastForwardPreservePitch = prefs[Keys.BUILTIN_FAST_FORWARD_PRESERVE_PITCH] ?: false,
             rotation = prefs[Keys.BUILTIN_ROTATION] ?: -1,
             overscanCrop = prefs[Keys.BUILTIN_OVERSCAN_CROP] ?: 0,
@@ -222,6 +236,22 @@ class BuiltinEmulatorPreferencesRepository @Inject constructor(
         dataStore.edit { it[Keys.BUILTIN_RUMBLE_ENABLED] = enabled }
     }
 
+    suspend fun setBuiltinMotionEnabled(enabled: Boolean) {
+        dataStore.edit { it[Keys.BUILTIN_MOTION_ENABLED] = enabled }
+    }
+
+    suspend fun setBuiltinGyroAimInvertX(enabled: Boolean) {
+        dataStore.edit { it[Keys.BUILTIN_GYRO_AIM_INVERT_X] = enabled }
+    }
+
+    suspend fun setBuiltinGyroAimInvertY(enabled: Boolean) {
+        dataStore.edit { it[Keys.BUILTIN_GYRO_AIM_INVERT_Y] = enabled }
+    }
+
+    suspend fun setBuiltinGyroAimSensitivity(percent: Int) {
+        dataStore.edit { it[Keys.BUILTIN_GYRO_AIM_SENSITIVITY] = GyroAimSensitivity.clamp(percent) }
+    }
+
     suspend fun setBuiltinBlackFrameInsertion(enabled: Boolean) {
         dataStore.edit { it[Keys.BUILTIN_BLACK_FRAME_INSERTION] = enabled }
     }
@@ -271,6 +301,14 @@ class BuiltinEmulatorPreferencesRepository @Inject constructor(
 
     suspend fun setBuiltinFastForwardMode(mode: FastForwardMode) {
         dataStore.edit { it[Keys.BUILTIN_FAST_FORWARD_MODE] = mode.name }
+    }
+
+    suspend fun setBuiltinSelectAsBack(mode: SelectAsBackMode) {
+        dataStore.edit { it[Keys.BUILTIN_SELECT_AS_BACK] = mode.name }
+    }
+
+    suspend fun setBuiltinDualScreenMatchSize(enabled: Boolean) {
+        dataStore.edit { it[Keys.BUILTIN_DUAL_SCREEN_MATCH_SIZE] = enabled }
     }
 
     suspend fun setBuiltinFastForwardPreservePitch(enabled: Boolean) {
@@ -357,6 +395,14 @@ class BuiltinEmulatorPreferencesRepository @Inject constructor(
 
     suspend fun setPs2StandalonePinDone() {
         dataStore.edit { it[Keys.BUILTIN_PS2_STANDALONE_PIN_DONE] = true }
+    }
+
+    fun isBuiltinPriorityPinDone(): Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.BUILTIN_PRIORITY_PIN_DONE] ?: false
+    }
+
+    suspend fun setBuiltinPriorityPinDone() {
+        dataStore.edit { it[Keys.BUILTIN_PRIORITY_PIN_DONE] = true }
     }
 
     suspend fun setTouchControlsShowWhenNoGamepad(enabled: Boolean) {

@@ -43,7 +43,6 @@ import com.nendo.argosy.platform.filesDir
 import com.nendo.argosy.platform.getQuantityString
 import com.nendo.argosy.platform.getString
 import com.nendo.argosy.platform.resources
-import com.nendo.argosy.ui.common.labelRes
 import com.nendo.argosy.ui.components.ListReorder
 import com.nendo.argosy.ui.components.activeFilterSummary
 import com.nendo.argosy.ui.screens.common.DiscPickerState
@@ -220,6 +219,7 @@ data class LibraryUiState(
     val isCustomGridHome: Boolean = false,
     val gridDensity: GridDensity = GridDensity.NORMAL,
     val libraryLayout: LibraryLayout = LibraryLayout.GRID,
+    val libraryListStyle: LibraryListStyle = LibraryListStyle.RELAXED,
     val boxArt3d: Boolean = false,
     val saveStates: Map<Long, SaveListState> = emptyMap(),
     val friendsActivity: Map<Int, List<FriendActivity>> = emptyMap(),

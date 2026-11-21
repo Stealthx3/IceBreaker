@@ -115,7 +115,10 @@ private val HOTKEY_ACTIONS = listOf(
     HotkeyAction.SPEEDRUN_UNDO_SPLIT,
     HotkeyAction.SPEEDRUN_SKIP_SPLIT,
     HotkeyAction.SPEEDRUN_TOGGLE_TIMER,
-    HotkeyAction.SPEEDRUN_RESET_TIMER
+    HotkeyAction.SPEEDRUN_RESET_TIMER,
+    HotkeyAction.SUN_BRIGHTER,
+    HotkeyAction.SUN_DIMMER,
+    HotkeyAction.RECENTER_GYRO_AIM
 )
 
 private val HOLD_DELAY_CYCLE = listOf(0L, 1000L, 2000L, 3000L)
@@ -671,13 +674,14 @@ private fun HotkeyRow(
 }
 
 @Composable
-private fun RecordingContent(
+internal fun RecordingContent(
     title: String,
     heldKeys: Set<Int>,
     isComplete: Boolean,
     onComplete: (Set<Int>) -> Unit,
     onCancel: () -> Unit,
-    onUpdateComplete: (Boolean) -> Unit
+    onUpdateComplete: (Boolean) -> Unit,
+    prompt: String = stringResource(R.string.settings_hotkeys_recording_prompt)
 ) {
     var holdProgress by remember { mutableFloatStateOf(0f) }
     var savedKeys by remember { mutableStateOf<Set<Int>>(emptySet()) }
@@ -771,7 +775,7 @@ private fun RecordingContent(
                         text = if (isComplete) {
                             stringResource(R.string.settings_hotkeys_recording_saved)
                         } else if (heldKeys.isEmpty()) {
-                            stringResource(R.string.settings_hotkeys_recording_prompt)
+                            prompt
                         } else {
                             stringResource(R.string.settings_hotkeys_recording_holding)
                         },
@@ -808,6 +812,9 @@ private fun getActionDisplayName(action: HotkeyAction): String {
         HotkeyAction.SPEEDRUN_SKIP_SPLIT -> stringResource(R.string.settings_hotkeys_action_skip_split)
         HotkeyAction.SPEEDRUN_TOGGLE_TIMER -> stringResource(R.string.settings_hotkeys_action_toggle_timer)
         HotkeyAction.SPEEDRUN_RESET_TIMER -> stringResource(R.string.settings_hotkeys_action_reset_timer)
+        HotkeyAction.SUN_BRIGHTER -> stringResource(R.string.settings_hotkeys_action_sun_brighter)
+        HotkeyAction.SUN_DIMMER -> stringResource(R.string.settings_hotkeys_action_sun_dimmer)
+        HotkeyAction.RECENTER_GYRO_AIM -> stringResource(R.string.settings_hotkeys_action_recenter_gyro_aim)
     }
 }
 

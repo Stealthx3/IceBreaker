@@ -27,6 +27,7 @@ import com.nendo.argosy.platform.getString
 import com.nendo.argosy.platform.resources
 import com.nendo.argosy.util.PlatformLog as Log
 import com.nendo.argosy.platform.withTransaction
+import com.nendo.argosy.core.media.SfxCacheCleaner
 import com.nendo.argosy.data.cache.ImageCacheManager
 import com.nendo.argosy.data.download.DownloadManager
 import com.nendo.argosy.data.download.MediaDownloadManager
@@ -36,11 +37,10 @@ import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.model.GameSource
 import com.nendo.argosy.data.preferences.SessionStateStore
 import com.nendo.argosy.data.social.SocialRepository
-import com.nendo.argosy.data.steam.SteamContentManager
 import com.nendo.argosy.data.storage.StorageAttributionRepository
 import com.nendo.argosy.data.storage.StorageCategory
-import com.nendo.argosy.ui.input.SoundFeedbackManager
 import com.nendo.argosy.util.AppPaths
+import com.nendo.argosy.util.FileNames
 import dagger.Lazy
 import com.nendo.argosy.di.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -63,7 +63,6 @@ sealed interface HardResetBlocker {
     data class PendingUploads(val accounts: List<PendingUploadAccount>) : HardResetBlocker
     data object ActiveDownloads : HardResetBlocker
     data object EmulatorDownload : HardResetBlocker
-    data object SteamDownload : HardResetBlocker
     data object MediaDownload : HardResetBlocker
 }
 
@@ -106,11 +105,11 @@ class DatabaseAdminRepository @Inject constructor(
     private val attributionRepository: StorageAttributionRepository,
     private val downloadManager: Lazy<DownloadManager>,
     private val emulatorDownloadManager: Lazy<EmulatorDownloadManager>,
-    private val steamContentManager: Lazy<SteamContentManager>,
     private val mediaDownloadManager: Lazy<MediaDownloadManager>,
     private val socialRepository: Lazy<SocialRepository>,
-    private val soundFeedbackManager: Lazy<SoundFeedbackManager>,
-    private val hardResetRecorder: HardResetRecorder
+    private val sfxCacheCleaner: Lazy<SfxCacheCleaner>,
+    private val hardResetRecorder: HardResetRecorder,
+    private val gameRepository: Lazy<GameRepository>
 ) {
     private val sessionStateStore by lazy { SessionStateStore(context) }
 
@@ -152,12 +151,9 @@ class DatabaseAdminRepository @Inject constructor(
         )
         purgeDatabase(GameSource.entries, includeLocalCollections = true, clearImages = true)
         downloadManager.get().cleanAbandonedStaging()
-        soundFeedbackManager.get().clearSfxCache()
+        sfxCacheCleaner.get().clearSfxCache()
         if (!emulatorDownloadManager.get().clearApkCache()) {
             Log.w(TAG, "hardReset: emulator APK cache skipped, download became active mid-reset")
-        }
-        if (!steamContentManager.get().clearDownloadData()) {
-            Log.w(TAG, "hardReset: steam download data skipped, download became active mid-reset")
         }
         socialRepository.get().clearPresenceCovers()
         attributionRepository.refresh(force = true, deep = true)
@@ -222,7 +218,6 @@ class DatabaseAdminRepository @Inject constructor(
             return HardResetBlocker.ActiveDownloads
         }
         if (emulatorDownloadManager.get().hasActiveDownload()) return HardResetBlocker.EmulatorDownload
-        if (steamContentManager.get().hasBlockingDownloadState()) return HardResetBlocker.SteamDownload
         if (mediaDownloadManager.get().hasBlockingDownloadState()) return HardResetBlocker.MediaDownload
         return null
     }
@@ -316,7 +311,12 @@ class DatabaseAdminRepository @Inject constructor(
                         deleted++
                         continue
                     }
-                    val removed = if (file.isDirectory) file.deleteRecursively() else file.delete()
+                    val removed = if (file.isDirectory) {
+                        val platformDir = gameRepository.get().getDownloadDirForPlatformId(target.game.platformId)
+                        !FileNames.isWithin(platformDir, file) && file.deleteRecursively()
+                    } else {
+                        file.delete()
+                    }
                     if (removed) {
                         session.recordDeleted(target.game.id)
                         deleted++

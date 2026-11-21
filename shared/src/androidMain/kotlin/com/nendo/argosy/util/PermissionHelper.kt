@@ -46,19 +46,8 @@ actual class PermissionHelper @Inject constructor() {
         return fresh
     }
 
-    actual fun lastForegroundTimestamp(context: Context, packageName: String): Long? {
-        if (!hasUsageStatsPermission(context)) return null
-        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val now = System.currentTimeMillis()
-        val stats = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_BEST,
-            now - 24 * 60 * 60 * 1000L,
-            now
-        ) ?: return null
-        val target = stats.firstOrNull { it.packageName == packageName } ?: return null
-        val last = target.lastTimeUsed
-        return if (last <= 0) null else last
-    }
+    fun lastForegroundTimestamp(context: Context, packageName: String): Long? =
+        lastForegroundTimestamps(context, setOf(packageName))[packageName]
 
     /**
      * Last foreground time for each of [packageNames] that has any, from a single usage-stats
@@ -100,13 +89,16 @@ actual class PermissionHelper @Inject constructor() {
      * tracked separately because a package hands off between its own activities, and the one being
      * torn down can report STOPPED after its successor has already resumed.
      */
-    actual fun isPackageOnScreen(
-        context: Context,
-        packageName: String,
-        lookbackMs: Long): Boolean? {
+    fun isPackageOnScreen(context: Context, packageName: String): Boolean? {
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) return null
         if (!hasUsageStatsPermission(context)) return null
         val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        return ON_SCREEN_LOOKBACKS_MS.firstNotNullOfOrNull { lookbackMs ->
+            lastLifecycleOnScreen(usm, packageName, lookbackMs)
+        }
+    }
+
+    private fun lastLifecycleOnScreen(usm: UsageStatsManager, packageName: String, lookbackMs: Long): Boolean? {
         val now = System.currentTimeMillis()
         val events = usm.queryEvents(now - lookbackMs, now)
         val event = UsageEvents.Event()
@@ -139,7 +131,8 @@ actual class PermissionHelper @Inject constructor() {
     actual fun isPackageOnScreenOrRecent(
         context: Context,
         packageName: String,
-        recencyMs: Long): Boolean {
+        recencyMs: Long = RECENT_USE_WINDOW_MS
+    ): Boolean {
         isPackageOnScreen(context, packageName)?.let { return it }
         return isPackageInForeground(context, packageName, recencyMs)
     }
@@ -196,16 +189,44 @@ actual class PermissionHelper @Inject constructor() {
         actual val hasData: Boolean get() = foregroundMs >= 0 && screenOnMs >= 0
     }
 
-    actual fun getSessionDurations(context: Context, packageName: String, fromMs: Long, toMs: Long): SessionDurations {
+    /**
+     * The spans between [fromMs] and [toMs] when at least one activity of [packageName] was resumed,
+     * counting only [activityClass] when it is given. Null without usage access.
+     */
+    fun foregroundSpans(
+        context: Context,
+        packageName: String,
+        activityClass: String?,
+        fromMs: Long,
+        toMs: Long
+    ): List<LongRange>? {
+        if (!hasUsageStatsPermission(context)) return null
+        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val events = usageStatsManager.queryEvents(fromMs - SPAN_SEED_LOOKBACK_MS, toMs)
+        val event = UsageEvents.Event()
+        val transitions = ArrayList<ActivityTransition>()
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            if (event.packageName != packageName) continue
+            val className = event.className ?: continue
+            if (activityClass != null && className != activityClass) continue
+            when (event.eventType) {
+                UsageEvents.Event.MOVE_TO_FOREGROUND -> transitions += ActivityTransition(event.timeStamp, className, true)
+                UsageEvents.Event.MOVE_TO_BACKGROUND -> transitions += ActivityTransition(event.timeStamp, className, false)
+            }
+        }
+        return spansFromTransitions(transitions, fromMs, toMs)
+    }
+
+    data class ActivityTransition(val timestamp: Long, val className: String, val resumed: Boolean)
+
+    fun getSessionDurations(context: Context, packageName: String, fromMs: Long, toMs: Long): SessionDurations {
         if (!hasUsageStatsPermission(context)) return SessionDurations(-1, -1)
 
         val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val events = usageStatsManager.queryEvents(fromMs, toMs)
         val event = UsageEvents.Event()
 
-        // Assume active at window start: the launcher just launched the emulator
-        // with the screen on, so both are true at fromMs. If the first event is a
-        // transition away, the interval [fromMs, event] is correctly captured.
         var foregroundMs = 0L
         var lastForegroundTime: Long? = fromMs
         var hasAppEvents = false
@@ -217,7 +238,6 @@ actual class PermissionHelper @Inject constructor() {
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
 
-            // Screen interactive/non-interactive (API 29+)
             when (event.eventType) {
                 SCREEN_INTERACTIVE -> {
                     hasScreenEvents = true
@@ -234,7 +254,6 @@ actual class PermissionHelper @Inject constructor() {
                 }
             }
 
-            // App foreground/background
             if (event.packageName == packageName) {
                 when (event.eventType) {
                     UsageEvents.Event.MOVE_TO_FOREGROUND -> {
@@ -254,7 +273,6 @@ actual class PermissionHelper @Inject constructor() {
             }
         }
 
-        // Close open intervals at the end of the window
         if (lastForegroundTime != null) {
             foregroundMs += (toMs - lastForegroundTime).coerceAtLeast(0)
         }
@@ -262,19 +280,44 @@ actual class PermissionHelper @Inject constructor() {
             screenOnMs += (toMs - lastScreenOnTime).coerceAtLeast(0)
         }
 
-        // -1 signals "no data" so the caller can fall back to wall-clock time.
-        // With the fromMs initialization, no app events means emulator was in
-        // foreground the entire window (foregroundMs == totalMs). Return that
-        // directly -- it is the correct value, not a missing-data case.
-        // Only return -1 when we truly have no permission or no UsageStats access.
         val finalScreenOn = if (!hasScreenEvents) -1 else screenOnMs
 
         return SessionDurations(foregroundMs, finalScreenOn)
     }
 
-    actual companion object {
-        // UsageEvents.Event.SCREEN_INTERACTIVE / SCREEN_NON_INTERACTIVE (API 29+)
+    companion object {
+        const val RECENT_USE_WINDOW_MS = 15_000L
         private const val SCREEN_INTERACTIVE = 15
         private const val SCREEN_NON_INTERACTIVE = 16
+        private val ON_SCREEN_LOOKBACKS_MS = listOf(10 * 60 * 1000L, 12 * 60 * 60 * 1000L)
+
+        private const val SPAN_SEED_LOOKBACK_MS = 12 * 60 * 60 * 1000L
+
+        /**
+         * Spans within [fromMs]..[toMs] when at least one activity was resumed, from time-ordered
+         * [transitions] that may start before [fromMs] so the resumed set is known at [fromMs].
+         */
+        fun spansFromTransitions(transitions: List<ActivityTransition>, fromMs: Long, toMs: Long): List<LongRange> {
+            val resumed = HashSet<String>()
+            val spans = ArrayList<LongRange>()
+            var openedAt: Long? = null
+            fun close(at: Long) {
+                val start = openedAt ?: return
+                openedAt = null
+                val clippedStart = maxOf(start, fromMs)
+                val clippedEnd = minOf(at, toMs)
+                if (clippedStart <= clippedEnd) spans += clippedStart..clippedEnd
+            }
+            for (transition in transitions) {
+                if (transition.resumed) {
+                    if (resumed.isEmpty()) openedAt = transition.timestamp
+                    resumed += transition.className
+                } else if (resumed.remove(transition.className) && resumed.isEmpty()) {
+                    close(transition.timestamp)
+                }
+            }
+            close(toMs)
+            return spans
+        }
     }
 }

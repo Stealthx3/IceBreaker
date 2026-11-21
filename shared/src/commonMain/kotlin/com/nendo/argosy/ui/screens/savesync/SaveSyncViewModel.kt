@@ -7,8 +7,6 @@ import com.nendo.argosy.res.ArgosyR as R
 import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.local.dao.PendingConflictDao
 import com.nendo.argosy.data.local.dao.SaveCountByDevice
-import com.nendo.argosy.data.local.dao.SaveSyncDao
-import com.nendo.argosy.data.local.dao.getByIdsChunked
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.local.entity.PendingConflictEntity
 import com.nendo.argosy.data.local.entity.SaveSyncEntity
@@ -16,7 +14,6 @@ import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.remote.romm.ConnectionState
 import com.nendo.argosy.data.remote.romm.RomMDevice
 import com.nendo.argosy.data.remote.romm.RomMRepository
-import com.nendo.argosy.data.repository.SaveSyncApiClient
 import com.nendo.argosy.data.repository.SaveSyncRepository
 import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.sync.ConflictResolution
@@ -25,7 +22,6 @@ import com.nendo.argosy.data.sync.SaveAccessNotices
 import com.nendo.argosy.data.sync.SyncDirection
 import com.nendo.argosy.data.sync.SyncQueueManager
 import com.nendo.argosy.data.sync.SyncStatus
-import java.io.File
 import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
@@ -82,10 +78,7 @@ private const val ACTIVITY_DEBOUNCE_MS = 150L
 @HiltViewModel
 class SaveSyncViewModel @Inject constructor(
     @com.nendo.argosy.di.ApplicationContext private val context: com.nendo.argosy.platform.PlatformContext,
-    private val saveSyncDao: SaveSyncDao,
-    private val pendingConflictDao: PendingConflictDao,
     private val syncQueueManager: SyncQueueManager,
-    private val gameDao: GameDao,
     private val preferencesRepository: UserPreferencesRepository,
     private val romMRepository: RomMRepository,
     private val conflictResolutionService: ConflictResolutionService,
@@ -159,7 +152,7 @@ class SaveSyncViewModel @Inject constructor(
         val otherDevicesExpanded = values[10] as Boolean
         val gameIds = (saveRows.map { it.gameId } + conflicts.map { it.gameId } + queueState.operations.map { it.gameId })
             .distinct()
-        val gameById = if (gameIds.isEmpty()) emptyMap() else gameDao.getByIdsChunked(gameIds).associateBy { it.id }
+        val gameById = if (gameIds.isEmpty()) emptyMap() else gameRepository.getByIdsBatched(gameIds).associateBy { it.id }
         val artById = gameRepository.getArt(gameById.keys)
 
         val isConnected = connection is ConnectionState.Connected
@@ -268,7 +261,7 @@ class SaveSyncViewModel @Inject constructor(
                     platformDisplayName = game.platformSlug,
                     coverPath = artById[gameId]?.coverPath,
                     slots = entities
-                        .map { buildSaveSlotEntry(it, game, prefs.rommDeviceId) }
+                        .map { buildSaveSlotEntry(it, prefs.rommDeviceId) }
                         .sortedByDescending { it.lastSyncedAt ?: Instant.MIN }
                 )
             }
@@ -498,22 +491,21 @@ class SaveSyncViewModel @Inject constructor(
     private fun ownedConflicts() = preferencesRepository.preferences
         .map { it.rommUserId }
         .distinctUntilChanged()
-        .flatMapLatest { pendingConflictDao.observeOpenConflicts(PendingConflictEntity.ownerScope(it)) }
+        .flatMapLatest { conflictResolutionService.observeOpenConflicts(it) }
 
     private fun ownedSaveRows() = preferencesRepository.preferences
         .map { it.rommUserId }
         .distinctUntilChanged()
-        .flatMapLatest { saveSyncDao.observeAll(it) }
+        .flatMapLatest { saveSyncRepository.observeSaveRows(it) }
 
     private fun ownedDeviceCounts() = preferencesRepository.preferences
         .map { it.rommUserId }
         .distinctUntilChanged()
-        .flatMapLatest { saveSyncDao.observeSaveCountsByDevice(it) }
+        .flatMapLatest { saveSyncRepository.observeSaveCountsByDevice(it) }
 
     private fun resolveAttention(conflictId: Long, resolution: ConflictResolution) {
         viewModelScope.launch {
-            val conflict = pendingConflictDao.getById(conflictId) ?: return@launch
-            conflictResolutionService.resolve(conflict, resolution)
+            conflictResolutionService.resolveById(conflictId, resolution)
         }
     }
 
@@ -531,7 +523,7 @@ class SaveSyncViewModel @Inject constructor(
             platformDisplayName = game.platformSlug,
             coverPath = coverPath,
             channelName = conflict.slot,
-            channelDisplay = effectiveChannelLabel(conflict.slot, game),
+            channelDisplay = effectiveChannelLabel(conflict.slot),
             localTime = conflict.localUpdatedAt,
             serverTime = conflict.serverUpdatedAt,
             localDeviceName = thisDeviceName,
@@ -546,7 +538,6 @@ class SaveSyncViewModel @Inject constructor(
 
     private fun buildSaveSlotEntry(
         entity: SaveSyncEntity,
-        game: GameEntity,
         thisDeviceId: String?
     ): SaveSlotEntry {
         val isThisDevice = entity.lastSyncDeviceId != null && entity.lastSyncDeviceId == thisDeviceId
@@ -555,7 +546,7 @@ class SaveSyncViewModel @Inject constructor(
         return SaveSlotEntry(
             saveSyncId = entity.id,
             channelName = entity.channelName,
-            channelDisplay = effectiveChannelLabel(entity.channelName, game),
+            channelDisplay = effectiveChannelLabel(entity.channelName),
             syncStatus = entity.syncStatus,
             lastSyncedAt = entity.lastSyncedAt,
             localUpdatedAt = entity.localUpdatedAt,
@@ -566,15 +557,7 @@ class SaveSyncViewModel @Inject constructor(
         )
     }
 
-    private fun effectiveChannelLabel(channelName: String?, game: GameEntity): String {
-        val autosaveLabel = context.getString(R.string.savesync_channel_autosave)
-        if (channelName.isNullOrBlank()) return context.getString(R.string.savesync_channel_archived)
-        if (channelName.equals(SaveSyncApiClient.AUTOSAVE_SLOT_NAME, ignoreCase = true)) return autosaveLabel
-        if (channelName.equals(SaveSyncApiClient.DEFAULT_SAVE_NAME, ignoreCase = true)) return autosaveLabel
-        if (channelName.equals(game.title, ignoreCase = true)) return autosaveLabel
-        val romBaseName = game.localPath?.let { File(it).nameWithoutExtension }
-        if (romBaseName != null && channelName.equals(romBaseName, ignoreCase = true)) return autosaveLabel
-        return channelName
-    }
+    private fun effectiveChannelLabel(channelName: String?): String =
+        channelName?.takeUnless { it.isBlank() } ?: context.getString(R.string.savesync_channel_archived)
 }
 

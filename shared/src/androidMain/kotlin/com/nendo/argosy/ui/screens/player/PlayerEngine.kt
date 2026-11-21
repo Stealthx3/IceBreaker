@@ -88,6 +88,9 @@ actual class PlayerEngine @Inject constructor(
                     true
                 )
                 setWakeMode(C.WAKE_MODE_NETWORK)
+                trackSelectionParameters = trackSelectionParameters.buildUpon()
+                    .setPreferredVideoMimeType(MimeTypes.VIDEO_DOLBY_VISION)
+                    .build()
                 addListener(listener)
             }
     }

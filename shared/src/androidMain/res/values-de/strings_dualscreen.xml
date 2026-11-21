@@ -57,7 +57,7 @@
     <string name="dual_companion_saves_dirty">Neue Spielstanddaten</string>
     <string name="dual_companion_saves_synced">Spielstände synchronisiert</string>
 
-    <string name="dual_companion_app_drawer_title">Alle Apps</string>
+    <string name="dual_companion_app_drawer_title">Apps</string>
     <string name="dual_companion_app_bar_keyboard_description">Tastatur</string>
     <string name="dual_companion_app_bar_swap_description">Bildschirme tauschen</string>
     <string name="dual_companion_app_bar_focus_description">Eingabe an einen Bildschirm senden</string>
@@ -110,7 +110,7 @@
 
     <string name="dual_home_hint_app_bar_select">Auswählen</string>
     <string name="dual_home_hint_app_bar_open_top">Oben öffnen</string>
-    <string name="dual_home_hint_app_bar_all_apps">Alle Apps</string>
+    <string name="dual_home_hint_app_bar_all_apps">Apps</string>
 
     <string name="dual_home_hint_carousel_platform">Plattform</string>
     <string name="dual_home_hint_carousel_details">Details</string>
@@ -161,6 +161,7 @@
     <string name="dual_media_episodes_empty_title">Noch keine Episoden</string>
 
     <string name="dual_media_cast_header">Besetzung</string>
+    <string name="dual_media_related_header">Ähnliche Titel</string>
     <string name="dual_media_browse_back_description">Zurück</string>
     <plurals name="dual_media_browse_episode_count">
         <item quantity="one">%d Episode</item>
@@ -432,7 +433,6 @@
     <string name="dual_detail_file_picker_choose_title">Dateien auswählen</string>
 
     <string name="dual_detail_steam_install_heading">INSTALLATIONSORT</string>
-    <string name="dual_detail_steam_install_argosy">Über Argosy herunterladen</string>
     <string name="dual_detail_steam_install_external">Als installiert markieren</string>
     <string name="dual_detail_steam_install_managed_by">Verwaltet von %1$s</string>
 

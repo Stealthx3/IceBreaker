@@ -25,6 +25,7 @@ import com.nendo.argosy.platform.filesDir
 import com.nendo.argosy.platform.getQuantityString
 import com.nendo.argosy.platform.getString
 import com.nendo.argosy.platform.resources
+import com.nendo.argosy.data.storage.FileAccessLayer
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.di.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -33,14 +34,13 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import java.io.File
-import java.io.FileOutputStream
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class GpuDriverManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    private val fal: FileAccessLayer
 ) {
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -51,6 +51,9 @@ class GpuDriverManager @Inject constructor(
         private const val TAG = "GpuDriverManager"
         private const val GITHUB_API_URL = "https://api.github.com/repos/MrPurple666/purple-turnip/releases/latest"
         private const val GPU_MODEL_PATH = "/sys/class/kgsl/kgsl-3d0/gpu_model"
+        private const val DRIVER_PACKAGE_SUFFIX = ".adpkg"
+        private const val DRIVERS_DIR = "gpu_drivers"
+        private const val CONFIG_FILE = "config/config.ini"
 
         private val SUPPORTED_ADRENO_GPUS = setOf(
             "Adreno730",   // SD8 Gen 1
@@ -62,7 +65,6 @@ class GpuDriverManager @Inject constructor(
 
     data class DriverInfo(
         val name: String,
-        val version: String,
         val downloadUrl: String,
         val fileName: String
     )
@@ -104,8 +106,7 @@ class GpuDriverManager @Inject constructor(
                     val fileName = asset.getString("name")
                     if (fileName.endsWith(".adpkg.zip")) {
                         return@withContext DriverInfo(
-                            name = releaseName,
-                            version = tagName,
+                            name = releaseName.removeSuffix(DRIVER_PACKAGE_SUFFIX),
                             downloadUrl = asset.getString("browser_download_url"),
                             fileName = fileName
                         )
@@ -126,10 +127,7 @@ class GpuDriverManager @Inject constructor(
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             val edenBasePath = BiosPathRegistry.getEdenDataPath(edenPackage)
-            val driversDir = File(edenBasePath, "gpu_drivers")
-            if (!driversDir.exists()) driversDir.mkdirs()
-
-            val targetFile = File(driversDir, driverInfo.fileName)
+            val targetPath = "${requireDriversDir(edenBasePath)}/${driverInfo.fileName}"
 
             Logger.info(TAG, "Downloading GPU driver: ${driverInfo.downloadUrl}")
 
@@ -146,7 +144,9 @@ class GpuDriverManager @Inject constructor(
                 val body = response.body ?: return@withContext false
                 val contentLength = body.contentLength()
 
-                FileOutputStream(targetFile).use { output ->
+                val target = fal.getOutputStream(targetPath)
+                    ?: throw java.io.IOException("Cannot write $targetPath")
+                target.use { output ->
                     body.byteStream().use { input ->
                         val buffer = ByteArray(8192)
                         var downloaded = 0L
@@ -161,9 +161,10 @@ class GpuDriverManager @Inject constructor(
                 }
             }
 
-            Logger.info(TAG, "Driver downloaded to: ${targetFile.absolutePath}")
+            Logger.info(TAG, "Driver downloaded to: $targetPath")
 
-            updateEdenConfig(edenBasePath, targetFile.absolutePath)
+            updateEdenConfig(edenBasePath, targetPath)
+            requireCommitted(edenBasePath)
 
             true
         } catch (e: Exception) {
@@ -172,13 +173,32 @@ class GpuDriverManager @Inject constructor(
         }
     }
 
-    private fun updateEdenConfig(edenBasePath: String, driverPath: String) {
-        val configFile = File(edenBasePath, "config/config.ini")
+    private fun requireDriversDir(edenBasePath: String): String {
+        val driversDir = "$edenBasePath/$DRIVERS_DIR"
+        if (!fal.mkdirs(driversDir) && !fal.isDirectory(driversDir)) {
+            throw java.io.IOException("Cannot create $driversDir")
+        }
+        return driversDir
+    }
 
-        if (!configFile.exists()) {
+    private fun requireCommitted(edenBasePath: String) {
+        val paths = arrayOf("$edenBasePath/$DRIVERS_DIR", "$edenBasePath/${CONFIG_FILE.substringBeforeLast('/')}")
+        if (!fal.commitSaveAccess(*paths)) {
+            throw java.io.IOException("Cannot copy into Eden's folder | paths=${paths.joinToString()}")
+        }
+    }
+
+    private fun readEdenConfig(edenBasePath: String): List<String>? =
+        fal.readBytes("$edenBasePath/$CONFIG_FILE")?.toString(Charsets.UTF_8)?.lines()
+
+    private fun updateEdenConfig(edenBasePath: String, driverPath: String) {
+        val configPath = "$edenBasePath/$CONFIG_FILE"
+        val existing = readEdenConfig(edenBasePath)
+
+        if (existing == null) {
             Logger.warn(TAG, "Eden config not found, creating minimal config")
-            configFile.parentFile?.mkdirs()
-            configFile.writeText("""
+            fal.mkdirs(configPath.substringBeforeLast('/'))
+            writeEdenConfig(configPath, """
                 [GpuDriver]
                 driver_path\default=false
                 driver_path=$driverPath
@@ -186,7 +206,7 @@ class GpuDriverManager @Inject constructor(
             return
         }
 
-        val lines = configFile.readLines().toMutableList()
+        val lines = existing.toMutableList()
         var inGpuDriverSection = false
         var driverPathIndex = -1
         var driverPathDefaultIndex = -1
@@ -233,24 +253,29 @@ class GpuDriverManager @Inject constructor(
             }
         }
 
-        configFile.writeText(lines.joinToString("\n"))
+        writeEdenConfig(configPath, lines.joinToString("\n"))
         Logger.info(TAG, "Updated Eden config with driver path: $driverPath")
     }
 
-    fun installDriverFromFile(filePath: String, edenPackage: String): Boolean {
-        return try {
+    private fun writeEdenConfig(configPath: String, content: String) {
+        if (!fal.writeBytes(configPath, content.toByteArray(Charsets.UTF_8))) {
+            throw java.io.IOException("Cannot write $configPath")
+        }
+    }
+
+    suspend fun installDriverFromFile(filePath: String, edenPackage: String): Boolean = withContext(Dispatchers.IO) {
+        try {
             val edenBasePath = BiosPathRegistry.getEdenDataPath(edenPackage)
-            val driversDir = File(edenBasePath, "gpu_drivers")
-            if (!driversDir.exists()) driversDir.mkdirs()
+            val targetPath = "${requireDriversDir(edenBasePath)}/${File(filePath).name}"
 
-            val sourceFile = File(filePath)
-            val targetFile = File(driversDir, sourceFile.name)
+            if (!fal.copyFile(filePath, targetPath)) {
+                throw java.io.IOException("Cannot copy $filePath to $targetPath")
+            }
 
-            sourceFile.copyTo(targetFile, overwrite = true)
+            Logger.info(TAG, "Driver copied to: $targetPath")
 
-            Logger.info(TAG, "Driver copied to: ${targetFile.absolutePath}")
-
-            updateEdenConfig(edenBasePath, targetFile.absolutePath)
+            updateEdenConfig(edenBasePath, targetPath)
+            requireCommitted(edenBasePath)
 
             true
         } catch (e: Exception) {
@@ -259,24 +284,16 @@ class GpuDriverManager @Inject constructor(
         }
     }
 
-    fun getInstalledDriverPath(edenPackage: String): String? {
+    suspend fun hasInstalledDriver(edenPackage: String): Boolean = withContext(Dispatchers.IO) {
         val edenBasePath = BiosPathRegistry.getEdenDataPath(edenPackage)
-        val configFile = File(edenBasePath, "config/config.ini")
-
-        if (!configFile.exists()) return null
-
-        return try {
-            configFile.readLines()
-                .firstOrNull { it.trim().startsWith("driver_path=") && !it.contains("default") }
-                ?.substringAfter("=")
-                ?.trim()
-                ?.takeIf { File(it).exists() }
-        } catch (e: Exception) {
-            null
-        }
+        val hasDriverFile = fal.fileSizes("$edenBasePath/$DRIVERS_DIR").orEmpty().isNotEmpty()
+        hasDriverFile || configuredDriverPath(edenBasePath) != null
     }
 
-    fun hasInstalledDriver(edenPackage: String): Boolean {
-        return getInstalledDriverPath(edenPackage) != null
-    }
+    private fun configuredDriverPath(edenBasePath: String): String? =
+        readEdenConfig(edenBasePath)
+            ?.firstOrNull { it.trim().startsWith("driver_path=") }
+            ?.substringAfter("=")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() && fal.exists(it) }
 }

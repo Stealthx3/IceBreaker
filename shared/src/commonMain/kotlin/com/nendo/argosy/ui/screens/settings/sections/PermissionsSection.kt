@@ -22,6 +22,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Accessibility
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Lock
@@ -42,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.nendo.argosy.res.stringResource
 import com.nendo.argosy.res.ArgosyR as R
+import com.nendo.argosy.ui.common.cardDescriptionRes
 import com.nendo.argosy.ui.components.FocusedScroll
 import com.nendo.argosy.ui.components.PermissionCard
 import com.nendo.argosy.ui.screens.settings.PermissionsState
@@ -71,19 +74,24 @@ internal sealed class PermissionsItem(
         visibleWhen = { it.isScreenCaptureRelevant && !it.sandboxSupported }
     )
     data object DisplayOverlay : PermissionsItem("displayOverlay", visibleWhen = { !it.sandboxSupported })
+    data object AccessibilityService : PermissionsItem("accessibilityService", visibleWhen = { !it.sandboxSupported })
     data object LiveWallpaper : PermissionsItem(
         key = "liveWallpaper",
         visibleWhen = { it.isLiveWallpaperRelevant && !it.sandboxSupported }
     )
     class Sandbox(val permission: SandboxPermission) :
         PermissionsItem("sandbox_${permission.name}", visibleWhen = { it.sandboxSupported })
+    data object PrivilegedAccess : PermissionsItem(
+        key = "privilegedAccess",
+        visibleWhen = { it.privilegedRoute != null }
+    )
     data object StatusFooter : PermissionsItem("statusFooter")
 
     companion object {
         val ALL: List<PermissionsItem>
             get() = listOf(
                 InfoText, StorageAccess, UsageStats, Notifications, WriteSettings, ScreenCapture, DisplayOverlay,
-                LiveWallpaper
+                AccessibilityService, LiveWallpaper, PrivilegedAccess
             ) + SANDBOX_ITEMS + StatusFooter
 
         private val SANDBOX_ITEMS = SandboxPermission.entries.map(::Sandbox)
@@ -101,8 +109,10 @@ internal fun PermissionsItem.confirm(viewModel: SettingsViewModel) {
         PermissionsItem.WriteSettings -> viewModel.openWriteSettings()
         PermissionsItem.ScreenCapture -> viewModel.requestScreenCapturePermission()
         PermissionsItem.DisplayOverlay -> viewModel.openDisplayOverlaySettings()
+        PermissionsItem.AccessibilityService -> viewModel.openAccessibilitySettings()
         PermissionsItem.LiveWallpaper -> viewModel.openLiveWallpaperPicker()
         is PermissionsItem.Sandbox -> viewModel.requestSandboxGrant(permission)
+        PermissionsItem.PrivilegedAccess -> viewModel.enablePrivilegedAccess()
         PermissionsItem.InfoText, PermissionsItem.StatusFooter -> Unit
     }
 }
@@ -213,6 +223,15 @@ fun PermissionsSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                     onClick = { item.confirm(viewModel) }
                 )
 
+                PermissionsItem.AccessibilityService -> PermissionCard(
+                    icon = Icons.Default.Accessibility,
+                    title = stringResource(R.string.settings_permissions_accessibility_title),
+                    description = stringResource(R.string.settings_permissions_accessibility_description),
+                    isGranted = permissions.hasAccessibilityService,
+                    isFocused = isFocused(item),
+                    onClick = { item.confirm(viewModel) }
+                )
+
                 PermissionsItem.LiveWallpaper -> PermissionCard(
                     icon = Icons.Default.Wallpaper,
                     title = stringResource(R.string.settings_permissions_live_wallpaper_title),
@@ -242,6 +261,17 @@ fun PermissionsSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                         onClick = { item.confirm(viewModel) }
                     )
                 }
+                PermissionsItem.PrivilegedAccess -> PermissionCard(
+                    icon = Icons.Default.AdminPanelSettings,
+                    title = stringResource(
+                        R.string.settings_permissions_privileged_title,
+                        permissions.privilegedRoute?.productName.orEmpty()
+                    ),
+                    description = stringResource(permissions.privilegedReach.cardDescriptionRes),
+                    isGranted = permissions.privilegedReach.isReady,
+                    isFocused = isFocused(item),
+                    onClick = { item.confirm(viewModel) }
+                )
 
                 PermissionsItem.StatusFooter -> Column {
                     Spacer(modifier = Modifier.height(Dimens.spacingMd))

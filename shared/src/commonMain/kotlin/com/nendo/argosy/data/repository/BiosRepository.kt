@@ -25,10 +25,12 @@ import com.nendo.argosy.platform.filesDir
 import com.nendo.argosy.platform.getQuantityString
 import com.nendo.argosy.platform.getString
 import com.nendo.argosy.platform.resources
+import com.nendo.argosy.data.emulator.BiosPathConfig
 import com.nendo.argosy.data.emulator.BiosPathRegistry
 import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.emulator.SwitchKeyManager
 import com.nendo.argosy.data.local.dao.FirmwareDao
+import com.nendo.argosy.data.local.dao.getDownloadedForPlatformFamily
 import com.nendo.argosy.data.platform.PlatformDefinitions
 import com.nendo.argosy.data.local.dao.PlatformDao
 import com.nendo.argosy.data.local.entity.FirmwareEntity
@@ -36,9 +38,11 @@ import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.remote.romm.RomMApi
 import com.nendo.argosy.data.remote.romm.RomMFirmware
 import com.nendo.argosy.data.remote.romm.RomMResult
+import com.nendo.argosy.data.storage.FileAccessLayer
 import com.nendo.argosy.data.storage.StorageAttributionRepository
 import com.nendo.argosy.data.storage.StorageCategory
 import com.nendo.argosy.util.AppPaths
+import com.nendo.argosy.util.FileNames
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.di.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +52,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
@@ -57,17 +63,20 @@ import java.nio.ByteOrder
 import java.security.MessageDigest
 import java.time.Instant
 import java.util.UUID
+import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG = "BiosRepository"
-private const val XBOX_EMULATOR_ID = "hakux"
 private const val BIOS_INTERNAL_DIR = "bios"
 private const val FIRMWARE_STALL_TIMEOUT_MS = 90_000L
 private const val FIRMWARE_PART_SUFFIX = ".part"
 private const val FIRMWARE_DOWNLOAD_ATTEMPTS = 6
 private const val HTTP_PARTIAL_CONTENT = 206
+private const val EDEN_EMULATOR_ID = "eden"
+private const val SWITCH_SLUG = "switch"
+private const val SWITCH_INSTALLED_FILES = 2
 
 data class BiosPlatformStatus(
     val platformSlug: String,
@@ -132,9 +141,10 @@ class BiosRepository @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val switchKeyManager: SwitchKeyManager,
     private val attributionRepository: StorageAttributionRepository,
-    private val xboxDiskImageProvisioner: com.nendo.argosy.data.sync.xbox.XboxDiskImageProvisioner
+    private val fal: FileAccessLayer
 ) {
     private var api: RomMApi? = null
+    private val firmwareRowsLock = Mutex()
 
     fun setApi(api: RomMApi?) {
         this.api = api
@@ -180,7 +190,7 @@ class BiosRepository @Inject constructor(
     private suspend fun getActiveBiosPlatformDir(platformSlug: String): File {
         val customPath = userPreferencesRepository.preferences.first().customBiosPath
         val base = if (customPath != null) resolveBiosDir(customPath) else getInternalBiosDir()
-        val dir = File(base, platformSlug)
+        val dir = File(base, FileNames.sanitize(platformSlug))
         if (!dir.exists()) dir.mkdirs()
         return dir
     }
@@ -216,14 +226,29 @@ class BiosRepository @Inject constructor(
         platformSlug: String,
         firmware: List<RomMFirmware>
     ) = withContext(Dispatchers.IO) {
-        if (firmware.isEmpty()) {
-            Logger.debug(TAG, "No firmware for platform $platformSlug")
-            return@withContext
+        firmwareRowsLock.withLock { reconcilePlatformFirmware(platformId, platformSlug, firmware) }
+    }
+
+    private suspend fun reconcilePlatformFirmware(
+        platformId: Long,
+        platformSlug: String,
+        firmware: List<RomMFirmware>
+    ) {
+        val offered = firmware.filterNot { BiosPathRegistry.isRetiredFirmware(it.fileName) }
+        val (missing, available) = offered.partition { it.missingFromFs }
+        val heldWhileMissing = missing.filter { firmwareDao.getByRommId(it.id)?.localPath != null }.map { it.id }
+        if (missing.isNotEmpty()) {
+            Logger.info(TAG, "Skipping ${missing.size} firmware files missing from the server for $platformSlug, keeping ${heldWhileMissing.size} already downloaded")
+        }
+        if (available.isEmpty() && heldWhileMissing.isEmpty()) {
+            Logger.info(TAG, "No firmware available for $platformSlug, clearing its entries")
+            firmwareDao.deleteByPlatform(platformId)
+            return
         }
 
-        Logger.info(TAG, "Syncing ${firmware.size} firmware files for $platformSlug")
+        Logger.info(TAG, "Syncing ${available.size} firmware files for $platformSlug")
 
-        val entities = firmware.map { fw ->
+        val entities = available.map { fw ->
             val existing = firmwareDao.getByRommId(fw.id)
             FirmwareEntity(
                 id = existing?.id ?: 0,
@@ -241,8 +266,32 @@ class BiosRepository @Inject constructor(
             )
         }
 
-        firmwareDao.upsertAll(entities)
-        firmwareDao.deleteRemovedFirmware(platformId, firmware.map { it.id })
+        if (entities.isNotEmpty()) firmwareDao.upsertAll(entities)
+        firmwareDao.deleteRemovedFirmware(platformId, available.map { it.id } + heldWhileMissing)
+    }
+
+    /**
+     * Deletes firmware no supported emulator reads from Argosy's own BIOS folders, finished or
+     * partial, along with its rows. The server's copy is never touched.
+     */
+    suspend fun purgeRetiredFirmware() = withContext(Dispatchers.IO) {
+        firmwareRowsLock.withLock {
+            val retiredRows = firmwareDao.getAll().filter { BiosPathRegistry.isRetiredFirmware(it.fileName) }
+            if (retiredRows.isNotEmpty()) firmwareDao.deleteByIds(retiredRows.map { it.id })
+
+            val freed = biosRootsArgosyWritesTo()
+                .flatMap { root -> File(root).listFiles()?.filter { it.isDirectory }.orEmpty() }
+                .flatMap { platformDir -> platformDir.listFiles()?.filter { it.isFile }.orEmpty() }
+                .filter { BiosPathRegistry.isRetiredFirmware(it.name.removeSuffix(FIRMWARE_PART_SUFFIX)) }
+                .sumOf { file ->
+                    val size = file.length()
+                    if (file.delete()) size else 0L.also { Logger.warn(TAG, "Could not delete retired firmware $file") }
+                }
+            if (freed > 0 || retiredRows.isNotEmpty()) {
+                Logger.info(TAG, "Purged retired firmware: ${retiredRows.size} rows, $freed bytes freed")
+                attributionRepository.markDirty(StorageCategory.BIOS)
+            }
+        }
     }
 
     suspend fun downloadFirmware(
@@ -261,8 +310,9 @@ class BiosRepository @Inject constructor(
         }
 
         val platformDir = getActiveBiosPlatformDir(firmware.platformSlug)
-        val targetFile = File(platformDir, firmware.fileName)
-        val partFile = File(platformDir, "${firmware.fileName}$FIRMWARE_PART_SUFFIX")
+        val diskName = FileNames.sanitize(firmware.fileName)
+        val targetFile = File(platformDir, diskName)
+        val partFile = File(platformDir, "$diskName$FIRMWARE_PART_SUFFIX")
 
         val expectedBytes = firmware.fileSizeBytes
 
@@ -369,14 +419,21 @@ class BiosRepository @Inject constructor(
                 }
             }
 
-            targetFile.delete()
-            if (!partFile.renameTo(targetFile)) {
-                partFile.delete()
-                Logger.error(TAG, "Could not move ${firmware.fileName} into place")
-                return@withContext BiosDownloadResult.Error("Could not save the downloaded file")
+            firmwareRowsLock.withLock {
+                val current = firmwareDao.getByRommId(firmware.rommId)
+                if (current == null) {
+                    partFile.delete()
+                    Logger.info(TAG, "Dropped ${firmware.fileName}: the server stopped offering it during the download")
+                    return@withContext BiosDownloadResult.Error("No longer offered by the server")
+                }
+                targetFile.delete()
+                if (!partFile.renameTo(targetFile)) {
+                    partFile.delete()
+                    Logger.error(TAG, "Could not move ${firmware.fileName} into place")
+                    return@withContext BiosDownloadResult.Error("Could not save the downloaded file")
+                }
+                firmwareDao.updateLocalPath(current.id, targetFile.absolutePath, Instant.now())
             }
-
-            firmwareDao.updateLocalPath(firmware.id, targetFile.absolutePath, Instant.now())
             Logger.info(TAG, "Downloaded firmware: ${firmware.fileName}")
 
             attributionRepository.markDirty(StorageCategory.BIOS)
@@ -498,9 +555,10 @@ class BiosRepository @Inject constructor(
             cleaned++
         }
 
+        val heldByEnabledPlatforms = copiesHeldByEnabledPlatforms()
         for (slug in platformSlugs) {
-            cleanupDistributedCopies(slug)
-            val platformDir = File(getInternalBiosDir(), slug)
+            cleanupDistributedCopies(slug, heldByEnabledPlatforms)
+            val platformDir = File(getInternalBiosDir(), FileNames.sanitize(slug))
             if (platformDir.exists()) platformDir.deleteRecursively()
         }
 
@@ -526,37 +584,53 @@ class BiosRepository @Inject constructor(
         target.delete()
     }
 
-    private suspend fun cleanupDistributedCopies(platformSlug: String) {
+    private fun distributionDirs(config: BiosPathConfig): List<File> =
+        if (config.emulatorId == EmulatorRegistry.BUILTIN_PACKAGE) {
+            listOf(getLibretroSystemDir())
+        } else {
+            config.defaultPaths.map { File(it) }
+        }
+
+    private fun distributedCopyCandidates(
+        dir: File,
+        config: BiosPathConfig,
+        firmware: FirmwareEntity,
+        canonicalSlug: String
+    ): List<File> = listOfNotNull(
+        File(dir, FileNames.sanitize(firmware.fileName)),
+        File(dir, FileNames.sanitizeRelativePath(config.targetNameFor(firmware.fileName))),
+        BiosPathRegistry.getNestedBiosPath(firmware.fileName)?.let { File(dir, it) },
+        BiosPathRegistry.getBuiltinPlatformBiosPath(canonicalSlug, firmware.fileName)
+            ?.takeIf { config.emulatorId == EmulatorRegistry.BUILTIN_PACKAGE }
+            ?.let { File(dir, FileNames.sanitizeRelativePath(it)) },
+        BiosPathRegistry.getRetroArchBiosName(firmware.md5Hash)?.let { File(dir, it) }
+    )
+
+    private suspend fun copiesHeldByEnabledPlatforms(): Set<File> =
+        firmwareDao.getSyncEnabledAll()
+            .filter { it.localPath != null }
+            .flatMapTo(mutableSetOf()) { firmware ->
+                val canonicalSlug = PlatformDefinitions.getCanonicalSlug(firmware.platformSlug)
+                BiosPathRegistry.getUnpromptedEmulatorsForPlatform(canonicalSlug).flatMap { config ->
+                    distributionDirs(config).flatMap { dir ->
+                        distributedCopyCandidates(dir, config, firmware, canonicalSlug)
+                    }
+                }
+            }
+
+    private suspend fun cleanupDistributedCopies(platformSlug: String, heldByEnabledPlatforms: Set<File>) {
         val firmwareFiles = firmwareDao.getByPlatformSlug(platformSlug)
         val canonicalSlug = PlatformDefinitions.getCanonicalSlug(platformSlug)
         val emulators = BiosPathRegistry.getUnpromptedEmulatorsForPlatform(canonicalSlug)
 
         for (config in emulators) {
-            val isBuiltin = config.emulatorId == EmulatorRegistry.BUILTIN_PACKAGE
-            val dirs = if (isBuiltin) {
-                listOf(getLibretroSystemDir())
-            } else {
-                config.defaultPaths.map { File(it) }
-            }
-
-            for (dir in dirs) {
+            for (dir in distributionDirs(config)) {
                 if (!dir.exists()) continue
                 for (firmware in firmwareFiles) {
-                    if (config.isWriteOnce(firmware.fileName)) continue
                     try {
-                        deleteDistributedCopy(File(dir, firmware.fileName), firmware)
-                        deleteDistributedCopy(File(dir, config.targetNameFor(firmware.fileName)), firmware)
-                        BiosPathRegistry.getNestedBiosPath(firmware.fileName)?.let { nested ->
-                            deleteDistributedCopy(File(dir, nested), firmware)
-                        }
-                        BiosPathRegistry.getBuiltinPlatformBiosPath(canonicalSlug, firmware.fileName)
-                            ?.takeIf { isBuiltin }
-                            ?.let { deleteDistributedCopy(File(dir, it), firmware) }
-                        firmware.md5Hash?.let { md5 ->
-                            BiosPathRegistry.getRetroArchBiosName(md5)?.let { raName ->
-                                deleteDistributedCopy(File(dir, raName), firmware)
-                            }
-                        }
+                        distributedCopyCandidates(dir, config, firmware, canonicalSlug)
+                            .filterNot { it in heldByEnabledPlatforms }
+                            .forEach { deleteDistributedCopy(it, firmware) }
                     } catch (e: Exception) {
                         Logger.debug(TAG, "Could not clean distributed BIOS ${firmware.fileName} from $dir: ${e.message}")
                     }
@@ -569,12 +643,25 @@ class BiosRepository @Inject constructor(
         platformSlug: String,
         emulatorId: String
     ): Int = withContext(Dispatchers.IO) {
-        val config = BiosPathRegistry.getEmulatorBiosPaths(emulatorId) ?: return@withContext 0
-        val canonicalSlug = PlatformDefinitions.getCanonicalSlug(platformSlug)
-        if (!config.supports(canonicalSlug)) return@withContext 0
+        copyFirmwareToEmulator(platformSlug, emulatorId, firmwareDao.getDownloadedForPlatformFamily(platformSlug))
+    }
 
-        val downloaded = firmwareDao.getByPlatformSlug(platformSlug).filter { it.localPath != null }
-        if (downloaded.isEmpty()) return@withContext 0
+    private suspend fun distributeOwnFirmware(platformSlug: String, emulatorId: String): Int =
+        copyFirmwareToEmulator(
+            platformSlug,
+            emulatorId,
+            firmwareDao.getByPlatformSlug(platformSlug).filter { it.localPath != null }
+        )
+
+    private fun copyFirmwareToEmulator(
+        platformSlug: String,
+        emulatorId: String,
+        downloaded: List<FirmwareEntity>
+    ): Int {
+        val config = BiosPathRegistry.getEmulatorBiosPaths(emulatorId) ?: return 0
+        val canonicalSlug = PlatformDefinitions.getCanonicalSlug(platformSlug)
+        if (!config.supports(canonicalSlug)) return 0
+        if (downloaded.isEmpty()) return 0
 
         val isBuiltin = emulatorId == EmulatorRegistry.BUILTIN_PACKAGE
         val requiresExactFilenames = emulatorId.startsWith("retroarch") ||
@@ -609,11 +696,12 @@ class BiosRepository @Inject constructor(
                     config.targetNameFor(firmware.fileName)
                 }
 
-                val targetFile = File(targetDir, targetFileName)
-                if (config.isWriteOnce(firmware.fileName) && targetFile.exists()) {
-                    Logger.debug(TAG, "Keeping existing ${targetFile.name}; it is written once")
+                val relativeTarget = FileNames.sanitizeRelativePath(targetFileName)
+                if (relativeTarget.isEmpty()) {
+                    Logger.debug(TAG, "Skipped ${firmware.fileName}: target name $targetFileName folds to nothing")
                     continue
                 }
+                val targetFile = File(targetDir, relativeTarget)
                 try {
                     targetFile.parentFile?.mkdirs()
                     sourceFile.copyTo(targetFile, overwrite = true)
@@ -627,19 +715,7 @@ class BiosRepository @Inject constructor(
             if (copiedCount > 0) break
         }
 
-        provisionXboxDiskImage(emulatorId, targetPaths)
-        copiedCount
-    }
-
-    /**
-     * hakuX cannot boot without a hard disk, and unlike the flash ROM and MCPX that disk holds
-     * nothing copyrighted, so a blank one is generated rather than demanded from the user. An
-     * image already in place is left alone; it is where their saves live.
-     */
-    private suspend fun provisionXboxDiskImage(emulatorId: String, targetPaths: List<String>) {
-        if (emulatorId != XBOX_EMULATOR_ID) return
-        targetPaths.firstOrNull { File(it).isDirectory }
-            ?.let { xboxDiskImageProvisioner.ensureImageExists(it) }
+        return copiedCount
     }
 
     suspend fun distributeAllBiosToEmulators(): Map<String, Int> = withContext(Dispatchers.IO) {
@@ -649,7 +725,7 @@ class BiosRepository @Inject constructor(
         for (slug in platformSlugs) {
             val emulators = BiosPathRegistry.getUnpromptedEmulatorsForPlatform(slug)
             for (config in emulators) {
-                val count = distributeBiosToEmulator(slug, config.emulatorId)
+                val count = distributeOwnFirmware(slug, config.emulatorId)
                 if (count > 0) {
                     results[config.emulatorId] = (results[config.emulatorId] ?: 0) + count
                 }
@@ -659,9 +735,12 @@ class BiosRepository @Inject constructor(
         results
     }
 
+    enum class DistributeFailure { FILES_MISSING, KEYS_MISMATCH, EMULATOR_MISSING, INSTALL_FAILED }
+
     data class DetailedDistributeResult(
         val emulatorId: String,
-        val platformResults: Map<String, Int>
+        val platformResults: Map<String, Int>,
+        val failedPlatforms: Map<String, DistributeFailure> = emptyMap()
     )
 
     suspend fun distributeAllBiosToEmulatorsDetailed(): List<DetailedDistributeResult> = withContext(Dispatchers.IO) {
@@ -670,19 +749,14 @@ class BiosRepository @Inject constructor(
             val platformSlugs = firmwareDao.getPlatformSlugsWithDownloadedFirmware()
 
             val switchJob = if (isSwitchFirmwareReady() && isEdenInstalled()) {
-                async {
-                    val result = installSwitchFirmware()
-                    if (result is SwitchInstallResult.Success) {
-                        Pair("eden", "switch" to 2)
-                    } else null
-                }
+                async { installSwitchFirmware() }
             } else null
 
             val regularSlugs = platformSlugs.filter { it != "switch" }
             for (slug in regularSlugs) {
                 val emulators = BiosPathRegistry.getUnpromptedEmulatorsForPlatform(slug)
                 for (config in emulators) {
-                    val count = distributeBiosToEmulator(slug, config.emulatorId)
+                    val count = distributeOwnFirmware(slug, config.emulatorId)
                     if (count > 0) {
                         val emulatorResults = results.getOrPut(config.emulatorId) { mutableMapOf() }
                         emulatorResults[slug] = count
@@ -690,15 +764,33 @@ class BiosRepository @Inject constructor(
                 }
             }
 
-            switchJob?.await()?.let { (emulatorId, platformResult) ->
-                val emulatorResults = results.getOrPut(emulatorId) { mutableMapOf() }
-                emulatorResults[platformResult.first] = platformResult.second
+            val failures = mutableMapOf<String, Map<String, DistributeFailure>>()
+            switchJob?.await()?.let { result ->
+                val failure = switchDistributeFailure(result)
+                if (failure == null) {
+                    results.getOrPut(EDEN_EMULATOR_ID) { mutableMapOf() }[SWITCH_SLUG] = SWITCH_INSTALLED_FILES
+                } else {
+                    Logger.warn(TAG, "Switch firmware distribution to Eden did not complete | result=$result")
+                    failures[EDEN_EMULATOR_ID] = mapOf(SWITCH_SLUG to failure)
+                }
             }
 
-            results.map { (emulatorId, platformResults) ->
-                DetailedDistributeResult(emulatorId, platformResults)
+            (results.keys + failures.keys).map { emulatorId ->
+                DetailedDistributeResult(
+                    emulatorId = emulatorId,
+                    platformResults = results[emulatorId].orEmpty(),
+                    failedPlatforms = failures[emulatorId].orEmpty()
+                )
             }
         }
+    }
+
+    private fun switchDistributeFailure(result: SwitchInstallResult): DistributeFailure? = when (result) {
+        SwitchInstallResult.Success -> null
+        SwitchInstallResult.MissingFiles -> DistributeFailure.FILES_MISSING
+        SwitchInstallResult.EdenNotInstalled -> DistributeFailure.EMULATOR_MISSING
+        is SwitchInstallResult.ValidationFailed -> DistributeFailure.KEYS_MISMATCH
+        is SwitchInstallResult.Error -> DistributeFailure.INSTALL_FAILED
     }
 
     suspend fun getStatusByPlatform(): List<BiosPlatformStatus> = withContext(Dispatchers.IO) {
@@ -768,7 +860,6 @@ class BiosRepository @Inject constructor(
         val oldPath = prefs.customBiosPath
         val internalDir = getInternalBiosDir()
 
-        // Determine source directory (old custom path or internal)
         val oldBiosDir = if (oldPath != null) resolveBiosDir(oldPath) else null
         val sourceDir = oldBiosDir ?: internalDir
 
@@ -780,7 +871,6 @@ class BiosRepository @Inject constructor(
             }
 
             try {
-                // Copy from source (old custom or internal) to new custom path
                 if (sourceDir.exists()) {
                     sourceDir.walkTopDown().filter { it.isFile }.forEach { file ->
                         val relativePath = file.relativeTo(sourceDir)
@@ -793,7 +883,6 @@ class BiosRepository @Inject constructor(
                     Logger.info(TAG, "Copied BIOS files from ${sourceDir.absolutePath} to ${newDir.absolutePath}")
                 }
 
-                // Update localPath in firmware database
                 val allFirmware = firmwareDao.getDownloaded()
                 allFirmware.forEach { firmware ->
                     val oldLocalPath = firmware.localPath ?: return@forEach
@@ -801,7 +890,6 @@ class BiosRepository @Inject constructor(
                     val relativePath = try {
                         oldFile.relativeTo(sourceDir)
                     } catch (e: IllegalArgumentException) {
-                        // File not under source dir, skip
                         return@forEach
                     }
                     val newLocalPath = File(newDir, relativePath.path).absolutePath
@@ -813,7 +901,6 @@ class BiosRepository @Inject constructor(
                 return@withContext false
             }
         } else {
-            // Moving back to internal - update database paths
             try {
                 if (sourceDir.exists() && sourceDir != internalDir) {
                     sourceDir.walkTopDown().filter { it.isFile }.forEach { file ->
@@ -844,7 +931,6 @@ class BiosRepository @Inject constructor(
             }
         }
 
-        // Delete old custom directory if different from new
         if (oldBiosDir != null && oldBiosDir.absolutePath != (if (newPath != null) resolveBiosDir(newPath).absolutePath else null)) {
             try {
                 if (oldBiosDir.exists()) {
@@ -920,42 +1006,49 @@ class BiosRepository @Inject constructor(
                 }
             }
 
-            // Create all Eden expected directories
             val edenDirs = listOf(
                 "amiibo", "cache", "config", "crash_dumps", "dump",
                 "keys", "load", "log", "play_time", "screenshots",
                 "sdmc", "shader", "tas", "icons"
             )
-            edenDirs.forEach { dir ->
-                File(edenBasePath, dir).mkdirs()
-            }
+            edenDirs.forEach { dir -> requireEdenDir("$edenBasePath/$dir") }
 
-            val keysDir = File(edenBasePath, "keys")
-            val targetProdKeys = File(keysDir, "prod.keys")
-            File(prodKeysPath).copyTo(targetProdKeys, overwrite = true)
-            Logger.info(TAG, "Copied prod.keys to ${targetProdKeys.absolutePath}")
-
-            val internalKeysDir = File(context.filesDir, "bios/switch")
-            internalKeysDir.mkdirs()
-            val internalProdKeys = File(internalKeysDir, "prod.keys")
-            File(prodKeysPath).copyTo(internalProdKeys, overwrite = true)
-            Logger.info(TAG, "Copied prod.keys to internal fallback | path=${internalProdKeys.absolutePath}")
-
-            val registeredDir = File(edenBasePath, "nand/system/Contents/registered")
-            registeredDir.mkdirs()
-
-            val ncaFiles = mutableListOf<String>()
-            ZipInputStream(FileInputStream(firmwareZipPath)).use { zip ->
-                var entry = zip.nextEntry
-                while (entry != null) {
-                    if (entry.name.endsWith(".nca", ignoreCase = true)) {
-                        ncaFiles.add(entry.name)
-                    }
-                    entry = zip.nextEntry
+            val keysDir = "$edenBasePath/keys"
+            val targetProdKeys = "$keysDir/prod.keys"
+            val prodKeys = File(prodKeysPath).readBytes()
+            if (fal.readBytes(targetProdKeys)?.contentEquals(prodKeys) == true) {
+                Logger.debug(TAG, "Eden already holds these prod.keys | path=$targetProdKeys")
+            } else {
+                if (!fal.writeBytes(targetProdKeys, prodKeys)) {
+                    throw java.io.IOException("Cannot write $targetProdKeys")
                 }
+                requireCommitted(keysDir)
+                Logger.info(TAG, "Copied prod.keys to $targetProdKeys")
             }
 
-            val totalFiles = ncaFiles.size
+            val internalProdKeys = File(context.filesDir, "$BIOS_INTERNAL_DIR/$SWITCH_SLUG/prod.keys")
+            if (internalProdKeys.canonicalFile != File(prodKeysPath).canonicalFile) {
+                internalProdKeys.parentFile?.mkdirs()
+                File(prodKeysPath).copyTo(internalProdKeys, overwrite = true)
+                Logger.info(TAG, "Copied prod.keys to internal fallback | path=${internalProdKeys.absolutePath}")
+            }
+
+            val registeredDir = "$edenBasePath/nand/system/Contents/registered"
+            val firmwareNcas = ZipFile(firmwareZipPath).use { zip ->
+                zip.entries().asSequence()
+                    .filter { it.name.endsWith(".nca", ignoreCase = true) }
+                    .associate { File(it.name).name to it.size }
+            }
+
+            if (firmwareAlreadyInstalled(registeredDir, firmwareNcas)) {
+                Logger.info(TAG, "Eden already holds this firmware, skipping extraction | files=${firmwareNcas.size}")
+                createDefaultEdenProfile(edenBasePath)
+                return@withContext SwitchInstallResult.Success
+            }
+
+            requireEdenDir(registeredDir)
+
+            val totalFiles = firmwareNcas.size
             var extractedCount = 0
 
             ZipInputStream(FileInputStream(firmwareZipPath)).use { zip ->
@@ -965,17 +1058,18 @@ class BiosRepository @Inject constructor(
                         val ncaFileName = File(entry.name).name
                         onProgress?.invoke(extractedCount + 1, totalFiles, ncaFileName)
 
-                        val outFile = File(registeredDir, ncaFileName)
-                        outFile.outputStream().use { out ->
-                            zip.copyTo(out)
-                        }
+                        val outPath = "$registeredDir/$ncaFileName"
+                        val out = fal.getOutputStream(outPath)
+                            ?: throw java.io.IOException("Cannot write $outPath")
+                        out.use { zip.copyTo(it) }
                         extractedCount++
                     }
                     entry = zip.nextEntry
                 }
             }
 
-            Logger.info(TAG, "Extracted $extractedCount NCA files to ${registeredDir.absolutePath}")
+            requireCommitted(registeredDir)
+            Logger.info(TAG, "Extracted $extractedCount NCA files to $registeredDir")
 
             createDefaultEdenProfile(edenBasePath)
 
@@ -986,25 +1080,34 @@ class BiosRepository @Inject constructor(
         }
     }
 
-    private fun createDefaultEdenProfile(edenBasePath: String) {
-        val profileDir = File(edenBasePath, "nand/system/save/8000000000000010/su/avators")
-        val profileFile = File(profileDir, "profiles.dat")
+    private fun requireEdenDir(path: String) {
+        if (!fal.mkdirs(path) && !fal.isDirectory(path)) {
+            throw java.io.IOException("Cannot create $path")
+        }
+    }
 
-        if (profileFile.exists()) {
+    private fun requireCommitted(vararg paths: String) {
+        if (!fal.commitSaveAccess(*paths)) {
+            throw java.io.IOException("Cannot copy into Eden's folder | paths=${paths.joinToString()}")
+        }
+    }
+
+    private fun firmwareAlreadyInstalled(registeredDir: String, firmwareNcas: Map<String, Long>): Boolean {
+        if (firmwareNcas.isEmpty()) return false
+        val installed = fal.fileSizes(registeredDir) ?: return false
+        return firmwareNcas.all { (name, size) -> installed[name] == size }
+    }
+
+    private fun createDefaultEdenProfile(edenBasePath: String) {
+        val profileDir = "$edenBasePath/nand/system/save/8000000000000010/su/avators"
+        val profileFile = "$profileDir/profiles.dat"
+
+        if (fal.exists(profileFile)) {
             Logger.debug(TAG, "Eden profile already exists, skipping creation")
             return
         }
 
-        profileDir.mkdirs()
-
-        // profiles.dat format (0x650 bytes total):
-        // [0x00-0x0F] 16 bytes header padding
-        // [0x10-0xD7] User 0 (0xC8 bytes per user, 8 users max)
-        //   [0x10-0x1F] UUID (16 bytes)
-        //   [0x20-0x2F] UUID2 (16 bytes, same as UUID)
-        //   [0x30-0x37] timestamp (8 bytes, little-endian)
-        //   [0x38-0x57] username (32 bytes, null-padded UTF-8)
-        //   [0x58-0xD7] extra_data (128 bytes)
+        requireEdenDir(profileDir)
 
         val uuid = UUID.randomUUID()
         val uuidBytes = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
@@ -1018,24 +1121,26 @@ class BiosRepository @Inject constructor(
             .array()
 
         val username = "Argosy".toByteArray(Charsets.UTF_8)
-        val usernameBytes = ByteArray(32)
-        System.arraycopy(username, 0, usernameBytes, 0, minOf(username.size, 31))
+        val usernameBytes = ByteArray(EdenProfileLayout.USERNAME_BYTES)
+        System.arraycopy(username, 0, usernameBytes, 0, minOf(username.size, EdenProfileLayout.USERNAME_BYTES - 1))
 
-        val profileData = ByteArray(0x650)
-        System.arraycopy(uuidBytes, 0, profileData, 0x10, 16)
-        System.arraycopy(uuidBytes, 0, profileData, 0x20, 16)
-        System.arraycopy(timestampBytes, 0, profileData, 0x30, 8)
-        System.arraycopy(usernameBytes, 0, profileData, 0x38, 32)
+        val profileData = ByteArray(EdenProfileLayout.FILE_BYTES)
+        System.arraycopy(uuidBytes, 0, profileData, EdenProfileLayout.USER0_UUID, EdenProfileLayout.UUID_BYTES)
+        System.arraycopy(uuidBytes, 0, profileData, EdenProfileLayout.USER0_UUID_COPY, EdenProfileLayout.UUID_BYTES)
+        System.arraycopy(timestampBytes, 0, profileData, EdenProfileLayout.USER0_TIMESTAMP_LE, EdenProfileLayout.TIMESTAMP_BYTES)
+        System.arraycopy(usernameBytes, 0, profileData, EdenProfileLayout.USER0_USERNAME_UTF8, EdenProfileLayout.USERNAME_BYTES)
 
-        profileFile.writeBytes(profileData)
+        if (!fal.writeBytes(profileFile, profileData)) {
+            throw java.io.IOException("Cannot write $profileFile")
+        }
 
         val folderName = String.format("%016X%016X", uuid.mostSignificantBits, uuid.leastSignificantBits)
-        Logger.info(TAG, "Created default Eden profile | uuid=$folderName, path=${profileFile.absolutePath}")
+        Logger.info(TAG, "Created default Eden profile | uuid=$folderName, path=$profileFile")
 
-        // Create user save directory structure so save sync works immediately
-        val userSaveDir = File(edenBasePath, "nand/user/save/0000000000000000/$folderName")
-        userSaveDir.mkdirs()
-        Logger.info(TAG, "Created Eden user save directory | path=${userSaveDir.absolutePath}")
+        val userSaveDir = "$edenBasePath/nand/user/save/0000000000000000/$folderName"
+        requireEdenDir(userSaveDir)
+        requireCommitted(profileDir, userSaveDir)
+        Logger.info(TAG, "Created Eden user save directory | path=$userSaveDir")
     }
 
     suspend fun isSwitchFirmwareReady(): Boolean = withContext(Dispatchers.IO) {
@@ -1060,4 +1165,15 @@ class BiosRepository @Inject constructor(
         }
         return md.digest().joinToString("") { "%02x".format(it) }
     }
+}
+
+private object EdenProfileLayout {
+    const val FILE_BYTES = 0x650
+    const val USER0_UUID = 0x10
+    const val USER0_UUID_COPY = 0x20
+    const val USER0_TIMESTAMP_LE = 0x30
+    const val USER0_USERNAME_UTF8 = 0x38
+    const val UUID_BYTES = 16
+    const val TIMESTAMP_BYTES = 8
+    const val USERNAME_BYTES = 32
 }

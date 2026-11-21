@@ -60,6 +60,8 @@ sealed interface PresentationSlot {
         val facts: List<CompanionFact>
     ) : PresentationSlot
 
+    data class MediaPlayback(val itemId: String) : PresentationSlot
+
     data class InGame(
         val state: com.nendo.argosy.hardware.CompanionInGameState,
         val achievements: List<com.nendo.argosy.core.game.AchievementUi>
@@ -118,6 +120,23 @@ data class PlayShareRow(
     val coverPath: String?,
     val topGames: List<PlayTimeSlotGame>
 )
+
+/**
+ * The slot a presentation surface on [displayId] draws: [PresentationSlot.Fallback] in place of
+ * the in-game panel unless the game is known to run on another display, and in place of the
+ * media panel on the display the player occupies.
+ */
+fun PresentationSlot.onDisplay(
+    displayId: Int?,
+    gameDisplayId: Int?,
+    playerDisplayId: Int? = null
+): PresentationSlot = when {
+    this is PresentationSlot.InGame && (gameDisplayId == null || displayId == gameDisplayId) ->
+        PresentationSlot.Fallback
+    this is PresentationSlot.MediaPlayback && playerDisplayId != null && displayId == playerDisplayId ->
+        PresentationSlot.Fallback
+    else -> this
+}
 
 data class TimelineDot(
     val hasActivity: Boolean,

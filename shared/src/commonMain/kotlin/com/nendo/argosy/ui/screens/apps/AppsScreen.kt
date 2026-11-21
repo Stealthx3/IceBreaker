@@ -29,8 +29,6 @@ import com.nendo.argosy.platform.show
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.nendo.argosy.ui.util.clickableNoFocus
 import com.nendo.argosy.ui.util.clickableSurfaceNoFocus
 import androidx.compose.foundation.layout.Arrangement
@@ -468,12 +466,7 @@ private fun AppCard(
         modifier = modifier
             .then(borderModifier)
             .clip(RoundedCornerShape(Dimens.radiusMd))
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick,
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            )
+            .clickableNoFocus(onClick = onClick, onLongClick = onLongClick)
             .background(backgroundColor)
             .padding(Dimens.radiusLg),
         horizontalAlignment = Alignment.CenterHorizontally

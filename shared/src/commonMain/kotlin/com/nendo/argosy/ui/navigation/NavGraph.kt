@@ -11,8 +11,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import androidx.navigation.navDeepLink
 import com.nendo.argosy.ui.ArgosyViewModel
+import com.nendo.argosy.ui.common.settingsSection
 import com.nendo.argosy.ui.screens.apps.AppsScreen
 import com.nendo.argosy.ui.screens.collections.CollectionDetailScreen
 import com.nendo.argosy.ui.screens.collections.CollectionsScreen
@@ -23,6 +23,7 @@ import com.nendo.argosy.ui.screens.firstrun.FirstRunScreen
 import com.nendo.argosy.ui.screens.gamedetail.GameDetailScreen
 import com.nendo.argosy.ui.screens.home.HomeScreen
 import com.nendo.argosy.ui.screens.quaypass.QuayPassCheckInScreen
+import com.nendo.argosy.ui.screens.running.RunningAppsScreen
 import com.nendo.argosy.ui.screens.library.LibraryScreen
 import com.nendo.argosy.ui.screens.media.MediaDetailScreen
 import com.nendo.argosy.ui.screens.media.MediaLibraryScreen
@@ -96,11 +97,14 @@ fun NavGraph(
                 onNavigateToDefault = navigateToDefault,
                 onDrawerToggle = onDrawerToggle,
                 onChangelogAction = { action ->
-                    val section = action.section.name
+                    val section = action.settingsSection.name
                     navController.navigate(Screen.Settings.createRoute(section, action.actionKey))
                 },
                 onNavigateToSettings = { section ->
                     navController.navigate(Screen.Settings.createRoute(section))
+                },
+                onNavigateToApps = {
+                    navController.navigate(Screen.Apps.route) { launchSingleTop = true }
                 },
                 onPlayMedia = onPlayMedia,
                 onMediaSelect = { itemId ->
@@ -227,13 +231,17 @@ fun NavGraph(
             )
         }
 
-        composable(
-            route = Screen.Apps.route,
-            deepLinks = listOf(navDeepLink { uriPattern = "argosy://apps" })
-        ) {
+        composable(route = Screen.Apps.route) {
             AppsScreen(
                 onBack = navigateToDefault,
                 onDrawerToggle = onDrawerToggle
+            )
+        }
+
+        composable(route = Screen.Running.route) {
+            RunningAppsScreen(
+                onBack = navigateToDefault,
+                onOpenGame = { gameId -> navController.navigate(Screen.GameDetail.createRoute(gameId)) }
             )
         }
 
@@ -275,8 +283,7 @@ fun NavGraph(
 
         composable(
             route = Screen.GameDetail.route,
-            arguments = listOf(navArgument("gameId") { type = NavType.LongType }),
-            deepLinks = listOf(navDeepLink { uriPattern = "argosy://game/{gameId}" })
+            arguments = listOf(navArgument("gameId") { type = NavType.LongType })
         ) { backStackEntry ->
             val gameId = backStackEntry.arguments?.getLong("gameId") ?: return@composable
             GameDetailScreen(

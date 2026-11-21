@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -220,7 +221,7 @@ internal fun hasStatusBarContent(items: StatusBarItems, scrapingArtwork: Boolean
 @Composable
 private fun ArtworkScrapeIndicator(color: Color, modifier: Modifier = Modifier) {
     val transition = rememberInfiniteTransition(label = "artworkScrape")
-    val alpha by transition.animateFloat(
+    val alpha = transition.animateFloat(
         initialValue = 0.35f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -232,8 +233,10 @@ private fun ArtworkScrapeIndicator(color: Color, modifier: Modifier = Modifier) 
     Icon(
         imageVector = Icons.Outlined.Image,
         contentDescription = null,
-        tint = color.copy(alpha = alpha),
-        modifier = modifier.size(Dimens.iconSm)
+        tint = color,
+        modifier = modifier
+            .size(Dimens.iconSm)
+            .graphicsLayer { this.alpha = alpha.value }
     )
 }
 

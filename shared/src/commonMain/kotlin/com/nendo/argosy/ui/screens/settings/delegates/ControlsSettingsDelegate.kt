@@ -20,6 +20,8 @@ import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.core.input.ConnectedControllerTracker
 import com.nendo.argosy.core.input.DetectedLayout
 import com.nendo.argosy.core.input.DetectionResult
+import com.nendo.argosy.hardware.SystemHotkeyAction
+import com.nendo.argosy.hardware.SystemHotkeyCombos
 import com.nendo.argosy.ui.components.ListReorder
 import com.nendo.argosy.ui.components.ReorderStep
 import com.nendo.argosy.ui.input.HapticFeedbackManager
@@ -120,6 +122,13 @@ class ControlsSettingsDelegate @Inject constructor(
         scope.launch {
             preferencesRepository.setQuickNavigation(enabled)
             _state.update { it.copy(quickNavigation = enabled) }
+        }
+    }
+
+    fun setIgnoreControllerTouchpad(scope: CoroutineScope, enabled: Boolean) {
+        scope.launch {
+            preferencesRepository.setIgnoreControllerTouchpad(enabled)
+            _state.update { it.copy(ignoreControllerTouchpad = enabled) }
         }
     }
 
@@ -420,6 +429,44 @@ class ControlsSettingsDelegate @Inject constructor(
             UiShortcut.OPEN_QUICK_PANEL -> {
                 preferencesRepository.setOpenQuickPanelKey(keyCode)
                 _state.update { it.copy(openQuickPanelKey = keyCode) }
+            }
+        }
+    }
+
+    fun setSystemHotkeysEnabled(scope: CoroutineScope, enabled: Boolean) {
+        scope.launch {
+            preferencesRepository.setSystemHotkeysEnabled(enabled)
+            _state.update { it.copy(systemHotkeysEnabled = enabled) }
+        }
+    }
+
+    fun startSystemComboCapture(action: SystemHotkeyAction) {
+        _state.update { it.copy(systemComboCaptureTarget = action) }
+    }
+
+    fun cancelSystemComboCapture() {
+        _state.update { it.copy(systemComboCaptureTarget = null) }
+    }
+
+    fun assignSystemCombo(scope: CoroutineScope, action: SystemHotkeyAction, keyCodes: List<Int>) {
+        _state.update { it.copy(systemComboCaptureTarget = null) }
+        if (!SystemHotkeyCombos.isValid(keyCodes)) return
+        scope.launch { writeSystemCombo(action, keyCodes) }
+    }
+
+    fun resetSystemCombo(scope: CoroutineScope, action: SystemHotkeyAction) {
+        scope.launch { writeSystemCombo(action, null) }
+    }
+
+    private suspend fun writeSystemCombo(action: SystemHotkeyAction, keyCodes: List<Int>?) {
+        when (action) {
+            SystemHotkeyAction.HOME -> {
+                preferencesRepository.setSystemHomeCombo(keyCodes)
+                _state.update { it.copy(systemHomeCombo = keyCodes) }
+            }
+            SystemHotkeyAction.BACK -> {
+                preferencesRepository.setSystemBackCombo(keyCodes)
+                _state.update { it.copy(systemBackCombo = keyCodes) }
             }
         }
     }

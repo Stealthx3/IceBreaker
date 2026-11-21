@@ -140,6 +140,14 @@
     <string name="settings_interface_hide_system_nav_bar_subtitle">Oculta los botones de atrás, inicio y recientes de Android o la barra de gestos. Desliza desde el borde para mostrarlos</string>
     <string name="settings_interface_hide_system_status_bar_title">Ocultar barra de estado del sistema</string>
     <string name="settings_interface_hide_system_status_bar_subtitle">Oculta la barra de estado de Android y los iconos de notificación. Desliza hacia abajo desde arriba para mostrarla</string>
+    <string name="settings_interface_screen_orientation_title">Orientación de pantalla</string>
+    <string name="settings_interface_screen_orientation_subtitle">Mantiene Argosy y los juegos integrados en una orientación, sin importar el bloqueo de rotación del dispositivo</string>
+    <string name="settings_interface_screen_orientation_auto">Automática</string>
+    <string name="settings_interface_screen_orientation_landscape">Horizontal</string>
+    <string name="settings_interface_screen_orientation_portrait">Vertical</string>
+    <string name="settings_interface_quick_panel_in_emulators_title">Panel rápido en otros emuladores</string>
+    <string name="settings_interface_quick_panel_in_emulators_subtitle">Mantén Atrás en un emulador que Argosy abrió para mostrar el panel rápido. Requiere el servicio de accesibilidad de Argosy</string>
+    <string name="settings_interface_quick_panel_in_emulators_service_off">El servicio de accesibilidad está desactivado. Actívalo en Permisos</string>
     <string name="settings_interface_lock_screen_art_title">Imagen de la pantalla de bloqueo</string>
     <string name="settings_interface_lock_screen_art_subtitle">Mientras Argosy sea tu aplicación de inicio, la pantalla de bloqueo muestra tu biblioteca o el juego que dejaste en curso. Sustituye tu fondo de pantalla de bloqueo de forma permanente.</string>
     <string name="settings_interface_home_app_title">Disponible como aplicación de inicio</string>
@@ -206,6 +214,7 @@
     <string name="settings_installers_error_download">Error en la descarga</string>
     <string name="settings_installers_error_rate_limited">GitHub está limitando las solicitudes. Inténtalo más tarde</string>
     <string name="settings_installers_error_not_found">No se pudo acceder a ese repositorio</string>
+    <string name="settings_installers_error_wrong_package">La descarga es una aplicación distinta de la esperada</string>
     <string name="settings_installers_ime_enable_title">Activar en los ajustes del sistema</string>
     <string name="settings_installers_ime_enable_subtitle">Android exige activar el teclado desde los ajustes del sistema</string>
     <string name="settings_installers_ime_select_title">Elegir teclado activo</string>
@@ -223,6 +232,8 @@
     <string name="settings_navigation_swap_xy_subtitle">Intercambiar el menú contextual y la acción secundaria</string>
     <string name="settings_navigation_swap_start_select_title">Intercambiar Start/Select</string>
     <string name="settings_navigation_swap_start_select_subtitle">Intercambiar las funciones de los botones Start y Select</string>
+    <string name="settings_navigation_ignore_controller_touchpad_title">Ignorar el panel táctil en juego</string>
+    <string name="settings_navigation_ignore_controller_touchpad_subtitle">El panel táctil de un mando no puede hacer clic en el launcher mientras se juega</string>
 
     <string name="settings_navigation_haptic_title">Respuesta háptica</string>
     <string name="settings_navigation_vibration_title">Intensidad de vibración</string>
@@ -260,6 +271,18 @@
     <string name="settings_navigation_shortcut_capture_subtitle">El botón deja de hacer cualquier otra cosa en los menús de Argosy</string>
     <string name="settings_navigation_shortcut_capture_reserved">%1$s sirve para moverse por los menús y no se puede asignar</string>
     <string name="settings_navigation_shortcut_capture_hint_cancel">Cancelar</string>
+    <string name="settings_navigation_section_system_buttons">Botones del sistema</string>
+    <string name="settings_navigation_system_hotkeys_title">Combinaciones de Inicio y Atrás</string>
+    <string name="settings_navigation_system_hotkeys_subtitle">Combinaciones del mando que funcionan como Inicio y Atrás mientras otra app está abierta</string>
+    <string name="settings_navigation_system_hotkeys_access_title">Servicio de accesibilidad</string>
+    <string name="settings_navigation_system_hotkeys_access_subtitle">Las combinaciones llegan a otras apps a través del servicio de accesibilidad de Argosy</string>
+    <string name="settings_navigation_system_hotkeys_access_on">Activado</string>
+    <string name="settings_navigation_system_hotkeys_access_needed">Requiere accesibilidad</string>
+    <string name="settings_navigation_system_home_title">Inicio</string>
+    <string name="settings_navigation_system_home_subtitle">Mantenlos juntos 2 segundos. Pulsar el botón guía también va a Inicio</string>
+    <string name="settings_navigation_system_back_title">Atrás</string>
+    <string name="settings_navigation_system_back_subtitle">Mantén los primeros botones y pulsa el último. Mantener el botón guía 1 segundo también va Atrás. En un juego, mantener la combinación 3 segundos abre el panel rápido</string>
+    <string name="settings_navigation_system_combo_capture_prompt">Mantén 2 o 3 botones en orden...</string>
 
     <!-- ===== Displays section ===== -->
 
@@ -275,6 +298,8 @@
         <item quantity="other">%d min</item>
     </plurals>
     <string name="settings_displays_dim_level_title">Nivel de atenuación</string>
+    <string name="settings_displays_lid_sleep_title">Suspender al cerrar la tapa</string>
+    <string name="settings_displays_lid_sleep_subtitle">Vuelve a suspender el dispositivo si una pulsación de botón lo despierta con la tapa cerrada</string>
 
     <string name="settings_displays_dual_screen_title">Activar el modo de doble pantalla</string>
     <string name="settings_displays_dual_screen_subtitle">Usar la pantalla secundaria como pantalla complementaria</string>
@@ -282,6 +307,8 @@
 
     <string name="settings_displays_display_roles_title">Pantalla de control</string>
     <string name="settings_displays_display_roles_subtitle">La pantalla donde se abren los menús; la otra muestra lo que estás mirando</string>
+    <string name="settings_displays_match_screen_size_title">Igualar el tamaño de las pantallas</string>
+    <string name="settings_displays_match_screen_size_subtitle">Las pantallas de DS se ven al mismo tamaño y se unen en la bisagra</string>
     <string name="settings_displays_display_roles_auto">Auto</string>
     <string name="settings_displays_display_roles_standard">Pantalla complementaria</string>
     <string name="settings_displays_display_roles_swapped">Pantalla principal</string>
@@ -442,6 +469,21 @@
     <string name="settings_home_screen_box_art_option_2d">Portada 2D</string>
     <string name="settings_home_screen_box_art_option_3d">Caja 3D</string>
     <string name="settings_home_screen_installed_only_subtitle">Mostrar solo los juegos descargados en la pantalla de inicio</string>
+    <string name="settings_home_screen_recent_new_games_title">Juegos nuevos en Recientes</string>
+    <string name="settings_home_screen_recent_new_games_subtitle">Juegos sin jugar añadidos en el último día</string>
+    <string name="settings_home_screen_recent_new_games_none">Ninguno</string>
+    <string name="settings_home_screen_recent_new_games_all">Todos</string>
+    <plurals name="settings_home_screen_recent_new_games_up_to">
+        <item quantity="one">Hasta %d</item>
+        <item quantity="many">Hasta %d</item>
+        <item quantity="other">Hasta %d</item>
+    </plurals>
+
+    <string name="settings_home_screen_new_badge_title">Insignia NUEVO</string>
+    <string name="settings_home_screen_new_badge_subtitle">Dónde se sitúa la insignia NUEVO en las tarjetas del inicio, o ocultarla</string>
+    <string name="settings_home_screen_new_badge_option_right">Derecha</string>
+    <string name="settings_home_screen_new_badge_option_left">Izquierda</string>
+    <string name="settings_home_screen_new_badge_option_hidden">Oculto</string>
 
     <!-- ===== Saves section ===== -->
 
@@ -510,7 +552,6 @@
     <string name="settings_sync_upload_screenshots_title">Subir capturas de pantalla</string>
     <string name="settings_sync_upload_screenshots_subtitle">Enviar a RomM las capturas tomadas durante el juego</string>
     <string name="settings_sync_upload_screenshots_subtitle_unsupported">Requiere RomM 5.0 o posterior</string>
-    <string name="settings_sync_upload_screenshots_subtitle_needs_usage">Concede el acceso al uso para una coincidencia exacta de juegos</string>
 
     <string name="settings_sync_image_cache_title">Ubicación de la caché de imágenes</string>
     <string name="settings_sync_image_cache_path_internal">Interno (predeterminado)</string>
@@ -626,6 +667,10 @@
         <item quantity="other">%d archivos</item>
     </plurals>
     <string name="settings_bios_distribute_result_dismiss">Aceptar</string>
+    <string name="settings_bios_distribute_failure_files_missing">Claves o firmware sin descargar</string>
+    <string name="settings_bios_distribute_failure_keys_mismatch">Las claves no coinciden con este firmware</string>
+    <string name="settings_bios_distribute_failure_emulator_missing">Emulador no instalado</string>
+    <string name="settings_bios_distribute_failure_install_failed">No se pudo instalar</string>
 
     <string name="settings_bios_download_failed_title">Algunos archivos no se descargaron</string>
     <plurals name="settings_bios_download_failed_message">
@@ -639,7 +684,7 @@
     <string name="settings_bios_gpu_prompt_detected">Detectado: %1$s</string>
     <string name="settings_bios_gpu_prompt_message">Un controlador GPU personalizado puede mejorar el rendimiento de la emulación de Switch en dispositivos Snapdragon 8.</string>
     <string name="settings_bios_gpu_prompt_installing">Instalando controlador...</string>
-    <string name="settings_bios_gpu_prompt_install_versioned">Instalar recomendado (%1$s)</string>
+    <string name="settings_bios_gpu_prompt_recommended">Controlador recomendado: %1$s</string>
     <string name="settings_bios_gpu_prompt_install">Instalar recomendado</string>
     <string name="settings_bios_gpu_prompt_install_from_file">Instalar desde archivo</string>
     <string name="settings_bios_gpu_prompt_skip">Omitir</string>
@@ -717,8 +762,18 @@
     <string name="settings_permissions_screen_capture_description">Permite la iluminación LED ambiental para tomar muestras de los colores de la pantalla mientras juegas.</string>
     <string name="settings_permissions_display_overlay_title">Mostrar sobre otras aplicaciones</string>
     <string name="settings_permissions_display_overlay_description">Muestra notificaciones de detección de guardado al jugar con emuladores externos.</string>
+    <string name="settings_permissions_accessibility_title">Servicio de accesibilidad</string>
+    <string name="settings_permissions_accessibility_description">Permite abrir el panel rápido sobre otros emuladores y tomar capturas de guardado en silencio</string>
     <string name="settings_permissions_live_wallpaper_title">Pantalla de bloqueo animada</string>
     <string name="settings_permissions_live_wallpaper_description">Permite que Argosy aplique una pantalla de bloqueo animada.</string>
+    <!-- %1$s is a root or system-access app name, such as Magisk or Shizuku -->
+    <string name="settings_permissions_privileged_title">Acceso de %1$s</string>
+    <string name="settings_permissions_privileged_description_off">Permite que Argosy acceda a las carpetas de guardado de los emuladores en Android/data.</string>
+    <string name="settings_permissions_privileged_description_checking">Comprobando acceso...</string>
+    <string name="settings_permissions_privileged_description_root">Las carpetas de guardado y las funciones root están disponibles.</string>
+    <string name="settings_permissions_privileged_description_app_data">Las carpetas de guardado están disponibles. Mantener los juegos en ejecución necesita root.</string>
+    <string name="settings_permissions_privileged_description_unreachable">No se puede acceder a las carpetas de guardado en este dispositivo.</string>
+    <string name="settings_permissions_privileged_description_refused">No se concedió el acceso. Selecciona para volver a pedirlo.</string>
     <string name="settings_lock_screen_wallpaper_label">Biblioteca de Argosy</string>
     <string name="settings_lock_screen_wallpaper_description">Permite que Argosy aplique una pantalla de bloqueo animada.</string>
     <string name="settings_permissions_status_footer">Estado: %1$d/%2$d permisos concedidos</string>
@@ -985,7 +1040,7 @@
         <item quantity="other">%d archivos</item>
     </plurals>
     <string name="settings_storage_steam_tile_title">Steam y PC</string>
-    <string name="settings_storage_steam_tile_subtitle">Tiendas, instalaciones y preparación</string>
+    <string name="settings_storage_steam_tile_subtitle">Tiendas e instalaciones</string>
 
     <string name="settings_storage_rom_path_title">Ruta global de ROM</string>
     <string name="settings_storage_rom_path_free">%1$s libres</string>
@@ -1029,12 +1084,23 @@
 
     <string name="settings_storage_games_integrity_title">Comprobación semanal de integridad de ROM</string>
     <string name="settings_storage_games_integrity_subtitle">Verifica los archivos de juego descargados al iniciar, una vez por semana</string>
-    <string name="settings_storage_games_not_from_romm_title">No provienen de RomM</string>
-    <plurals name="settings_storage_games_not_from_romm_subtitle">
-        <item quantity="one">%1$d archivo de juego se añadió a mano y se conserva en un restablecimiento completo</item>
-        <item quantity="many">%1$d archivos de juego se añadieron a mano y se conservan en un restablecimiento completo</item>
-        <item quantity="other">%1$d archivos de juego se añadieron a mano y se conservan en un restablecimiento completo</item>
+    <string name="settings_storage_games_local_only_title">Solo local</string>
+    <plurals name="settings_storage_games_local_only_subtitle">
+        <item quantity="one">%1$d juego en este dispositivo que RomM no tiene</item>
+        <item quantity="many">%1$d juegos en este dispositivo que RomM no tiene</item>
+        <item quantity="other">%1$d juegos en este dispositivo que RomM no tiene</item>
     </plurals>
+    <string name="settings_storage_local_only_empty_message">Los juegos de este dispositivo que RomM no tiene aparecen aquí con su tamaño y ubicación.</string>
+    <string name="settings_storage_game_source_local_only">Solo local</string>
+    <string name="settings_storage_location_internal">Interno</string>
+    <string name="settings_storage_location_removable">Tarjeta SD</string>
+    <string name="settings_storage_location_mixed">Interno + tarjeta SD</string>
+    <string name="settings_storage_location_unknown">Ubicación desconocida</string>
+    <string name="settings_storage_local_only_tab_all">Todos</string>
+    <string name="settings_storage_local_only_tab_internal">Interno</string>
+    <string name="settings_storage_local_only_tab_sd_card">Tarjeta SD</string>
+    <string name="settings_storage_local_only_tab_unknown">Desconocida</string>
+    <string name="settings_storage_local_only_tab_empty_message">No hay juegos solo locales guardados aquí.</string>
 
     <plurals name="settings_storage_games_totals_count">
         <item quantity="one">%d descargado</item>
@@ -1118,6 +1184,23 @@
     <string name="settings_storage_platform_games_loading">Cargando...</string>
     <string name="settings_storage_platform_games_empty_title">Ningún juego descargado</string>
     <string name="settings_storage_platform_games_empty_message">Los juegos descargados de %1$s aparecen aquí con un desglose por categoría.</string>
+    <string name="settings_storage_platform_games_tab_empty_message">No hay juegos de %1$s guardados aquí.</string>
+    <plurals name="settings_storage_platform_games_summary">
+        <item quantity="one">%1$d juego, %2$s</item>
+        <item quantity="many">%1$d juegos, %2$s</item>
+        <item quantity="other">%1$d juegos, %2$s</item>
+    </plurals>
+    <string name="settings_storage_platform_games_sort_size">Más grandes primero</string>
+    <string name="settings_storage_platform_games_sort_title">De la A a la Z</string>
+    <string name="settings_storage_platform_games_sort_least_played">Jugados hace más tiempo</string>
+    <string name="settings_storage_platform_games_last_played">Última partida: %1$s</string>
+    <string name="settings_storage_platform_games_never_played">Nunca jugado</string>
+    <string name="settings_storage_platform_games_play_time">%1$s jugado</string>
+    <plurals name="settings_storage_platform_games_unsynced_saves">
+        <item quantity="one">%d partida guardada sin sincronizar</item>
+        <item quantity="many">%d partidas guardadas sin sincronizar</item>
+        <item quantity="other">%d partidas guardadas sin sincronizar</item>
+    </plurals>
 
     <string name="settings_storage_bucket_base">Base</string>
     <string name="settings_storage_bucket_updates">Actualizaciones</string>
@@ -1243,10 +1326,6 @@
     <string name="settings_caches_frames_busy">Vaciando...</string>
     <string name="settings_caches_frames_subtitle">Marcos descargados - se vuelven a descargar bajo demanda</string>
 
-    <string name="settings_caches_steam_clear_title">Vaciar datos de descarga</string>
-    <string name="settings_caches_steam_clear_busy">Vaciando...</string>
-    <string name="settings_caches_steam_clear_blocked">Cancela primero las descargas de Steam</string>
-    <string name="settings_caches_steam_clear_subtitle">Elimina las descargas preparadas y la cola - los juegos instalados permanecen</string>
 
     <string name="settings_caches_info_artwork_title">Caché de ilustraciones</string>
     <string name="settings_caches_info_artwork_subtitle">Pósters, fondos y otras imágenes en línea - se vuelven a descargar bajo demanda</string>
@@ -1266,9 +1345,6 @@
     </plurals>
     <string name="settings_caches_info_steam_total_title">Total de Steam y PC</string>
     <string name="settings_caches_info_steam_total_subtitle">Incluye los juegos instalados de la tienda</string>
-    <string name="settings_caches_info_steam_staging_title">Preparación de descargas</string>
-    <string name="settings_caches_info_steam_staging_subtitle">Descargas parciales a la espera de implementarse</string>
-    <string name="settings_caches_info_steam_staging_computing">Calculando...</string>
 
     <!-- ===== Steam section ===== -->
 
@@ -1284,10 +1360,6 @@
     <string name="settings_steam_gn_storage_warning_title">Almacenamiento externo</string>
     <string name="settings_steam_gn_storage_warning_value">Abre GameNative y activa \'Escribir en almacenamiento externo\' en Ajustes</string>
 
-    <string name="settings_steam_install_path_title">Ruta de instalación</string>
-    <string name="settings_steam_install_path_title_custom">Ruta de instalación (personalizada)</string>
-    <string name="settings_steam_install_path_change">Cambiar</string>
-    <string name="settings_steam_install_triage_title">Juegos instalados</string>
     <string name="settings_steam_account_title">Cuenta de Steam</string>
     <string name="settings_steam_account_connected">Conectada</string>
 
@@ -1295,7 +1367,7 @@
     <string name="settings_steam_sync_idle">Sincronizar los juegos que posees en Steam</string>
     <string name="settings_steam_sync_licenses">Sincronizando licencias...</string>
     <string name="settings_steam_sync_packages">Obteniendo paquetes (%1$d/%2$d)...</string>
-    <string name="settings_steam_sync_apps">Obteniendo juegos (%1$d/%2$d)...</string>
+    <string name="settings_steam_sync_apps">Comprobando aplicaciones (%1$d/%2$d)...</string>
     <string name="settings_steam_sync_complete">%1$d añadidos, %2$d actualizados</string>
     <string name="settings_steam_sync_error">Error: %1$s</string>
 
@@ -1327,11 +1399,11 @@
     <string name="settings_steam_reset_library_subtitle">Quitar todos los juegos de Steam sincronizados</string>
 
     <string name="settings_steam_gn_required_title">Se requiere GameNative</string>
-    <string name="settings_steam_gn_required_message">Argosy descarga los juegos de Steam y los inicia a través de GameNative. Instala GameNative y activa el almacenamiento externo en sus ajustes antes de continuar.</string>
+    <string name="settings_steam_gn_required_message">Los juegos de Steam se instalan e inician a través de GameNative, DroidDeck o GameHub. Instala una de estas apps antes de continuar.</string>
     <string name="settings_steam_gn_required_action">Instalar GameNative</string>
 
     <string name="settings_steam_login_title">Iniciar sesión en Steam</string>
-    <string name="settings_steam_login_message">Conecta tu cuenta de Steam para sincronizar tu biblioteca y descargar juegos.</string>
+    <string name="settings_steam_login_message">Conecta tu cuenta de Steam para sincronizar tu biblioteca.</string>
     <string name="settings_steam_login_action">Conectar</string>
     <string name="settings_steam_connecting">Conectando...</string>
 
@@ -1599,6 +1671,14 @@
 
     <string name="settings_builtin_controls_rumble_title">Vibración</string>
     <string name="settings_builtin_controls_rumble_subtitle">Activar la respuesta por vibración del mando</string>
+    <string name="settings_builtin_controls_motion_title">Controles de movimiento</string>
+    <string name="settings_builtin_controls_motion_subtitle">Permite que los juegos lean la inclinación y la rotación del dispositivo</string>
+    <string name="settings_builtin_controls_gyro_sensitivity_title">Sensibilidad de la puntería con giroscopio</string>
+    <string name="settings_builtin_controls_gyro_sensitivity_subtitle">Cuánto se mueve la mira al girar el dispositivo</string>
+    <string name="settings_builtin_controls_gyro_invert_x_title">Invertir la puntería con giroscopio en horizontal</string>
+    <string name="settings_builtin_controls_gyro_invert_x_subtitle">Girar a la izquierda mueve la mira a la derecha</string>
+    <string name="settings_builtin_controls_gyro_invert_y_title">Invertir la puntería con giroscopio en vertical</string>
+    <string name="settings_builtin_controls_gyro_invert_y_subtitle">Inclinar hacia arriba mueve la mira hacia abajo</string>
     <string name="settings_builtin_controls_order_title">Orden de mandos</string>
     <string name="settings_builtin_controls_order_subtitle">Define el orden de los jugadores pulsando un botón en cada mando</string>
     <plurals name="settings_builtin_controls_order_assigned">
@@ -1610,6 +1690,7 @@
     <string name="settings_builtin_controls_mapping_subtitle">Reasignar los botones de cada mando</string>
     <string name="settings_builtin_controls_controller_type_title">Mando del jugador %1$d</string>
     <string name="settings_builtin_controls_controller_type_subtitle">El mando que ve el juego. Se aplica la próxima vez que se inicie un juego.</string>
+    <string name="settings_builtin_controls_controller_type_auto">Auto (%1$s)</string>
 
     <string name="settings_builtin_controls_analog_as_dpad_title">Stick izquierdo como cruceta</string>
     <string name="settings_builtin_controls_analog_as_dpad_subtitle">Asignar el stick analógico izquierdo a las entradas de la cruceta</string>
@@ -1620,6 +1701,11 @@
     <string name="settings_builtin_controls_hotkeys_subtitle">Configura los atajos para el menú, avance rápido y rebobinado</string>
     <string name="settings_builtin_controls_limit_hotkeys_title">Limitar atajos al jugador 1</string>
     <string name="settings_builtin_controls_limit_hotkeys_subtitle">Solo el mando del jugador 1 puede activar los atajos</string>
+    <string name="settings_builtin_controls_select_as_back_title">Select como Atrás</string>
+    <string name="settings_builtin_controls_select_as_back_subtitle">Para mandos cuyo Select envía Atrás. Automático usa Atrás como Select en mandos sin botón Select.</string>
+    <string name="settings_builtin_controls_select_as_back_auto">Automático</string>
+    <string name="settings_builtin_controls_select_as_back_on">Activado</string>
+    <string name="settings_builtin_controls_select_as_back_off">Desactivado</string>
     <string name="settings_builtin_controls_toggle_ff_title">Alternar avance rápido</string>
     <string name="settings_builtin_controls_toggle_ff_subtitle">Pulsa una vez para iniciar, otra vez para detener (desactivado = mantener para avanzar rápido)</string>
     <string name="settings_builtin_controls_ff_pitch_title">Conservar el tono del audio</string>
@@ -1766,9 +1852,10 @@
     <string name="settings_emulators_section_disabled">Plataformas desactivadas</string>
     <string name="settings_emulators_rail_platforms">Plataformas</string>
 
-    <string name="settings_emulators_close_on_session_end_title">Cerrar el emulador al volver a Argosy</string>
-    <string name="settings_emulators_close_on_session_end_subtitle_on">Cierra el emulador cuando su partida guardada se ha sincronizado. Se pierde el progreso sin guardar.</string>
-    <string name="settings_emulators_close_on_session_end_subtitle_off">La app del emulador sigue abierta en segundo plano</string>
+    <string name="settings_emulators_close_on_session_end_title">Cerrar los juegos al volver a Argosy</string>
+    <string name="settings_emulators_close_on_session_end_subtitle_on">Cierra el juego cuando su partida guardada se ha sincronizado. Se pierde el progreso sin guardar.</string>
+    <string name="settings_emulators_close_on_session_end_subtitle_off">Los juegos siguen abiertos en segundo plano</string>
+    <string name="settings_emulators_close_on_session_end_subtitle_built_in_only">Los juegos integrados siguen abiertos. Los demás emuladores solo siguen abiertos en dispositivos con root.</string>
     <string name="settings_emulators_check_updates_title">Buscar actualizaciones</string>
     <string name="settings_emulators_check_updates_subtitle">Buscar actualizaciones de emuladores</string>
     <string name="settings_emulators_reset_title">Restablecer valores</string>
@@ -1893,6 +1980,8 @@
     <string name="settings_platform_sync_toggle_subtitle">Incluir esta plataforma en la sincronización de la biblioteca</string>
     <string name="settings_platform_combine_content_title">Combinar contenido</string>
     <string name="settings_platform_combine_content_subtitle">Todos los juegos en una sola carpeta, todas las actualizaciones y el DLC en extcontent</string>
+    <string name="settings_platform_skip_full_sync_title">Omitir en la sincronización completa</string>
+    <string name="settings_platform_skip_full_sync_subtitle">La sincronización incremental sigue buscando cambios</string>
     <string name="settings_platform_sync_now_title">Sincronizar ahora</string>
     <string name="settings_platform_sync_now_busy">Sincronización en curso...</string>
     <string name="settings_platform_sync_now_subtitle">Sincronizar esta plataforma con RomM</string>
@@ -1979,6 +2068,9 @@
     <string name="settings_library_layout_title">Diseño</string>
     <string name="settings_library_layout_grid">Cuadrícula</string>
     <string name="settings_library_layout_list">Lista</string>
+    <string name="settings_library_list_style_title">Estilo de lista</string>
+    <string name="settings_library_list_style_relaxed">Espacioso</string>
+    <string name="settings_library_list_style_compact">Compacto</string>
     <string name="settings_library_box_art_title">Carátula</string>
     <string name="settings_library_box_art_subtitle">Muestra una caja 3D en los juegos que la tienen</string>
     <string name="settings_library_box_art_option_2d">Portada 2D</string>
@@ -2056,6 +2148,9 @@
     <string name="settings_hotkeys_action_skip_split">Saltar split</string>
     <string name="settings_hotkeys_action_toggle_timer">Iniciar/pausar cronómetro</string>
     <string name="settings_hotkeys_action_reset_timer">Reiniciar cronómetro</string>
+    <string name="settings_hotkeys_action_sun_brighter">Subir luz solar</string>
+    <string name="settings_hotkeys_action_sun_dimmer">Bajar luz solar</string>
+    <string name="settings_hotkeys_action_recenter_gyro_aim">Centrar puntería con giroscopio</string>
 
     <!-- ===== Input mapping modal (Settings > components > InputMappingModal) ===== -->
 
@@ -2340,12 +2435,10 @@
     <!-- ===== Controller order modal (Settings > components > ControllerOrderModal) ===== -->
 
     <string name="settings_controller_order_title">Orden de mandos</string>
-    <string name="settings_controller_order_subtitle">Pulsa un botón en un mando para encontrarlo.</string>
+    <string name="settings_controller_order_prompt">Pulsa %1$s + %2$s o %3$s en el mando que quieras usar</string>
+    <string name="settings_controller_order_ready">Pulsa %1$s cuando estés listo</string>
     <string name="settings_controller_order_hint_clear_all">Borrar todo</string>
     <string name="settings_controller_order_default_name">Mando</string>
-    <string name="settings_controller_order_slot_label">J%1$d</string>
-    <string name="settings_controller_order_seat_none">Ninguno</string>
-    <string name="settings_controller_order_empty">No hay mandos conectados</string>
 
     <!-- ===== Grip controller modal (Settings > components > GripControllerModal) ===== -->
 
@@ -2483,7 +2576,6 @@
     <string name="settings_accounts_delegate_blocker_external_game">%1$s estuvo en pantalla hace %2$d s. Ciérralo por completo e inténtalo de nuevo.</string>
     <string name="settings_accounts_delegate_blocker_active_downloads">Todavía hay descargas de juegos en curso. Espera a que terminen o cancélalas.</string>
     <string name="settings_accounts_delegate_blocker_emulator_download">Todavía hay una descarga de emulador en curso. Espera a que termine o cancélala.</string>
-    <string name="settings_accounts_delegate_blocker_steam_download">Todavía hay una descarga de Steam en curso. Espera a que termine o cancélala.</string>
     <string name="settings_accounts_delegate_blocker_media_download">Todavía se está descargando una película o episodio. Espera a que termine o cancélala.</string>
     <string name="settings_accounts_delegate_blocker_library_sync">Hay una sincronización de biblioteca en curso. Espera a que termine e inténtalo de nuevo.</string>
     <string name="settings_accounts_delegate_blocker_netplay_session">Hay una sesión de netplay abierta. Sal de ella e inténtalo de nuevo.</string>
@@ -2493,7 +2585,6 @@
     <!-- ===== Steam settings delegate (Settings > delegates > SteamSettingsDelegate) ===== -->
 
     <string name="settings_steam_delegate_invalid_app_id">Introduce un App ID de Steam válido</string>
-    <string name="settings_steam_delegate_volume_other_label">Otro</string>
 
     <!-- ===== Jellyfin settings delegate (Settings > delegates > JellyfinSettingsDelegate) ===== -->
 
@@ -2642,6 +2733,7 @@
     <string name="settings_libretro_def_audio_volume_subtitle" formatted="false">Nivel de salida del emulador (100% es sin cambios)</string>
     <string name="settings_libretro_def_vsync_title">VSync</string>
     <string name="settings_libretro_def_vsync_subtitle">Sincronizar con la frecuencia de actualización de la pantalla</string>
+    <string name="settings_libretro_applies_next_launch">Se aplica la próxima vez que inicies un juego</string>
     <string name="settings_libretro_def_auto_save_state_title">Guardar estado al salir</string>
     <string name="settings_libretro_def_auto_save_state_subtitle">Se aplica solo a los juegos en modo casual</string>
     <string name="settings_libretro_def_auto_restore_state_title">Restaurar estado al iniciar</string>
@@ -2801,6 +2893,9 @@
     </plurals>
     <string name="settings_play_time_romm_refresh_stopped">Actualización detenida: %s</string>
     <string name="settings_play_time_list_unknown_game">Juego desconocido</string>
+    <string name="settings_play_time_delete_title">¿Eliminar registros de juego?</string>
+    <string name="settings_play_time_delete_message">Todo el historial de juego de %1$s se elimina de este dispositivo. Las sesiones anteriores a este momento no se volverán a sincronizar.</string>
+    <string name="settings_play_time_delete_confirm">Eliminar</string>
     <string name="settings_play_time_list_game_detail">%1$s, última partida %2$s</string>
     <plurals name="settings_play_time_list_sessions">
         <item quantity="one">%d sesión</item>

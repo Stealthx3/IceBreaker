@@ -65,6 +65,7 @@ import androidx.compose.material3.Text
 import com.nendo.argosy.ui.common.AlwaysCrossfadeFactory
 import com.nendo.argosy.ui.common.backgroundBlurDp
 import com.nendo.argosy.ui.common.rememberFileImageModel
+import com.nendo.argosy.ui.common.stackedScreenshotBackdrop
 import com.nendo.argosy.ui.components.SectionBreadcrumb
 import com.nendo.argosy.ui.icons.InputIcons
 import androidx.compose.runtime.Composable
@@ -146,6 +147,7 @@ import com.nendo.argosy.platform.image.intrinsicWidth
 import com.nendo.argosy.platform.image.ImageRequest
 import com.nendo.argosy.res.ArgosyR as R
 import com.nendo.argosy.ui.input.LocalInputDispatcher
+import com.nendo.argosy.ui.input.ModalInputEffect
 import com.nendo.argosy.ui.input.ModalPresenceEffect
 import com.nendo.argosy.ui.navigation.Screen
 import com.nendo.argosy.domain.model.RequiredAction
@@ -209,6 +211,7 @@ fun HomeScreen(
     onDrawerToggle: () -> Unit,
     onChangelogAction: (RequiredAction) -> Unit = {},
     onNavigateToSettings: (String) -> Unit = {},
+    onNavigateToApps: () -> Unit = {},
     onPlayMedia: (itemId: String, startOver: Boolean) -> Unit = { _, _ -> },
     onMediaSelect: (String) -> Unit = {},
     videoPreviewBlocked: Boolean = false,
@@ -230,6 +233,7 @@ fun HomeScreen(
     val gridState = rememberLazyGridState()
     val isAutoGrid = uiState.layoutKind == HomeLayoutKind.AUTO_GRID
     val isCustomGrid = uiState.layoutKind == HomeLayoutKind.CUSTOM_GRID
+    val showDownloadedDot = !uiState.installedOnlyHome || uiState.currentRow == HomeRow.Recommendations
     val quickNavigation by viewModel.quickNavigationEnabled.collectAsState()
     val dockReorder by viewModel.dockReorder.collectAsState()
     val dockIsRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -319,8 +323,6 @@ fun HomeScreen(
     }
 
     BackHandler(enabled = true) {
-        // Prevent back from popping Home screen off nav stack
-        // Home is the root destination - back should do nothing
     }
 
     val context = LocalContext.current
@@ -330,7 +332,9 @@ fun HomeScreen(
                 is HomeEvent.LaunchIntent -> {
                     try {
                         context.startActivity(event.intent, event.options)
-                    } catch (_: Exception) { }
+                    } catch (e: Exception) {
+                        com.nendo.argosy.util.PlatformLog.e("HomeScreen", "Failed to start activity", e)
+                    }
                 }
                 is HomeEvent.NavigateToLibrary -> {
                     onNavigateToLibrary(
@@ -343,6 +347,7 @@ fun HomeScreen(
                 }
                 is HomeEvent.NavigateToCollections -> onNavigateToCollections(event.collectionId)
                 is HomeEvent.NavigateToSettings -> onNavigateToSettings(event.section)
+                HomeEvent.NavigateToApps -> onNavigateToApps()
                 is HomeEvent.PlayMedia -> onPlayMedia(event.itemId, event.startOver)
                 is HomeEvent.NavigateToMediaDetail -> onMediaSelect(event.itemId)
             }
@@ -426,7 +431,8 @@ fun HomeScreen(
             getFocusIndex = { uiState.discPickerFocusIndex },
             onFocusChange = { viewModel.setDiscPickerFocusIndex(it) },
             onSelect = { viewModel.selectDisc(it) },
-            onDismiss = { viewModel.dismissDiscPicker() }
+            onDismiss = { viewModel.dismissDiscPicker() },
+            wrapMode = { viewModel.menuWrapMode }
         )
     }
 
@@ -436,54 +442,36 @@ fun HomeScreen(
             getFocusIndex = { uiState.memcardPickerFocusIndex },
             onFocusChange = { viewModel.setMemcardPickerFocusIndex(it) },
             onSelect = { viewModel.selectMemcard(it) },
-            onDismiss = { viewModel.dismissMemcardPicker() }
+            onDismiss = { viewModel.dismissMemcardPicker() },
+            wrapMode = { viewModel.menuWrapMode }
         )
     }
 
-    LaunchedEffect(uiState.changelogEntry) {
-        if (uiState.changelogEntry != null) {
-            inputDispatcher.pushModal(changelogInputHandler)
-        }
-    }
+    ModalInputEffect(
+        active = uiState.changelogEntry != null,
+        handler = changelogInputHandler,
+        inputDispatcher = inputDispatcher
+    )
 
-    LaunchedEffect(uiState.discPickerState) {
-        if (uiState.discPickerState != null) {
-            viewModel.setDiscPickerFocusIndex(0)
-            inputDispatcher.pushModal(discPickerInputHandler)
-        }
+    val showDiscPicker = uiState.discPickerState != null
+    LaunchedEffect(showDiscPicker) {
+        if (showDiscPicker) viewModel.setDiscPickerFocusIndex(0)
     }
-
-    DisposableEffect(uiState.discPickerState) {
-        onDispose {
-            if (uiState.discPickerState != null) {
-                inputDispatcher.removeModal(discPickerInputHandler)
-            }
-        }
-    }
+    ModalInputEffect(
+        active = showDiscPicker,
+        handler = discPickerInputHandler,
+        inputDispatcher = inputDispatcher
+    )
 
     val showMemcardPicker = uiState.memcardPickerState != null
     LaunchedEffect(showMemcardPicker) {
-        if (showMemcardPicker) {
-            viewModel.setMemcardPickerFocusIndex(0)
-            inputDispatcher.pushModal(memcardPickerInputHandler)
-        }
+        if (showMemcardPicker) viewModel.setMemcardPickerFocusIndex(0)
     }
-
-    DisposableEffect(showMemcardPicker) {
-        onDispose {
-            if (showMemcardPicker) {
-                inputDispatcher.removeModal(memcardPickerInputHandler)
-            }
-        }
-    }
-
-    DisposableEffect(uiState.changelogEntry) {
-        onDispose {
-            if (uiState.changelogEntry != null) {
-                inputDispatcher.removeModal(changelogInputHandler)
-            }
-        }
-    }
+    ModalInputEffect(
+        active = showMemcardPicker,
+        handler = memcardPickerInputHandler,
+        inputDispatcher = inputDispatcher
+    )
 
     LaunchedEffect(uiState.focusedGame?.id) {
         val currentGameId = uiState.focusedGame?.id
@@ -499,7 +487,7 @@ fun HomeScreen(
             ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }
         ).collectAsState()
     val previewBlocked = videoPreviewBlocked || focusPickerOpen || uiState.showGameMenu ||
-        uiState.appDrawer != null || uiState.appBarMenu != null ||
+        uiState.appBarMenu != null ||
         uiState.showAddToCollectionModal || uiState.showCreateCollectionDialog ||
         uiState.discPickerState != null || uiState.memcardPickerState != null ||
         uiState.syncOverlayState != null || uiState.changelogEntry != null || siblingChoiceOpen ||
@@ -597,15 +585,18 @@ fun HomeScreen(
     val showArtLayer = !isGridLayout &&
         (!backdropEnabled || uiState.homeBackgroundMode == HomeBackgroundMode.GAME_ART)
 
+    var backgroundIsScreenshot = false
     val effectiveBackgroundPath = if (uiState.useGameBackground) {
         uiState.focusedGame?.let { game ->
             val background = com.nendo.argosy.ui.common.rememberResolvedBackgroundPath(game.id, game.backgroundPath)
             val cover = com.nendo.argosy.ui.common.rememberResolvedCoverPath(game.id, game.coverPath)
-            when {
+            val chosen = when {
                 background?.startsWith("/") == true -> background
                 cover?.startsWith("/") == true -> cover
                 else -> background ?: cover
             }
+            backgroundIsScreenshot = game.backgroundIsScreenshotOrArt && chosen != null && chosen == background
+            chosen
         }
     } else {
         uiState.customBackgroundPath
@@ -707,11 +698,12 @@ fun HomeScreen(
                     if (effectiveBackgroundPath != null) {
                         val backgroundContext = LocalContext.current
                         val backgroundModel = rememberFileImageModel(effectiveBackgroundPath)
-                        val backgroundRequest = remember(backgroundModel) {
+                        val backgroundRequest = remember(backgroundModel, backgroundIsScreenshot) {
                             ImageRequest.Builder(backgroundContext)
                                 .data(backgroundModel)
                                 .size(640, 360)
                                 .transitionFactory(AlwaysCrossfadeFactory(380))
+                                .apply { if (backgroundIsScreenshot) stackedScreenshotBackdrop() }
                                 .build()
                         }
                         AsyncImage(
@@ -978,6 +970,7 @@ fun HomeScreen(
                                 config = uiState.autoGridConfig,
                                 showFocusVisuals = !uiState.appBarFocused,
                                 useBoxArt = uiState.boxArt3d,
+                                showDownloadedIndicator = showDownloadedDot,
                                 gridState = gridState,
                                 entryAnimationKey = (uiState.currentPlatform?.id ?: uiState.currentRow)
                                     .takeIf { uiState.autoGridConfig.showAllGames },
@@ -1037,6 +1030,8 @@ fun HomeScreen(
                                     uiState.currentRow !is HomeRow.Platform &&
                                     uiState.currentRow != HomeRow.Steam && uiState.currentRow != HomeRow.Android,
                                 useBoxArt = uiState.boxArt3d,
+                                newBadgePlacement = uiState.newBadgePlacement,
+                                showDownloadedIndicator = showDownloadedDot,
                                 onCoverLoadFailed = viewModel::repairCoverImage,
                                 onCoverLoaded = viewModel::extractGradientForGame,
                                 onPosterLoaded = viewModel::extractGradientForMedia,
@@ -1416,7 +1411,7 @@ fun HomeScreen(
                 } else {
                     com.nendo.argosy.ui.components.APP_BAR_NOTHING_FOCUSED
                 },
-                onOpenDrawer = { viewModel.openAppDrawer() },
+                onOpenDrawer = { viewModel.openAppsScreen() },
                 onKeyboardToggle = {
                     com.nendo.argosy.DualScreenManagerHolder.instance?.toggleUpperKeyboard()
                 },
@@ -1451,24 +1446,6 @@ fun HomeScreen(
                         val measured = with(localDensity) { size.height.toDp() }
                         if (measured != dockHeight) dockHeight = measured
                     }
-            )
-        }
-
-        uiState.appDrawer?.let { drawer ->
-            com.nendo.argosy.ui.components.CompanionAppDrawer(
-                apps = drawer.apps,
-                focusIndex = drawer.focusIndex,
-                onLaunch = { packageName ->
-                    val index = drawer.apps.indexOfFirst { it.packageName == packageName }
-                    if (index >= 0) viewModel.moveAppDrawer(index - drawer.focusIndex)
-                    viewModel.confirmAppDrawer()
-                },
-                onLongPress = { packageName ->
-                    val index = drawer.apps.indexOfFirst { it.packageName == packageName }
-                    if (index >= 0) viewModel.moveAppDrawer(index - drawer.focusIndex)
-                    viewModel.openAppBarAppMenu()
-                },
-                onDismiss = { viewModel.dismissAppDrawer() }
             )
         }
 
@@ -1544,6 +1521,8 @@ fun HomeScreen(
                 )
             }
         }
+
+        com.nendo.argosy.ui.common.GameConfirmHost(viewModel.gameConfirm)
 
         val siblingChoiceState by viewModel.siblingChoiceState.collectAsState()
         com.nendo.argosy.ui.screens.common.SiblingChoiceModalHost(
@@ -2161,12 +2140,14 @@ private fun GameSelectOverlay(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(overlayColor),
+            .background(overlayColor)
+            .clickableNoFocus(onClick = onDismiss),
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(Dimens.radiusLg))
+                .clickableNoFocus {}
                 .padding(Dimens.spacingLg)
                 .width(Dimens.modalWidth)
                 .heightIn(max = maxHeight * 0.85f)

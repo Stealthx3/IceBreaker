@@ -4239,6 +4239,99 @@ object Migration_213_214 : Migration(213, 214) {
     }
 }
 
+object Migration_214_215 : Migration(214, 215) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `platforms` ADD COLUMN `skipFullSync` INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+object Migration_215_216 : Migration(215, 216) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `play_record_deletions` (" +
+                "`gameId` INTEGER NOT NULL, `ownerUserId` INTEGER NOT NULL, `deletedBefore` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`gameId`, `ownerUserId`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_play_record_deletions_ownerUserId` " +
+                "ON `play_record_deletions` (`ownerUserId`)"
+        )
+    }
+}
+
+object Migration_216_217 : Migration(216, 217) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE IF EXISTS `steam_download_queue`")
+        db.execSQL("DROP TABLE IF EXISTS `steam_completed_files`")
+        db.execSQL("DROP TABLE IF EXISTS `steam_completed_depots`")
+    }
+}
+
+object Migration_217_218 : Migration(217, 218) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `media_user_data` ADD COLUMN `pendingPosition` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `media_user_data` ADD COLUMN `pendingPlayed` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `media_user_data` ADD COLUMN `pendingFavorite` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL(
+            "UPDATE `media_user_data` SET `pendingPosition` = 1, `pendingPlayed` = 1, " +
+                "`pendingFavorite` = 1 WHERE `needsSync` = 1"
+        )
+    }
+}
+
+object Migration_218_219 : Migration(218, 219) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `platform_libretro_settings` ADD COLUMN `motionEnabled` INTEGER")
+    }
+}
+
+object Migration_219_220 : Migration(219, 220) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "DELETE FROM `emulator_save_config` WHERE `emulatorId` = 'hakux' " +
+                "AND `isAutoDetected` = 1 AND `isUserOverride` = 0"
+        )
+    }
+}
+
+object Migration_220_221 : Migration(220, 221) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "UPDATE `games` SET `titleIdLocked` = 0 WHERE `titleId` LIKE 'NP%' AND `platformId` IN " +
+                "(SELECT `id` FROM `platforms` WHERE `slug` = 'psp')"
+        )
+    }
+}
+
+/**
+ * Rebuilds `game_screenshots` keyed by (`gameId`, `source`, `position`) with the RomM gallery
+ * columns. Every existing row is carried as an official screenshot.
+ */
+object Migration_221_222 : Migration(221, 222) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `game_screenshots_new` (" +
+                "`gameId` INTEGER NOT NULL, `position` INTEGER NOT NULL, `sourceUrl` TEXT NOT NULL, " +
+                "`cachedPath` TEXT, `cachedFromUrl` TEXT, `source` TEXT NOT NULL DEFAULT 'official', " +
+                "`rommScreenshotId` INTEGER, `ownerUsername` TEXT, " +
+                "PRIMARY KEY(`gameId`, `source`, `position`), " +
+                "FOREIGN KEY(`gameId`) REFERENCES `games`(`id`) " +
+                "ON UPDATE NO ACTION ON DELETE CASCADE )"
+        )
+        db.execSQL(
+            "INSERT INTO `game_screenshots_new` " +
+                "(`gameId`, `position`, `sourceUrl`, `cachedPath`, `cachedFromUrl`, `source`) " +
+                "SELECT `gameId`, `position`, `sourceUrl`, `cachedPath`, `cachedFromUrl`, 'official' " +
+                "FROM `game_screenshots`"
+        )
+        db.execSQL("DROP TABLE `game_screenshots`")
+        db.execSQL("ALTER TABLE `game_screenshots_new` RENAME TO `game_screenshots`")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_game_screenshots_gameId` ON `game_screenshots` (`gameId`)"
+        )
+    }
+}
+
 object Migration_203_204 : Migration(203, 204) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(

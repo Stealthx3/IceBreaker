@@ -55,7 +55,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import javax.inject.Inject
@@ -159,13 +162,15 @@ class VirtualCategoryViewModel @Inject constructor(
         }
     }
 
-    private val core = combine(
+    private class VisibleGames(val games: List<CollectionGameUi>, val sectionLabelByGame: List<String>) {
+        val sectionLabels: List<String> = sectionLabelByGame.distinct()
+    }
+
+    private val visibleGames = combine(
         getGamesByCategoryUseCase(categoryType, category),
         platformRepository.observeAllPlatforms(),
-        _focusedIndex,
-        combine(_isPinned, _isRefreshing, _downloadAllProgress) { a, b, c -> Triple(a, b, c) },
-        _search
-    ) { games, platforms, focusedIndex, (isPinned, isRefreshing, downloadProgress), search ->
+        _search.map { it.query }.distinctUntilChanged()
+    ) { games, platforms, query ->
         val platformMap = platforms.associate { it.id to it.getDisplayName() }
         val sorted = games
             .map { game ->
@@ -176,12 +181,22 @@ class VirtualCategoryViewModel @Inject constructor(
                 )
             }
             .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
-        val visible = if (search.query.isBlank()) {
+        val visible = if (query.isBlank()) {
             sorted
         } else {
-            val q = com.nendo.argosy.util.SearchNormalizer.normalize(search.query)
+            val q = com.nendo.argosy.util.SearchNormalizer.normalize(query)
             sorted.filter { com.nendo.argosy.util.SearchNormalizer.normalize(it.title).contains(q) }
         }
+        VisibleGames(visible, visible.map { sectionLabelFor(it.title) })
+    }.flowOn(Dispatchers.Default)
+
+    private val core = combine(
+        visibleGames,
+        _focusedIndex,
+        combine(_isPinned, _isRefreshing, _downloadAllProgress) { a, b, c -> Triple(a, b, c) },
+        _search
+    ) { listing, focusedIndex, (isPinned, isRefreshing, downloadProgress), search ->
+        val visible = listing.games
         val clamped = focusedIndex.coerceIn(0, (visible.size - 1).coerceAtLeast(0))
         VirtualCategoryUiState(
             type = type,
@@ -192,8 +207,8 @@ class VirtualCategoryViewModel @Inject constructor(
             focusedIndex = clamped,
             isPinned = isPinned,
             downloadAllProgress = downloadProgress,
-            sectionLabels = if (search.active) emptyList() else visible.map { sectionLabelFor(it.title) }.distinct(),
-            currentSectionLabel = visible.getOrNull(clamped)?.let { sectionLabelFor(it.title) } ?: "",
+            sectionLabels = if (search.active) emptyList() else listing.sectionLabels,
+            currentSectionLabel = listing.sectionLabelByGame.getOrNull(clamped) ?: "",
             isSearchActive = search.active,
             searchQuery = search.query
         )
@@ -290,7 +305,7 @@ class VirtualCategoryViewModel @Inject constructor(
     }
 
     fun setSearchQuery(query: String) {
-        _search.value = _search.value.copy(query = query)
+        _search.update { it.copy(query = query) }
         _focusedIndex.value = 0
     }
 
@@ -352,18 +367,22 @@ class VirtualCategoryViewModel @Inject constructor(
         viewModelScope.launch {
             var queued = 0
             for ((index, game) in downloadable.withIndex()) {
-                _downloadAllProgress.value = _downloadAllProgress.value.copy(
-                    currentIndex = index + 1
-                )
+                _downloadAllProgress.update {
+                    it.copy(
+                        currentIndex = index + 1
+                    )
+                }
                 downloadGameUseCase(game.id)
                 queued++
                 delay(50)
             }
 
-            _downloadAllProgress.value = _downloadAllProgress.value.copy(
-                isActive = false,
-                isOnCooldown = true
-            )
+            _downloadAllProgress.update {
+                it.copy(
+                    isActive = false,
+                    isOnCooldown = true
+                )
+            }
 
             notificationManager.show(
                 title = NotificationText.Res(R.string.notif_virtualcategory_downloads_queued_title),
@@ -383,7 +402,7 @@ class VirtualCategoryViewModel @Inject constructor(
 
     fun dismissDownloadAllModal() {
         if (!_downloadAllProgress.value.isActive) {
-            _downloadAllProgress.value = _downloadAllProgress.value.copy(isActive = false)
+            _downloadAllProgress.update { it.copy(isActive = false) }
         }
     }
 

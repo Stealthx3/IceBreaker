@@ -5,12 +5,14 @@ import com.nendo.argosy.data.preferences.ControlsPreferences
 import com.nendo.argosy.data.preferences.GridDensity
 import com.nendo.argosy.data.preferences.GripReserveMode
 import com.nendo.argosy.data.preferences.HomeBackgroundMode
+import com.nendo.argosy.data.preferences.NewBadgePlacement
 import com.nendo.argosy.data.preferences.MediaStreamingQuality
 import com.nendo.argosy.data.preferences.MenuWrapMode
 import com.nendo.argosy.data.preferences.SelectSwapMode
 import com.nendo.argosy.ui.screens.settings.delegates.ControlsSettingsDelegate
 import com.nendo.argosy.util.LogLevel
 import com.nendo.argosy.data.preferences.LibraryLayout
+import com.nendo.argosy.data.preferences.LibraryListStyle
 import com.nendo.argosy.domain.model.HomeLayoutKind
 import com.nendo.argosy.ui.common.hudCornerFromStored
 import com.nendo.argosy.ui.components.HudCorner
@@ -102,8 +104,13 @@ internal class LightSectionsInput(
     override fun onSecondaryAction(): InputResult {
         val state = viewModel.uiState.value
         if (state.currentSection != SettingsSection.NAVIGATION) return InputResult.UNHANDLED
-        val shortcut = navigationItemAtFocusIndex(state.focusedIndex, state.controls)?.shortcut
-            ?: return InputResult.UNHANDLED
+        val item = navigationItemAtFocusIndex(state.focusedIndex, state.controls)
+        item?.systemHotkeyAction?.let { action ->
+            if (!state.controls.isSystemComboCustom(action)) return InputResult.UNHANDLED
+            viewModel.resetSystemCombo(action)
+            return InputResult.HANDLED
+        }
+        val shortcut = item?.shortcut ?: return InputResult.UNHANDLED
         viewModel.clearShortcutKey(shortcut)
         return InputResult.HANDLED
     }
@@ -266,6 +273,11 @@ internal class LightSectionsInput(
                 return toggleLeftRight(direction, display.videoWallpaperMuted) { viewModel.setVideoWallpaperMuted(it) }
             HomeScreenItem.InstalledOnly ->
                 return toggleLeftRight(direction, display.installedOnlyHome) { viewModel.setInstalledOnlyHome(it) }
+            HomeScreenItem.RecentNewGames -> { viewModel.cycleRecentNewGamesLimit(direction); return InputResult.HANDLED }
+            HomeScreenItem.NewBadge ->
+                return stepOption(NewBadgePlacement.entries, display.newBadgePlacement, direction) {
+                    viewModel.setNewBadgePlacement(it)
+                }
             HomeScreenItem.BoxArt ->
                 return stepOption(listOf(false, true), display.homeLayout.boxArt3d, direction, viewModel::setHomeBoxArt3d)
             HomeScreenItem.LayoutSelector -> return stepOption(
@@ -318,10 +330,18 @@ internal class LightSectionsInput(
                 return toggleLeftRight(direction, controls.swapXY) { viewModel.setSwapXY(it) }
             NavigationItem.SwapStartSelect ->
                 return toggleLeftRight(direction, controls.swapStartSelect) { viewModel.setSwapStartSelect(it) }
+            NavigationItem.IgnoreControllerTouchpad ->
+                return toggleLeftRight(direction, controls.ignoreControllerTouchpad) {
+                    viewModel.setIgnoreControllerTouchpad(it)
+                }
             NavigationItem.QuickNavigation ->
                 return toggleLeftRight(direction, controls.quickNavigation) { viewModel.setQuickNavigation(it) }
             NavigationItem.NavBarAutoHide ->
                 return toggleLeftRight(direction, controls.navBarAutoHide) { viewModel.setNavBarAutoHide(it) }
+            NavigationItem.SystemHotkeys ->
+                return toggleLeftRight(direction, controls.systemHotkeysEnabled) {
+                    viewModel.setSystemHotkeysEnabled(it)
+                }
             NavigationItem.SelectLCombo -> return stepOption(
                 ControlsSettingsDelegate.COMBO_OPTIONS,
                 controls.selectLCombo,
@@ -438,6 +458,8 @@ internal class LightSectionsInput(
         when (libraryItemAtFocusIndex(state.focusedIndex, layoutState)) {
             LibraryItem.LayoutItem ->
                 return stepOption(LibraryLayout.entries, display.libraryLayout, direction, viewModel::setLibraryLayout)
+            LibraryItem.ListStyleItem ->
+                return stepOption(LibraryListStyle.entries, display.libraryListStyle, direction, viewModel::setLibraryListStyle)
             LibraryItem.GridDensityItem ->
                 return stepOption(GridDensity.entries, display.gridDensity, direction, viewModel::setGridDensity)
             LibraryItem.BoxArtItem ->

@@ -53,11 +53,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.nendo.argosy.platform.LocalPlatformContext as LocalContext
-import com.nendo.argosy.platform.cacheDir
-import com.nendo.argosy.platform.filesDir
-import com.nendo.argosy.platform.getQuantityString
-import com.nendo.argosy.platform.getString
-import com.nendo.argosy.platform.resources
 import com.nendo.argosy.res.ArgosyR as R
 import com.nendo.argosy.ui.components.FocusedScroll
 import com.nendo.argosy.ui.components.GameTitle
@@ -105,8 +100,10 @@ private fun MoreOptionAction.toMenuEntry(
         action = this
     )
     MoreOptionAction.ChangeSteamLauncher -> MoreMenuEntry.Option(
+        icon = Icons.Default.SwapHoriz,
         label = context.getString(R.string.gamedetail_more_options_change_launcher),
-        value = game.steamLauncherName ?: context.getString(R.string.gamedetail_steam_launcher_auto),
+        value = if (game.steamLauncherSetManually) game.steamLauncherName
+            else context.getString(R.string.gamedetail_steam_launcher_auto),
         action = this
     )
     MoreOptionAction.SpeedrunSplits -> MoreMenuEntry.Option(

@@ -42,7 +42,6 @@ import com.nendo.argosy.data.repository.DatabaseAdminRepository
 import com.nendo.argosy.data.repository.HardResetBlocker
 import com.nendo.argosy.data.repository.PlatformRepository
 import com.nendo.argosy.data.repository.GameRepository
-import com.nendo.argosy.data.storage.ManagedStorageAccessor
 import com.nendo.argosy.domain.usecase.MigratePlatformStorageUseCase
 import com.nendo.argosy.domain.usecase.MigrateStorageUseCase
 import com.nendo.argosy.domain.usecase.PurgePlatformUseCase
@@ -87,7 +86,6 @@ class StorageSettingsDelegate @Inject constructor(
     private val platformSyncQueue: com.nendo.argosy.data.sync.PlatformSyncQueue,
     private val databaseAdminRepository: DatabaseAdminRepository,
     private val saveCacheRepository: com.nendo.argosy.data.repository.SaveCacheRepository,
-    private val managedStorageAccessor: ManagedStorageAccessor,
     private val notificationManager: NotificationManager,
     private val platformFolderResolver: PlatformFolderResolver
 ) {
@@ -345,12 +343,12 @@ class StorageSettingsDelegate @Inject constructor(
         scope.launch {
             val downloadedSize = gameRepository.getDownloadedGamesSize()
             val downloadedCount = gameRepository.getDownloadedGamesCount()
-            val adoptedCount = gameRepository.getAdoptedGamesCount()
+            val localOnlyCount = gameRepository.getLocalOnlyGamesCount()
             _state.update {
                 it.copy(
                     downloadedGamesSize = downloadedSize,
                     downloadedGamesCount = downloadedCount,
-                    adoptedGamesCount = adoptedCount
+                    localOnlyGamesCount = localOnlyCount
                 )
             }
         }
@@ -388,6 +386,7 @@ class StorageSettingsDelegate @Inject constructor(
                     downloadedCount = downloadedCount,
                     syncEnabled = platform.syncEnabled,
                     combineContent = platform.combineContent,
+                    skipFullSync = platform.skipFullSync,
                     customRomPath = platform.customRomPath,
                     effectivePath = effectivePath,
                     supportsStatePath = info?.supportsStatePath ?: false,
@@ -456,6 +455,7 @@ class StorageSettingsDelegate @Inject constructor(
         scope.launch {
             platformRepository.updateSyncEnabled(platformId, enabled)
             updatePlatformConfigInState(platformId) { it.copy(syncEnabled = enabled) }
+            if (!enabled) offerPurgeAfterDisable(platformId, saveCacheRepository.pendingUploadsOnPlatform(platformId))
         }
     }
 
@@ -463,6 +463,13 @@ class StorageSettingsDelegate @Inject constructor(
         scope.launch {
             platformRepository.updateCombineContent(platformId, enabled)
             updatePlatformConfigInState(platformId) { it.copy(combineContent = enabled) }
+        }
+    }
+
+    fun togglePlatformSkipFullSync(scope: CoroutineScope, platformId: Long, skip: Boolean) {
+        scope.launch {
+            platformRepository.updateSkipFullSync(platformId, skip)
+            updatePlatformConfigInState(platformId) { it.copy(skipFullSync = skip) }
         }
     }
 
@@ -651,13 +658,34 @@ class StorageSettingsDelegate @Inject constructor(
         }
     }
 
-    fun requestPurgePlatform(platformId: Long) {
-        _state.update { it.copy(showPurgePlatformConfirm = platformId) }
+    fun requestPurgePlatform(scope: CoroutineScope, platformId: Long) {
+        scope.launch {
+            val pendingUploads = saveCacheRepository.pendingUploadsOnPlatform(platformId)
+            _state.update {
+                it.copy(
+                    showPurgePlatformConfirm = platformId,
+                    purgeOfferedAfterDisable = false,
+                    purgePlatformPendingUploads = pendingUploads
+                )
+            }
+        }
+    }
+
+    private fun offerPurgeAfterDisable(platformId: Long, pendingUploads: Int) {
+        _state.update { state ->
+            val hasGames = state.platformConfigs.any { it.platformId == platformId && it.gameCount > 0 }
+            if (!hasGames || state.showPurgePlatformConfirm != null) state
+            else state.copy(
+                showPurgePlatformConfirm = platformId,
+                purgeOfferedAfterDisable = true,
+                purgePlatformPendingUploads = pendingUploads
+            )
+        }
     }
 
     fun confirmPurgePlatform(scope: CoroutineScope) {
         val platformId = _state.value.showPurgePlatformConfirm ?: return
-        _state.update { it.copy(showPurgePlatformConfirm = null) }
+        _state.update { it.copy(showPurgePlatformConfirm = null, purgeOfferedAfterDisable = false) }
         val platformName = _state.value.platformConfigs
             .firstOrNull { it.platformId == platformId }?.platformName
             ?: platformId.toString()
@@ -717,7 +745,7 @@ class StorageSettingsDelegate @Inject constructor(
     }
 
     fun cancelPurgePlatform() {
-        _state.update { it.copy(showPurgePlatformConfirm = null) }
+        _state.update { it.copy(showPurgePlatformConfirm = null, purgeOfferedAfterDisable = false) }
     }
 
     fun openPlatformSettingsModal(platformId: Long) {
@@ -752,7 +780,7 @@ class StorageSettingsDelegate @Inject constructor(
         var nextIndex = 3
         if (config.supportsStatePath) nextIndex++
         if (LibretroCoreRegistry.isPlatformSupported(config.platformSlug)) nextIndex++
-        return nextIndex + 1  // +1 for resync, and the max is purge which is at nextIndex+1
+        return nextIndex + 1
     }
 
     fun selectPlatformSettingsOption(scope: CoroutineScope) {
@@ -791,7 +819,6 @@ class StorageSettingsDelegate @Inject constructor(
                 }
             }
             libretroSettingsIndex -> {
-                // Handled in SettingsScreen via onClick callback
             }
             resyncIndex -> {
                 closePlatformSettingsModal()
@@ -799,7 +826,7 @@ class StorageSettingsDelegate @Inject constructor(
             }
             purgeIndex -> {
                 closePlatformSettingsModal()
-                requestPurgePlatform(platformId)
+                requestPurgePlatform(scope, platformId)
             }
         }
     }
@@ -1026,8 +1053,6 @@ class StorageSettingsDelegate @Inject constructor(
             NotificationText.Res(R.string.notif_storage_hardreset_blocked_active_downloads)
         HardResetBlocker.EmulatorDownload ->
             NotificationText.Res(R.string.notif_storage_hardreset_blocked_emulator_download)
-        HardResetBlocker.SteamDownload ->
-            NotificationText.Res(R.string.notif_storage_hardreset_blocked_steam_download)
         HardResetBlocker.MediaDownload ->
             NotificationText.Res(R.string.notif_storage_hardreset_blocked_media_download)
     }
@@ -1044,55 +1069,6 @@ class StorageSettingsDelegate @Inject constructor(
                 R.string.notif_storage_hardreset_pending_uploads_many,
                 listOf(named.joinToString(", "))
             )
-        }
-    }
-
-    fun testManagedStorageAccess(scope: CoroutineScope) {
-        scope.launch {
-            withContext(Dispatchers.IO) {
-                Log.i(TAG, "=== Testing ManagedStorageAccessor ===")
-                Log.i(TAG, "Managed access supported: ${managedStorageAccessor.isManagedAccessSupported()}")
-
-                val testPackages = listOf(
-                    "dev.eden.eden_emulator",
-                    "com.retroarch",
-                    "com.retroarch.aarch64"
-                )
-
-                for (pkg in testPackages) {
-                    Log.i(TAG, "--- Testing package: $pkg ---")
-
-                    val exists = managedStorageAccessor.exists(pkg)
-                    Log.i(TAG, "  exists(): $exists")
-
-                    if (exists) {
-                        val files = managedStorageAccessor.listAndroidDataFiles(pkg)
-                        if (files != null) {
-                            Log.i(TAG, "  listAndroidDataFiles(): ${files.size} files")
-                            files.take(5).forEach { file ->
-                                Log.i(TAG, "    - ${file.displayName} (dir=${file.isDirectory}, size=${file.size})")
-                            }
-                            if (files.size > 5) {
-                                Log.i(TAG, "    ... and ${files.size - 5} more")
-                            }
-                        } else {
-                            Log.i(TAG, "  listAndroidDataFiles(): NULL (access denied or not found)")
-                        }
-
-                        val filesSubPath = managedStorageAccessor.listAndroidDataFiles(pkg, "files")
-                        if (filesSubPath != null) {
-                            Log.i(TAG, "  listAndroidDataFiles(files/): ${filesSubPath.size} files")
-                            filesSubPath.take(5).forEach { file ->
-                                Log.i(TAG, "    - ${file.displayName} (dir=${file.isDirectory})")
-                            }
-                        } else {
-                            Log.i(TAG, "  listAndroidDataFiles(files/): NULL")
-                        }
-                    }
-                }
-
-                Log.i(TAG, "=== Test Complete ===")
-            }
         }
     }
 }

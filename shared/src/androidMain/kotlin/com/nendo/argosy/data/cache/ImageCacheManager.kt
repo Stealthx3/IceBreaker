@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
@@ -138,13 +139,15 @@ actual class ImageCacheManager @Inject constructor(
 ) {
     private val artModelScope = SafeCoroutineScope(Dispatchers.IO, "GameArtModel")
 
-    actual val gameArt: StateFlow<Map<Long, ResolvedGameArt>> = gameArtDao.observeRowCount()
+    val gameArt: StateFlow<GameArtSnapshot> = gameArtDao.observeRowCount()
         .conflate()
         .transform {
             emit(gameArtDao.getAll().toResolvedArtByGame())
             delay(ART_MODEL_RELOAD_INTERVAL_MS)
         }
-        .stateIn(artModelScope, SharingStarted.Lazily, emptyMap())
+        .distinctUntilChanged()
+        .map(::GameArtSnapshot)
+        .stateIn(artModelScope, SharingStarted.Lazily, GameArtSnapshot.EMPTY)
 
     actual fun artFor(gameId: Long): ResolvedGameArt? = gameArt.value[gameId]
 
@@ -274,7 +277,20 @@ actual class ImageCacheManager @Inject constructor(
     private val _screenshotProgress = kotlinx.coroutines.flow.MutableStateFlow(ImageCacheProgress())
     actual val screenshotProgress: kotlinx.coroutines.flow.StateFlow<ImageCacheProgress> = _screenshotProgress
 
-    private var isPaused = false
+    @Volatile private var isPaused = false
+    @Volatile private var heldForPlay = false
+
+    private val isHeld: Boolean get() = isPaused || heldForPlay
+
+    /**
+     * Holds background caching while a game is being played, independent of the pause a screen
+     * takes with [pauseBackgroundCaching].
+     */
+    fun holdForPlay(held: Boolean) {
+        if (heldForPlay == held) return
+        heldForPlay = held
+        Log.d(TAG, "Background caching ${if (held) "held for play" else "released after play"}")
+    }
 
     actual fun pauseBackgroundCaching() {
         isPaused = true
@@ -320,14 +336,16 @@ actual class ImageCacheManager @Inject constructor(
             updateProgressFromDb(isProcessing = true)
 
             for (request in queue) {
-                while (isPaused) {
+                while (isHeld) {
                     kotlinx.coroutines.delay(500)
                 }
                 try {
-                    _progress.value = _progress.value.copy(
-                        currentGameTitle = request.gameTitle,
-                        currentType = if (request.type == ImageType.BACKGROUND) "background" else "cover"
-                    )
+                    _progress.update {
+                        it.copy(
+                            currentGameTitle = request.gameTitle,
+                            currentType = if (request.type == ImageType.BACKGROUND) "background" else "cover"
+                        )
+                    }
                     processRequest(request)
                     updateProgressFromDb(isProcessing = true)
                 } catch (e: Exception) {
@@ -347,11 +365,13 @@ actual class ImageCacheManager @Inject constructor(
     private suspend fun updateProgressFromDb(isProcessing: Boolean) {
         val total = gameArtDao.countWithSource(ArtSlot.BACKGROUND.name)
         val cached = gameArtDao.countCached(ArtSlot.BACKGROUND.name)
-        _progress.value = _progress.value.copy(
-            isProcessing = isProcessing,
-            cachedCount = cached,
-            totalCount = total
-        )
+        _progress.update {
+            it.copy(
+                isProcessing = isProcessing,
+                cachedCount = cached,
+                totalCount = total
+            )
+        }
     }
 
     private suspend fun processRequest(request: ImageCacheRequest, replacing: Boolean = false) {
@@ -817,7 +837,7 @@ actual class ImageCacheManager @Inject constructor(
             val old = row.cachedPath ?: return@forEach
             val moved = relocate(old)
             if (moved != old) {
-                gameScreenshotDao.relocateCachedPath(row.gameId, row.position, old, moved)
+                gameScreenshotDao.relocateCachedPath(row.gameId, row.source, row.position, old, moved)
                 updated++
             }
         }
@@ -1023,14 +1043,16 @@ actual class ImageCacheManager @Inject constructor(
             updateScreenshotProgressFromDb(isProcessing = true)
 
             for (request in screenshotQueue) {
-                while (isPaused) {
+                while (isHeld) {
                     kotlinx.coroutines.delay(500)
                 }
                 try {
-                    _screenshotProgress.value = _screenshotProgress.value.copy(
-                        currentGameTitle = request.gameTitle,
-                        currentType = "screenshots"
-                    )
+                    _screenshotProgress.update {
+                        it.copy(
+                            currentGameTitle = request.gameTitle,
+                            currentType = "screenshots"
+                        )
+                    }
                     processScreenshotRequest(request)
                     updateScreenshotProgressFromDb(isProcessing = true)
                 } catch (e: Exception) {
@@ -1050,25 +1072,29 @@ actual class ImageCacheManager @Inject constructor(
     private suspend fun updateScreenshotProgressFromDb(isProcessing: Boolean) {
         val total = gameScreenshotDao.countWithSource()
         val cached = gameScreenshotDao.countCached()
-        _screenshotProgress.value = _screenshotProgress.value.copy(
-            isProcessing = isProcessing,
-            cachedCount = cached,
-            totalCount = total
-        )
+        _screenshotProgress.update {
+            it.copy(
+                isProcessing = isProcessing,
+                cachedCount = cached,
+                totalCount = total
+            )
+        }
     }
 
     private suspend fun processScreenshotRequest(request: ScreenshotCacheRequest) {
         cacheScreenshotRows(request.gameId, "ss_${request.rommId}", maxWidth = 480, quality = 75)
     }
 
-    actual suspend fun userScreenshotTargetFile(rommId: Long, screenshotId: Long, version: String): File {
+    suspend fun userScreenshotTargetFile(rommId: Long, screenshotId: Long, version: String, extension: String): File {
         val slug = resolveRommPlatformSlug(rommId)
-        return File(platformDir(slug, "screenshots"), "uss_${rommId}_${screenshotId}_${version.md5Hash()}.png")
+        val name = "${userScreenshotFileStem(rommId, screenshotId, version)}.$extension"
+        return File(platformDir(slug, "screenshots"), name)
     }
 
-    actual fun pruneStaleUserScreenshots(rommId: Long, screenshotId: Long, keep: File) {
+    fun pruneStaleUserScreenshots(rommId: Long, screenshotId: Long, keep: File) {
+        val idPrefix = userScreenshotIdPrefix(rommId, screenshotId)
         keep.parentFile?.listFiles()?.forEach { file ->
-            if (file.name.startsWith("uss_${rommId}_${screenshotId}_") && file.name != keep.name) file.delete()
+            if (file.name.startsWith(idPrefix) && file.name != keep.name) file.delete()
         }
     }
 
@@ -1108,7 +1134,7 @@ actual class ImageCacheManager @Inject constructor(
             Log.d(TAG, "Starting platform logo cache processing")
 
             for (request in logoQueue) {
-                while (isPaused) {
+                while (isHeld) {
                     kotlinx.coroutines.delay(500)
                 }
                 try {
@@ -1192,7 +1218,6 @@ actual class ImageCacheManager @Inject constructor(
             val g = Color.green(pixel)
             val b = Color.blue(pixel)
 
-            // Check if pixel is near-black (threshold of 30 for each channel)
             if (r < 30 && g < 30 && b < 30) {
                 pixels[i] = Color.TRANSPARENT
             }
@@ -1295,14 +1320,16 @@ actual class ImageCacheManager @Inject constructor(
             Log.d(TAG, "Starting cover image cache processing")
 
             for (request in coverQueue) {
-                while (isPaused) {
+                while (isHeld) {
                     kotlinx.coroutines.delay(500)
                 }
                 try {
-                    _progress.value = _progress.value.copy(
-                        currentGameTitle = request.gameTitle,
-                        currentType = "cover"
-                    )
+                    _progress.update {
+                        it.copy(
+                            currentGameTitle = request.gameTitle,
+                            currentType = "cover"
+                        )
+                    }
                     if (request.type.isBoxFace) processBoxFaceRequest(request) else processCoverRequest(request)
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to process cover for ${request.id}: ${e.message}")
@@ -1775,7 +1802,7 @@ actual class ImageCacheManager @Inject constructor(
             Log.d(TAG, "Starting achievement badge cache processing")
 
             for (request in badgeQueue) {
-                while (isPaused) {
+                while (isHeld) {
                     kotlinx.coroutines.delay(500)
                 }
                 try {
@@ -1896,7 +1923,7 @@ actual class ImageCacheManager @Inject constructor(
             Log.d(TAG, "Starting app icon cache processing")
 
             for (request in appIconQueue) {
-                while (isPaused) {
+                while (isHeld) {
                     kotlinx.coroutines.delay(500)
                 }
                 try {

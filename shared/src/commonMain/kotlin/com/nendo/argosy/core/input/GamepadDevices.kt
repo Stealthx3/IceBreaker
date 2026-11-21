@@ -1,6 +1,10 @@
 package com.nendo.argosy.core.input
 
 import com.nendo.argosy.platform.PlatformInputDevice as InputDevice
+import com.nendo.argosy.platform.SOURCE_MOUSE
+import com.nendo.argosy.platform.SOURCE_MOUSE_RELATIVE
+import com.nendo.argosy.platform.SOURCE_TOUCHPAD
+import com.nendo.argosy.platform.PlatformInputDevices
 import com.nendo.argosy.platform.controllerNumber
 import com.nendo.argosy.platform.descriptor
 import com.nendo.argosy.platform.id
@@ -62,11 +66,41 @@ fun InputDevice.actsAsGamepad(): Boolean = isPhysicalGamepad() || (isVirtual && 
 /**
  * Whether a device is a pad the launcher should act on. The source flags alone are not enough:
  * HyperOS registers a `uinput-xiaomi` device that advertises a gamepad source with no controller
- * behind it, which hid the on-screen controls and claimed player one on a bare phone.
+ * behind it, which hid the on-screen controls and claimed player one on a bare phone. A joystick
+ * source without gamepad buttons is not a pad either: a TV remote's consumer-control node reports
+ * one, and could never press a button to claim a controller seat.
  */
 fun InputDevice.isPhysicalGamepad(): Boolean {
-    val padSource = sources and SOURCE_GAMEPAD == SOURCE_GAMEPAD ||
-        sources and SOURCE_JOYSTICK == SOURCE_JOYSTICK
+    val padSource = sources and SOURCE_GAMEPAD == SOURCE_GAMEPAD
     if (!padSource || isVirtual) return false
     return !name.orEmpty().startsWith(OEM_VIRTUAL_DEVICE_PREFIX, ignoreCase = true)
+}
+
+/**
+ * Whether this pointer device is the touchpad of a connected game controller: a mouse or
+ * touchpad device that is itself a physical gamepad, or that belongs to one. A connected gamepad
+ * owns it when the two share vendor and product ids, as a DualShock 4 or DualSense touchpad does,
+ * or when the pointer carries the gamepad's name, alone or with a suffix ("DualSense Wireless
+ * Controller Touchpad"), which still holds where the system re-registers the pad under other ids.
+ */
+fun InputDevice.isControllerTouchpad(): Boolean {
+    val pointer = supportsSource(SOURCE_MOUSE) ||
+        supportsSource(SOURCE_MOUSE_RELATIVE) ||
+        supportsSource(SOURCE_TOUCHPAD)
+    if (!pointer) return false
+    if (isPhysicalGamepad()) return true
+    val pointerName = name.orEmpty()
+    return PlatformInputDevices.getDeviceIds().any { otherId ->
+        otherId != id && PlatformInputDevices.getDevice(otherId)?.let { other ->
+            other.isPhysicalGamepad() && (
+                (vendorId != 0 && other.vendorId == vendorId && other.productId == productId) ||
+                    other.ownsPointerNamed(pointerName)
+                )
+        } == true
+    }
+}
+
+private fun InputDevice.ownsPointerNamed(pointerName: String): Boolean {
+    val padName = name.orEmpty()
+    return padName.isNotBlank() && (pointerName == padName || pointerName.startsWith("$padName "))
 }

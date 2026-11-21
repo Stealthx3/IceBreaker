@@ -30,6 +30,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nendo.argosy.data.repository.GameRepository
+import com.nendo.argosy.data.social.SocialConnectionState
 import com.nendo.argosy.data.social.SocialRepository
 import com.nendo.argosy.data.social.UserProfileData
 import androidx.compose.foundation.layout.Spacer
@@ -119,6 +120,15 @@ class UserProfileViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            socialRepository.connectionState.collect { state ->
+                if (state !is SocialConnectionState.Connected) {
+                    _uiState.update { it.copy(isLoading = false) }
+                } else if (_uiState.value.profile == null) {
+                    loadProfile()
+                }
+            }
+        }
+        viewModelScope.launch {
             socialRepository.userProfile.collect { profile ->
                 if (profile != null && profile.user.id == userId) {
                     val igdbIds = profile.mostPlayed.map { it.igdbId }
@@ -137,8 +147,10 @@ class UserProfileViewModel @Inject constructor(
     }
 
     fun loadProfile() {
-        _uiState.value = _uiState.value.copy(isLoading = true)
-        socialRepository.requestUserProfile(userId)
+        _uiState.update { it.copy(isLoading = true) }
+        if (!socialRepository.requestUserProfile(userId)) {
+            _uiState.update { it.copy(isLoading = false) }
+        }
     }
 
     fun moveFocus(delta: Int): Boolean {
@@ -146,7 +158,7 @@ class UserProfileViewModel @Inject constructor(
         val maxIndex = (state.focusCount - 1).coerceAtLeast(0)
         val newIndex = (state.focusIndex + delta).coerceIn(0, maxIndex)
         if (newIndex != state.focusIndex) {
-            _uiState.value = state.copy(focusIndex = newIndex)
+            _uiState.update { it.copy(focusIndex = newIndex) }
             return true
         }
         return false
@@ -155,10 +167,12 @@ class UserProfileViewModel @Inject constructor(
     fun toggleFavorite() {
         val profile = _uiState.value.profile ?: return
         if (profile.relationship != "friend") return
-        socialRepository.toggleFavoriteFriend(userId)
-        _uiState.value = _uiState.value.copy(
-            profile = profile.copy(isFavorite = !profile.isFavorite)
-        )
+        if (!socialRepository.toggleFavoriteFriend(userId)) return
+        _uiState.update {
+            it.copy(
+                profile = it.profile?.copy(isFavorite = !profile.isFavorite)
+            )
+        }
     }
 
     fun sendFriendRequest() {
@@ -278,7 +292,18 @@ fun UserProfileScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-            } else if (profile != null) {
+            } else if (profile == null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.social_profile_unavailable_offline),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                }
+            } else {
                 val mostPlayed = profile.mostPlayed
                 val mostPlayedFocusIndex = uiState.focusedMostPlayedIndex
                 val highlightMostPlayed = uiState.focusOnMostPlayed

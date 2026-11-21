@@ -37,11 +37,6 @@ import com.nendo.argosy.platform.orientation
 import com.nendo.argosy.platform.screenHeightDp
 import com.nendo.argosy.platform.screenWidthDp
 import com.nendo.argosy.platform.LocalPlatformContext as LocalContext
-import com.nendo.argosy.platform.cacheDir
-import com.nendo.argosy.platform.filesDir
-import com.nendo.argosy.platform.getQuantityString
-import com.nendo.argosy.platform.getString
-import com.nendo.argosy.platform.resources
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.res.ArgosyR as R
 import com.nendo.argosy.data.model.GameActivitySnapshot

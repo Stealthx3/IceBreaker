@@ -2,11 +2,12 @@ package com.nendo.argosy.ui.screens.settings.delegates
 
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.domain.usecase.download.FilePickerFlowUseCase
-import com.nendo.argosy.domain.usecase.game.DeleteGameUseCase
 import com.nendo.argosy.domain.usecase.storage.GameStorageBreakdownUseCase
 import com.nendo.argosy.domain.usecase.storage.GameStorageBucket
+import com.nendo.argosy.ui.common.GameConfirm
+import com.nendo.argosy.ui.screens.common.GameActionsDelegate
 import com.nendo.argosy.ui.screens.settings.GameStorageCategoryDeleteConfirm
-import com.nendo.argosy.ui.screens.settings.GameStorageDeleteConfirm
+import com.nendo.argosy.ui.screens.settings.StorageLocationFilter
 import com.nendo.argosy.ui.screens.settings.StoragePlatformGamesState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,7 @@ import javax.inject.Inject
 
 class StoragePlatformGamesDelegate @Inject constructor(
     private val breakdownUseCase: GameStorageBreakdownUseCase,
-    private val deleteGameUseCase: DeleteGameUseCase,
+    private val gameActions: GameActionsDelegate,
     private val filePickerFlowUseCase: FilePickerFlowUseCase,
     private val gameRepository: GameRepository
 ) {
@@ -30,17 +31,29 @@ class StoragePlatformGamesDelegate @Inject constructor(
             StoragePlatformGamesState(
                 selectedPlatformId = platformId,
                 platformName = platformName,
-                isLoading = true
+                isLoading = true,
+                sort = it.sort
             )
         }
         reload(scope)
     }
 
+    fun openLocalOnly(scope: CoroutineScope) {
+        _state.update { StoragePlatformGamesState(localOnly = true, isLoading = true, sort = it.sort) }
+        reload(scope)
+    }
+
+    fun cycleSort() = _state.update { it.copy(sort = it.sort.next(), highlightedCategoryIndex = 0) }
+
     fun reload(scope: CoroutineScope, onPlatformEmpty: (() -> Unit)? = null) {
-        val platformId = _state.value.selectedPlatformId
-        if (platformId < 0) return
+        val current = _state.value
+        if (!current.localOnly && current.selectedPlatformId < 0) return
         scope.launch {
-            val games = breakdownUseCase.loadPlatform(platformId)
+            val games = if (current.localOnly) {
+                breakdownUseCase.loadLocalOnly()
+            } else {
+                breakdownUseCase.loadPlatform(current.selectedPlatformId)
+            }
             val covers = gameRepository.getArt(games.map { it.gameId }).mapValues { (_, art) -> art.coverPath }
             _state.update {
                 it.copy(
@@ -55,11 +68,22 @@ class StoragePlatformGamesDelegate @Inject constructor(
 
     fun setHighlightedCategory(index: Int) = _state.update { it.copy(highlightedCategoryIndex = index) }
 
+    fun setLocationFilter(filter: StorageLocationFilter) =
+        _state.update { it.copy(locationFilter = filter, highlightedCategoryIndex = 0) }
+
+    fun cycleLocationFilter(delta: Int) = _state.update {
+        val entries = StorageLocationFilter.entries
+        it.copy(
+            locationFilter = entries[(it.locationFilter.ordinal + delta).mod(entries.size)],
+            highlightedCategoryIndex = 0
+        )
+    }
+
     fun requestDeleteConfirm(gameId: Long) {
         val game = _state.value.games.find { it.gameId == gameId } ?: return
         _state.update {
             it.copy(
-                deleteConfirm = GameStorageDeleteConfirm(
+                deleteConfirm = GameConfirm.DeleteDownload(
                     gameId = gameId,
                     title = game.title,
                     hasSoundtrack = game.hasSoundtrack,
@@ -93,8 +117,7 @@ class StoragePlatformGamesDelegate @Inject constructor(
     fun confirmDeleteGame(gameId: Long, withSoundtrack: Boolean, scope: CoroutineScope, onPlatformEmpty: () -> Unit) {
         _state.update { it.copy(deleteConfirm = null) }
         scope.launch {
-            deleteGameUseCase(gameId)
-            if (withSoundtrack) filePickerFlowUseCase.purgeSoundtrack(gameId)
+            gameActions.deleteLocalFile(gameId, withSoundtrack)
             reload(scope, onPlatformEmpty)
         }
     }

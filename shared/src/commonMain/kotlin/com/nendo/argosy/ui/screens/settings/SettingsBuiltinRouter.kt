@@ -440,6 +440,32 @@ internal fun routeSetBuiltinRumbleEnabled(vm: SettingsViewModel, enabled: Boolea
     }
 }
 
+internal fun routeSetBuiltinGyroAimInvertX(vm: SettingsViewModel, enabled: Boolean) {
+    vm._uiState.update { it.copy(builtinControls = it.builtinControls.copy(gyroAimInvertX = enabled)) }
+    vm.viewModelScope.launch { vm.libretroSettingsRepo.setBuiltinGyroAimInvertX(enabled) }
+}
+
+internal fun routeSetBuiltinGyroAimInvertY(vm: SettingsViewModel, enabled: Boolean) {
+    vm._uiState.update { it.copy(builtinControls = it.builtinControls.copy(gyroAimInvertY = enabled)) }
+    vm.viewModelScope.launch { vm.libretroSettingsRepo.setBuiltinGyroAimInvertY(enabled) }
+}
+
+internal fun routeStepBuiltinGyroAimSensitivity(vm: SettingsViewModel, direction: Int) {
+    val next = com.nendo.argosy.data.preferences.GyroAimSensitivity.step(
+        vm._uiState.value.builtinControls.gyroAimSensitivity,
+        direction
+    )
+    vm._uiState.update { it.copy(builtinControls = it.builtinControls.copy(gyroAimSensitivity = next)) }
+    vm.viewModelScope.launch { vm.libretroSettingsRepo.setBuiltinGyroAimSensitivity(next) }
+}
+
+internal fun routeSetBuiltinMotionEnabled(vm: SettingsViewModel, enabled: Boolean) {
+    vm._uiState.update { it.copy(builtinControls = it.builtinControls.copy(motionEnabled = enabled)) }
+    vm.viewModelScope.launch {
+        vm.libretroSettingsRepo.setBuiltinMotionEnabled(enabled)
+    }
+}
+
 internal fun routeSetBuiltinLimitHotkeysToPlayer1(vm: SettingsViewModel, enabled: Boolean) {
     vm._uiState.update { it.copy(builtinControls = it.builtinControls.copy(limitHotkeysToPlayer1 = enabled)) }
     vm.viewModelScope.launch {
@@ -474,6 +500,13 @@ internal fun routeSetBuiltinFastForwardMode(vm: SettingsViewModel, mode: com.nen
     vm._uiState.update { it.copy(builtinControls = it.builtinControls.copy(fastForwardMode = mode)) }
     vm.viewModelScope.launch {
         vm.libretroSettingsRepo.setBuiltinFastForwardMode(mode)
+    }
+}
+
+internal fun routeSetBuiltinSelectAsBack(vm: SettingsViewModel, mode: com.nendo.argosy.data.local.entity.SelectAsBackMode) {
+    vm._uiState.update { it.copy(builtinControls = it.builtinControls.copy(selectAsBack = mode)) }
+    vm.viewModelScope.launch {
+        vm.libretroSettingsRepo.setBuiltinSelectAsBack(mode)
     }
 }
 
@@ -824,6 +857,7 @@ internal fun routeUpdatePlatformControlSetting(vm: SettingsViewModel, field: Str
             "analogAsDpad" -> current.copy(analogAsDpad = value)
             "dpadAsAnalog" -> current.copy(dpadAsAnalog = value)
             "rumbleEnabled" -> current.copy(rumbleEnabled = value)
+            "motionEnabled" -> current.copy(motionEnabled = value)
             else -> return@launch
         }
         if (updated.hasAnyOverrides()) {
@@ -838,7 +872,12 @@ internal fun routeResetAllPlatformControlSettings(vm: SettingsViewModel) {
     val platformContext = vm._uiState.value.builtinVideo.currentPlatformContext ?: return
     vm.viewModelScope.launch {
         val current = vm.libretroSettingsRepo.getByPlatformId(platformContext.platformId) ?: return@launch
-        val updated = current.copy(analogAsDpad = null, dpadAsAnalog = null, rumbleEnabled = null)
+        val updated = current.copy(
+            analogAsDpad = null,
+            dpadAsAnalog = null,
+            rumbleEnabled = null,
+            motionEnabled = null
+        )
         if (updated.hasAnyOverrides()) {
             vm.libretroSettingsRepo.upsert(updated)
         } else {
@@ -1206,6 +1245,7 @@ internal fun routeCyclePlatformContext(vm: SettingsViewModel, direction: Int) {
                 showStickMappings = !isGlobal,
                 showDpadAsAnalog = !isGlobal && platformSlug != null && PlatformWeightRegistry.hasAnalogStick(platformSlug),
                 showRumble = isGlobal || (platformSlug != null && PlatformWeightRegistry.hasRumble(platformSlug)),
+                showMotion = isGlobal || (platformSlug != null && PlatformWeightRegistry.hasMotion(platformSlug)),
                 showResetAll = !isGlobal && hasControlOverrides
             ),
             focusedIndex = 0
@@ -1238,11 +1278,13 @@ internal fun routeLoadControllerPorts(vm: SettingsViewModel) {
         )
         val ports = portDevices.mapIndexedNotNull { port, devices ->
             if (devices.size < 2) return@mapIndexedNotNull null
+            val deviceIds = devices.map { it.id }
             ControllerPortChoiceUi(
                 port = port,
-                deviceIds = devices.map { it.id },
+                deviceIds = deviceIds,
                 deviceNames = devices.map { it.name },
-                selectedIndex = devices.indexOfFirst { it.id == stored[port] }.coerceAtLeast(0)
+                selectedIndex = CorePortDeviceCatalog.selectedDeviceIndex(deviceIds, stored[port]),
+                autoIndex = CorePortDeviceCatalog.autoDeviceIndex(deviceIds) ?: 0
             )
         }
         vm._uiState.update { state ->
@@ -1271,7 +1313,7 @@ internal fun routeSelectControllerType(vm: SettingsViewModel, port: Int, index: 
         val legacyApplies = ControllerTypeSelection.legacyApplies(platform.platformSlug)
         val encoded = vm.configureEmulatorUseCase.getControllerTypesForPlatform(platform.platformId)
         val stored = ControllerTypeSelection.decode(encoded, coreId, legacyApplies)
-        val updated = if (index == 0) stored - port else stored + (port to deviceId)
+        val updated = if (index == choice.autoIndex) stored - port else stored + (port to deviceId)
         vm.configureEmulatorUseCase.setControllerTypesForPlatform(
             platform.platformId,
             ControllerTypeSelection.update(encoded, coreId, legacyApplies, updated)

@@ -28,7 +28,6 @@ import javax.inject.Singleton
 actual class DownloadThermalManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val downloadManager: DownloadManager,
-    private val steamContentManager: com.nendo.argosy.data.steam.SteamContentManager,
     private val mediaDownloadManager: MediaDownloadManager,
     private val fanController: FanController
 ) {
@@ -83,16 +82,10 @@ actual class DownloadThermalManager @Inject constructor(
         scope.launch {
             kotlinx.coroutines.flow.combine(
                 downloadManager.state.map { it.activeDownloads.isNotEmpty() },
-                steamContentManager.downloadState.map { state ->
-                    state is com.nendo.argosy.data.steam.SteamDownloadState.Downloading ||
-                    state is com.nendo.argosy.data.steam.SteamDownloadState.Preparing ||
-                    state is com.nendo.argosy.data.steam.SteamDownloadState.FetchingManifest ||
-                    state is com.nendo.argosy.data.steam.SteamDownloadState.Validating
-                },
                 mediaDownloadManager.downloadState.map { state ->
                     state is MediaDownloadState.Downloading || state is MediaDownloadState.Preparing
                 }
-            ) { rommActive, steamActive, mediaActive -> rommActive || steamActive || mediaActive }
+            ) { rommActive, mediaActive -> rommActive || mediaActive }
                 .collect { hasWork ->
                     if (hasWork && monitorJob?.isActive != true) {
                         startThermalMonitoring()
@@ -224,10 +217,6 @@ actual class DownloadThermalManager @Inject constructor(
     }
 
     private fun calculateThermalStatus(cpuTemp: Float, batteryTemp: Float): ThermalStatus {
-        // Throttling only engages during standby. When the screen is on the
-        // user is attending the device and can decide to stop downloads, and
-        // per-core junction sensors on modern SoCs routinely read hot under
-        // normal use -- throttling here would pause every download forever.
         if (!isScreenOff) {
             return ThermalStatus(ThermalState.NORMAL, cpuTemp, batteryTemp, 1.0f)
         }
@@ -259,12 +248,7 @@ actual class DownloadThermalManager @Inject constructor(
 
     private fun hasActiveDownloads(): Boolean {
         if (downloadManager.state.value.activeDownloads.isNotEmpty()) return true
-        if (mediaDownloadManager.hasActiveMediaDownload()) return true
-        val steamState = steamContentManager.downloadState.value
-        return steamState is com.nendo.argosy.data.steam.SteamDownloadState.Downloading ||
-            steamState is com.nendo.argosy.data.steam.SteamDownloadState.Preparing ||
-            steamState is com.nendo.argosy.data.steam.SteamDownloadState.FetchingManifest ||
-            steamState is com.nendo.argosy.data.steam.SteamDownloadState.Validating
+        return mediaDownloadManager.hasActiveMediaDownload()
     }
 
     private fun acquireWakeLock() {

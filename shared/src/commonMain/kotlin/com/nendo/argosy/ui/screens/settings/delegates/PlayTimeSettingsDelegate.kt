@@ -3,6 +3,29 @@ package com.nendo.argosy.ui.screens.settings.delegates
 import com.nendo.argosy.data.social.uploader.UNASSIGNED_PLAY_DEVICE_ID
 import com.nendo.argosy.di.ApplicationContext
 import com.nendo.argosy.platform.PlatformContext as Context
+import com.nendo.argosy.platform.startActivity
+import com.nendo.argosy.platform.getApplicationInfo
+import com.nendo.argosy.platform.getApplicationLabel
+import com.nendo.argosy.platform.applicationContext
+import com.nendo.argosy.platform.packageName
+import com.nendo.argosy.platform.getSystemService
+import com.nendo.argosy.platform.getExternalFilesDir
+import com.nendo.argosy.platform.externalCacheDir
+import com.nendo.argosy.platform.dataDir
+import com.nendo.argosy.platform.packageManager
+import com.nendo.argosy.platform.getPackageInfo
+import com.nendo.argosy.platform.getLaunchIntentForPackage
+import com.nendo.argosy.platform.addFlags
+import com.nendo.argosy.platform.versionName
+import com.nendo.argosy.platform.assets
+import com.nendo.argosy.platform.contentResolver
+import com.nendo.argosy.platform.cacheDir
+import com.nendo.argosy.platform.filesDir
+import com.nendo.argosy.platform.getSharedPreferences
+import com.nendo.argosy.platform.list
+import com.nendo.argosy.platform.open
+import com.nendo.argosy.platform.getQuantityString
+import com.nendo.argosy.platform.resources
 import com.nendo.argosy.platform.getString
 import com.nendo.argosy.res.ArgosyR as R
 import com.nendo.argosy.data.model.PlayTimeSnapshot
@@ -13,6 +36,7 @@ import com.nendo.argosy.data.social.uploader.PlaySessionBackfill
 import com.nendo.argosy.data.social.uploader.PlaySessionPull
 import com.nendo.argosy.ui.common.DisplayText
 import com.nendo.argosy.ui.components.recap.MonthlyRecapController
+import com.nendo.argosy.ui.screens.settings.PlayTimeDeleteConfirm
 import com.nendo.argosy.ui.screens.settings.PlayTimeEntryUi
 import com.nendo.argosy.ui.screens.settings.PlayTimeFigure
 import com.nendo.argosy.ui.screens.settings.PlayTimeGamesSortMode
@@ -58,6 +82,22 @@ class PlayTimeSettingsDelegate @Inject constructor(
                 .mapNotNull { (gameId, art) -> art.coverPath?.let { gameId to it } }
                 .toMap()
             _state.update { it.apply(snapshot, platformNames, coverPaths) }
+        }
+    }
+
+    fun requestDeleteConfirm(gameId: Long) {
+        val entry = _state.value.games.firstOrNull { it.key == gameId.toString() } ?: return
+        _state.update { it.copy(deleteConfirm = PlayTimeDeleteConfirm(gameId = gameId, gameTitle = entry.name)) }
+    }
+
+    fun dismissDeleteConfirm() = _state.update { it.copy(deleteConfirm = null) }
+
+    fun confirmDelete(scope: CoroutineScope) {
+        val confirm = _state.value.deleteConfirm ?: return
+        _state.update { it.copy(deleteConfirm = null) }
+        scope.launch {
+            playStatsRepository.deletePlayRecords(confirm.gameId)
+            load(scope)
         }
     }
 

@@ -72,6 +72,7 @@ object DimensionTokens {
         const val footerHeight = 52
         const val footerHeightCompact = 30
         const val modalWidth = 400
+        const val modalWidthMin = 280
         const val modalWidthLg = 520
         const val quickPanelWidthWide = 456
         const val navDrawerWidth = 252
@@ -104,6 +105,9 @@ object DimensionTokens {
         const val saveSyncRowCover = 56
         const val saveSyncAttentionCover = 144
         const val screenMapCardWidth = 220
+        const val seatCardMaxWidth = 200
+        const val seatCardHeight = 200
+        const val seatArtSize = 104
         const val playerTransportHeight = 96
         const val playerChromePadding = 32
         const val playerScrubTrackHeight = 4

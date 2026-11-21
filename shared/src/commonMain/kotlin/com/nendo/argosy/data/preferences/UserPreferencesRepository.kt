@@ -109,10 +109,16 @@ class UserPreferencesRepository @Inject constructor(
             selectSwapMode = controls.selectSwapMode,
             openNavigationKey = controls.openNavigationKey,
             openQuickPanelKey = controls.openQuickPanelKey,
+            quickPanelInEmulators = controls.quickPanelInEmulators,
             navRingRoutes = controls.navRingRoutes,
             quickNavigation = controls.quickNavigation,
             navBarAutoHide = controls.navBarAutoHide,
+            ignoreControllerTouchpad = controls.ignoreControllerTouchpad,
+            systemHotkeysEnabled = controls.systemHotkeysEnabled,
+            systemHomeCombo = controls.systemHomeCombo,
+            systemBackCombo = controls.systemBackCombo,
             lastRommSync = sync.lastRommSync,
+            rommChangesWatermark = sync.rommChangesWatermark,
             lastFavoritesSync = sync.lastFavoritesSync,
             lastFavoritesCheck = sync.lastFavoritesCheck,
             syncFilters = sync.syncFilters,
@@ -136,6 +142,7 @@ class UserPreferencesRepository @Inject constructor(
             startFullScreen = display.startFullScreen,
             displayProfile = display.displayProfile,
             safeAreaPercent = display.safeAreaPercent,
+            screenOrientation = display.screenOrientation,
             lockScreenArt = display.lockScreenArt,
             homeAppAvailable = display.homeAppAvailable,
             iconPack = display.iconPack,
@@ -151,6 +158,7 @@ class UserPreferencesRepository @Inject constructor(
             folderNameFromRom = storage.folderNameFromRom,
             gridDensity = display.gridDensity,
             libraryLayout = display.libraryLayout,
+            libraryListStyle = display.libraryListStyle,
             libraryBoxArt3d = display.libraryBoxArt3d,
             libraryDefaultSort = display.libraryDefaultSort,
             libraryDefaultSortDescending = display.libraryDefaultSortDescending,
@@ -176,7 +184,6 @@ class UserPreferencesRepository @Inject constructor(
             fileLoggingPath = app.fileLoggingPath,
             fileLogLevel = app.fileLogLevel,
             saveDebugLoggingEnabled = sync.saveDebugLoggingEnabled,
-            saveWatcherEnabled = sync.saveWatcherEnabled,
             boxArtShape = display.boxArtShape,
             boxArtCornerRadius = display.boxArtCornerRadius,
             boxArtBorderThickness = display.boxArtBorderThickness,
@@ -214,7 +221,6 @@ class UserPreferencesRepository @Inject constructor(
             customBiosPath = storage.customBiosPath,
             weeklyIntegrityCheckEnabled = storage.weeklyIntegrityCheckEnabled,
             lastIntegrityCheckTime = storage.lastIntegrityCheckTime,
-            steamInstallVolume = storage.steamInstallVolume,
             videoWallpaperEnabled = display.videoWallpaperEnabled,
             videoWallpaperDelaySeconds = display.videoWallpaperDelaySeconds,
             videoWallpaperMuted = display.videoWallpaperMuted,
@@ -235,6 +241,7 @@ class UserPreferencesRepository @Inject constructor(
             ambientLedAchievementFlash = display.ambientLedAchievementFlash,
             builtinLibretroEnabled = builtinEnabled,
             appDisplayTargets = app.appDisplayTargets,
+            lidSleepEnabled = display.lidSleepEnabled,
             dualScreenEnabled = display.dualScreenEnabled,
             displayRoleOverride = display.displayRoleOverride,
             gamesDisplayTarget = display.gamesDisplayTarget,
@@ -242,6 +249,8 @@ class UserPreferencesRepository @Inject constructor(
             dualScreenInputFocus = display.dualScreenInputFocus,
             screenLayouts = display.screenLayouts,
             installedOnlyHome = display.installedOnlyHome,
+            recentNewGamesLimit = display.recentNewGamesLimit,
+            newBadgePlacement = display.newBadgePlacement,
             socialSessionToken = sync.socialSessionToken,
             socialUserId = sync.socialUserId,
             socialUsername = sync.socialUsername,
@@ -292,6 +301,8 @@ class UserPreferencesRepository @Inject constructor(
      */
     val latest: UserPreferences? get() = hotPreferences.replayCache.firstOrNull()
 
+    val menuWrapMode: MenuWrapMode get() = (latest ?: UserPreferences()).menuWrapMode
+
     // --- Display delegates ---
 
     suspend fun setThemeMode(mode: ThemeMode) = displayPrefs.setThemeMode(mode)
@@ -321,6 +332,8 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setFontScale(slot: FontSlot, scale: Int) = displayPrefs.setFontScale(slot, scale)
     suspend fun setGridDensity(density: GridDensity) = displayPrefs.setGridDensity(density)
     suspend fun setLibraryLayout(layout: LibraryLayout) = displayPrefs.setLibraryLayout(layout)
+
+    suspend fun setLibraryListStyle(style: LibraryListStyle) = displayPrefs.setLibraryListStyle(style)
 
     suspend fun setLibraryBoxArt3d(enabled: Boolean) = displayPrefs.setLibraryBoxArt3d(enabled)
 
@@ -364,6 +377,7 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setDisplayProfile(profile: DisplayProfile) = displayPrefs.setDisplayProfile(profile)
     suspend fun setSafeAreaPercent(percent: Int) = displayPrefs.setSafeAreaPercent(percent)
     suspend fun setHideSystemStatusBar(hide: Boolean) = displayPrefs.setHideSystemStatusBar(hide)
+    suspend fun setScreenOrientation(mode: ScreenOrientationMode) = displayPrefs.setScreenOrientation(mode)
     suspend fun setLockScreenArt(enabled: Boolean) = displayPrefs.setLockScreenArt(enabled)
     suspend fun setIconPack(packageName: String?) = displayPrefs.setIconPack(packageName)
     suspend fun setGripAutoControllers(
@@ -405,6 +419,7 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setScreenDimmerEnabled(enabled: Boolean) = displayPrefs.setScreenDimmerEnabled(enabled)
     suspend fun setScreenDimmerTimeoutMinutes(minutes: Int) = displayPrefs.setScreenDimmerTimeoutMinutes(minutes)
     suspend fun setScreenDimmerLevel(level: Int) = displayPrefs.setScreenDimmerLevel(level)
+    suspend fun setLidSleepEnabled(enabled: Boolean) = displayPrefs.setLidSleepEnabled(enabled)
     suspend fun setDualScreenEnabled(enabled: Boolean) = displayPrefs.setDualScreenEnabled(enabled)
     suspend fun setDisplayRoleOverride(override: DisplayRoleOverride) = displayPrefs.setDisplayRoleOverride(override)
     suspend fun setGamesDisplayTarget(target: EmulatorDisplayTarget) = displayPrefs.setGamesDisplayTarget(target)
@@ -412,6 +427,8 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setScreenLayouts(layouts: ScreenLayouts) = displayPrefs.setScreenLayouts(layouts)
     suspend fun setDualScreenInputFocus(focus: DualScreenInputFocus) = displayPrefs.setDualScreenInputFocus(focus)
     suspend fun setInstalledOnlyHome(enabled: Boolean) = displayPrefs.setInstalledOnlyHome(enabled)
+    suspend fun setRecentNewGamesLimit(limit: Int) = displayPrefs.setRecentNewGamesLimit(limit)
+    suspend fun setNewBadgePlacement(placement: NewBadgePlacement) = displayPrefs.setNewBadgePlacement(placement)
 
     suspend fun setShowStatusClock(show: Boolean) = displayPrefs.setShowStatusClock(show)
 
@@ -448,6 +465,8 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setRAWebApiKey(key: String?) = syncPrefs.setRAWebApiKey(key)
     suspend fun setRAProxy(enabled: Boolean, address: String) = syncPrefs.setRAProxy(enabled, address)
     suspend fun setLastRommSyncTime(time: Instant) = syncPrefs.setLastRommSyncTime(time)
+
+    suspend fun setRommChangesWatermark(time: Instant) = syncPrefs.setRommChangesWatermark(time)
     suspend fun setLastRommFullSyncTime(time: Instant) = syncPrefs.setLastRommFullSyncTime(time)
     suspend fun getSyncResumeGeneration(): Instant? = syncPrefs.getSyncResumeGeneration()
     suspend fun getSyncResumeCompletedPlatformIds(): Set<Long> = syncPrefs.getSyncResumeCompletedPlatformIds()
@@ -475,8 +494,6 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setSaveCacheLimit(limit: Int) = syncPrefs.setSaveCacheLimit(limit)
     suspend fun setSaveDebugLoggingEnabled(enabled: Boolean) = syncPrefs.setSaveDebugLoggingEnabled(enabled)
     suspend fun setImageCachePath(path: String?) = syncPrefs.setImageCachePath(path)
-    fun saveWatcherEnabled(): Flow<Boolean> = syncPrefs.saveWatcherEnabled()
-    suspend fun setSaveWatcherEnabled(enabled: Boolean) = syncPrefs.setSaveWatcherEnabled(enabled)
 
     // --- Social delegates ---
 
@@ -530,9 +547,14 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setNavigationButtonMaps(maps: NavigationButtonMaps) = controlsPrefs.setNavigationButtonMaps(maps)
     suspend fun setOpenNavigationKey(keyCode: Int) = controlsPrefs.setOpenNavigationKey(keyCode)
     suspend fun setOpenQuickPanelKey(keyCode: Int) = controlsPrefs.setOpenQuickPanelKey(keyCode)
+    suspend fun setQuickPanelInEmulators(enabled: Boolean) = controlsPrefs.setQuickPanelInEmulators(enabled)
     suspend fun setNavRingRoutes(routes: List<String>?) = controlsPrefs.setNavRingRoutes(routes)
     suspend fun setQuickNavigation(enabled: Boolean) = controlsPrefs.setQuickNavigation(enabled)
     suspend fun setNavBarAutoHide(enabled: Boolean) = controlsPrefs.setNavBarAutoHide(enabled)
+    suspend fun setIgnoreControllerTouchpad(enabled: Boolean) = controlsPrefs.setIgnoreControllerTouchpad(enabled)
+    suspend fun setSystemHotkeysEnabled(enabled: Boolean) = controlsPrefs.setSystemHotkeysEnabled(enabled)
+    suspend fun setSystemHomeCombo(keyCodes: List<Int>?) = controlsPrefs.setSystemHomeCombo(keyCodes)
+    suspend fun setSystemBackCombo(keyCodes: List<Int>?) = controlsPrefs.setSystemBackCombo(keyCodes)
 
 
     // --- Storage delegates ---
@@ -548,7 +570,6 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setCustomBiosPath(path: String?) = storagePrefs.setCustomBiosPath(path)
     suspend fun setWeeklyIntegrityCheckEnabled(enabled: Boolean) = storagePrefs.setWeeklyIntegrityCheckEnabled(enabled)
     suspend fun setLastIntegrityCheckTime(timeMs: Long) = storagePrefs.setLastIntegrityCheckTime(timeMs)
-    suspend fun setSteamInstallVolume(volume: String?) = storagePrefs.setSteamInstallVolume(volume)
     suspend fun setMediaStoragePath(path: String?) = storagePrefs.setMediaStoragePath(path)
 
     suspend fun setJellyfinServerUrl(url: String?) = jellyfinPrefs.setServerUrl(url)
@@ -611,6 +632,10 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setBuiltinLowLatencyAudio(enabled: Boolean) = builtinPrefs.setBuiltinLowLatencyAudio(enabled)
     suspend fun setBuiltinForceSoftwareTiming(enabled: Boolean) = builtinPrefs.setBuiltinForceSoftwareTiming(enabled)
     suspend fun setBuiltinRumbleEnabled(enabled: Boolean) = builtinPrefs.setBuiltinRumbleEnabled(enabled)
+    suspend fun setBuiltinMotionEnabled(enabled: Boolean) = builtinPrefs.setBuiltinMotionEnabled(enabled)
+    suspend fun setBuiltinGyroAimInvertX(enabled: Boolean) = builtinPrefs.setBuiltinGyroAimInvertX(enabled)
+    suspend fun setBuiltinGyroAimInvertY(enabled: Boolean) = builtinPrefs.setBuiltinGyroAimInvertY(enabled)
+    suspend fun setBuiltinGyroAimSensitivity(percent: Int) = builtinPrefs.setBuiltinGyroAimSensitivity(percent)
     suspend fun setBuiltinBlackFrameInsertion(enabled: Boolean) = builtinPrefs.setBuiltinBlackFrameInsertion(enabled)
     suspend fun setBuiltinLimitHotkeysToPlayer1(enabled: Boolean) = builtinPrefs.setBuiltinLimitHotkeysToPlayer1(enabled)
     suspend fun setBuiltinAnalogAsDpad(enabled: Boolean) = builtinPrefs.setBuiltinAnalogAsDpad(enabled)
@@ -619,6 +644,8 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setBuiltinFastForwardEnabled(enabled: Boolean) = builtinPrefs.setBuiltinFastForwardEnabled(enabled)
     suspend fun setBuiltinFastForwardSpeed(speed: Int) = builtinPrefs.setBuiltinFastForwardSpeed(speed)
     suspend fun setBuiltinFastForwardMode(mode: com.nendo.argosy.data.local.entity.FastForwardMode) = builtinPrefs.setBuiltinFastForwardMode(mode)
+    suspend fun setBuiltinSelectAsBack(mode: com.nendo.argosy.data.local.entity.SelectAsBackMode) = builtinPrefs.setBuiltinSelectAsBack(mode)
+    suspend fun setBuiltinDualScreenMatchSize(enabled: Boolean) = builtinPrefs.setBuiltinDualScreenMatchSize(enabled)
     suspend fun setBuiltinFastForwardPreservePitch(enabled: Boolean) = builtinPrefs.setBuiltinFastForwardPreservePitch(enabled)
     suspend fun setBuiltinRotation(rotation: Int) = builtinPrefs.setBuiltinRotation(rotation)
     suspend fun setBuiltinOverscanCrop(crop: Int) = builtinPrefs.setBuiltinOverscanCrop(crop)
@@ -667,6 +694,8 @@ class UserPreferencesRepository @Inject constructor(
     fun isBuiltinMigrationComplete(): Flow<Boolean> = builtinPrefs.isBuiltinMigrationComplete()
     fun isPs2StandalonePinDone(): Flow<Boolean> = builtinPrefs.isPs2StandalonePinDone()
     suspend fun setPs2StandalonePinDone() = builtinPrefs.setPs2StandalonePinDone()
+    fun isBuiltinPriorityPinDone(): Flow<Boolean> = builtinPrefs.isBuiltinPriorityPinDone()
+    suspend fun setBuiltinPriorityPinDone() = builtinPrefs.setBuiltinPriorityPinDone()
 
     // --- Session delegates ---
 
@@ -684,9 +713,32 @@ class UserPreferencesRepository @Inject constructor(
         isNetplayGuest: Boolean = false
     ) = sessionPrefs.persistActiveSession(gameId, emulatorPackage, startTime, coreName, isHardcore, channelName, variantFileId, origin, isNetplayGuest)
 
-    suspend fun clearActiveSession() = sessionPrefs.clearActiveSession()
+    suspend fun clearActiveSession(startedAt: Instant? = null) = sessionPrefs.clearActiveSession(startedAt)
 
     suspend fun getPersistedSession(): PersistedSession? = sessionPrefs.getPersistedSession()
 
-    suspend fun keepSessionForRetry(maxAttempts: Int): Boolean = sessionPrefs.keepSessionForRetry(maxAttempts)
+    suspend fun keepSessionForRetry(maxAttempts: Int, startedAt: Instant? = null): Boolean =
+        sessionPrefs.keepSessionForRetry(maxAttempts, startedAt)
+}
+
+/**
+ * Gyro aim sensitivity as a percentage: 100 reaches the right stick's full range at the default
+ * turn, 200 at half that turn.
+ */
+object GyroAimSensitivity {
+    const val DEFAULT = 100
+    const val MIN = 25
+    const val MAX = 300
+    const val STEP = 25
+
+    fun clamp(percent: Int): Int = percent.coerceIn(MIN, MAX)
+
+    fun step(percent: Int, direction: Int): Int {
+        val next = percent + direction * STEP
+        return when {
+            next > MAX -> MIN
+            next < MIN -> MAX
+            else -> next
+        }
+    }
 }

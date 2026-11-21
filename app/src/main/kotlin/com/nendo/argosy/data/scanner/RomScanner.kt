@@ -17,6 +17,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
@@ -47,9 +49,12 @@ class RomScanner @Inject constructor(
     private val platformDao: PlatformDao,
     private val platformFolderResolver: PlatformFolderResolver,
     private val syncPreferencesRepository: com.nendo.argosy.data.preferences.SyncPreferencesRepository
-) {
+) : RomScanActivity {
     private val _progress = MutableStateFlow(ScanProgress())
     val progress: StateFlow<ScanProgress> = _progress.asStateFlow()
+
+    override val isScanning: kotlinx.coroutines.flow.Flow<Boolean>
+        get() = progress.map { it.isScanning }
 
     suspend fun initializePlatforms() {
         withContext(Dispatchers.IO) {
@@ -92,11 +97,13 @@ class RomScanner @Inject constructor(
                 } else {
                     gamesSkipped++
                 }
-                _progress.value = _progress.value.copy(
-                    gamesFound = gamesUpdated,
-                    gamesSkipped = gamesSkipped,
-                    platformsFound = platformsWithGames.toSet()
-                )
+                _progress.update {
+                    it.copy(
+                        gamesFound = gamesUpdated,
+                        gamesSkipped = gamesSkipped,
+                        platformsFound = platformsWithGames.toSet()
+                    )
+                }
             }
 
             val ownerUserId = syncPreferencesRepository.getRommUserId()
@@ -144,10 +151,12 @@ class RomScanner @Inject constructor(
         val files = directory.listFiles()?.filter { !it.name.startsWith("._") } ?: return
 
         for (file in files) {
-            _progress.value = _progress.value.copy(
-                currentPath = file.absolutePath,
-                filesScanned = _progress.value.filesScanned + 1
-            )
+            _progress.update {
+                it.copy(
+                    currentPath = file.absolutePath,
+                    filesScanned = it.filesScanned + 1
+                )
+            }
 
             when {
                 file.isDirectory && file.name.lowercase() in VariantCategory.CATEGORY_FOLDER_NAMES -> { }

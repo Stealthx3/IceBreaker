@@ -9,7 +9,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +27,7 @@ import com.nendo.argosy.ui.components.NestedModal
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.ui.input.LocalInputDispatcher
+import com.nendo.argosy.ui.input.ModalInputEffect
 import com.nendo.argosy.ui.theme.Dimens
 
 private const val MAX_GREETING_RUNES = 140
@@ -57,20 +57,7 @@ fun GreetingEditModal(
         }
     }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, inputHandler) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                inputDispatcher.pushModal(inputHandler)
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        inputDispatcher.pushModal(inputHandler)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            inputDispatcher.popModal()
-        }
-    }
+    ModalInputEffect(active = true, handler = inputHandler, inputDispatcher = inputDispatcher)
 
     NestedModal(
         title = stringResource(R.string.quaypass_greeting_modal_title),

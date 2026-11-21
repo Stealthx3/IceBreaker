@@ -6,6 +6,7 @@ import com.nendo.argosy.ui.input.InputDispatcher.Companion.computeWrappedIndex
 import com.nendo.argosy.data.steam.SteamConnectionState
 import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.ui.input.UiShortcut
+import com.nendo.argosy.hardware.SystemHotkeyAction
 import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.core.emulator.LibretroSettingDef
 import com.nendo.argosy.libretro.frame.FrameRegistry
@@ -566,7 +567,6 @@ private fun routeSteamConfirm(vm: SettingsViewModel, state: SettingsUiState): In
     when (val item = steamItemAtFocusIndex(state.focusedIndex, state.steam)) {
         SteamItem.PreLogin -> routeSteamPreLoginConfirm(vm, state)
         SteamItem.GnInstall -> {}
-        SteamItem.InstallPath -> vm.openSteamInstallPathPicker()
         SteamItem.SyncLibrary -> vm.syncSteamLibrary()
         SteamItem.AddManual -> vm.showAddSteamGameDialog()
         SteamItem.GameNativeLibrary -> {
@@ -619,7 +619,7 @@ private fun routeStorageConfirm(vm: SettingsViewModel, state: SettingsUiState): 
         StorageItem.MediaTile -> vm.navigateToStorageMedia()
         StorageItem.MusicTile -> vm.navigateToThemeMusic()
         StorageItem.CachesTile -> vm.navigateToStorageCaches()
-        StorageItem.SteamTile -> vm.navigateToStorageCachesForSteam()
+        StorageItem.SteamTile -> vm.navigateToSection(SettingsSection.STEAM_SETTINGS)
         StorageItem.GlobalRomPath -> vm.openFolderPicker()
         StorageItem.ImageCache -> if (!state.syncSettings.isImageCacheMigrating) vm.openImageCachePicker()
         StorageItem.MusicLocation -> vm.openMusicLocationPicker()
@@ -695,6 +695,7 @@ private fun routeStorageGamesConfirm(vm: SettingsViewModel, state: SettingsUiSta
             return InputResult.handled(SoundType.TOGGLE)
         }
         is StorageGamesItem.PlatformRow -> vm.openStoragePlatformGames(item.usage.platformId)
+        StorageGamesItem.LocalOnly -> vm.openStorageLocalOnlyGames()
         else -> {}
     }
     return InputResult.HANDLED
@@ -773,7 +774,6 @@ private fun routeStorageCachesConfirm(vm: SettingsViewModel, state: SettingsUiSt
         StorageCachesItem.MiscDownloadsClear -> vm.requestCachesClear(CachesClearTarget.MISC_DOWNLOADS)
         StorageCachesItem.ShadersCatalogClear -> vm.requestCachesClear(CachesClearTarget.SHADERS_CATALOG)
         StorageCachesItem.FramesClear -> vm.requestCachesClear(CachesClearTarget.FRAMES)
-        StorageCachesItem.SteamClear -> vm.requestCachesClear(CachesClearTarget.STEAM_DOWNLOADS)
         else -> {}
     }
     return InputResult.HANDLED
@@ -786,12 +786,17 @@ private fun routeInterfaceConfirm(vm: SettingsViewModel, state: SettingsUiState)
             vm.requestEnumPicker(InterfaceItem.Language.key)
             return InputResult.handled(SoundType.OPEN_MODAL)
         }
+        InterfaceItem.ScreenOrientation -> {
+            vm.requestEnumPicker(InterfaceItem.ScreenOrientation.key)
+            return InputResult.handled(SoundType.OPEN_MODAL)
+        }
         InterfaceItem.CompactFooter -> vm.setCompactFooter(!state.display.compactFooter)
         InterfaceItem.DisplayProfile -> vm.cycleDisplayProfile()
         InterfaceItem.StartFullScreen -> vm.setStartFullScreen(!state.display.startFullScreen)
         InterfaceItem.HideSystemNavigationBar ->
             vm.setHideSystemNavigationBar(!state.display.hideSystemNavigationBar)
         InterfaceItem.HideSystemStatusBar -> vm.setHideSystemStatusBar(!state.display.hideSystemStatusBar)
+        InterfaceItem.QuickPanelInEmulators -> vm.setQuickPanelInEmulators(!state.display.quickPanelInEmulators)
         InterfaceItem.LockScreenArt -> vm.setLockScreenArt(!state.display.lockScreenArt)
         InterfaceItem.HomeApp -> vm.setHomeAppAvailable(!state.display.homeAppAvailable)
         InterfaceItem.StatusClock -> vm.setShowStatusClock(!state.display.showStatusClock)
@@ -818,7 +823,9 @@ private fun routeDisplaysConfirm(vm: SettingsViewModel, state: SettingsUiState):
             return InputResult.handled(SoundType.OPEN_MODAL)
         }
         DisplaysItem.DimLevel -> vm.cycleScreenDimmerLevel()
+        DisplaysItem.LidSleep -> vm.setLidSleepEnabled(!state.display.lidSleepEnabled)
         DisplaysItem.DualScreenEnabled -> vm.setDualScreenEnabled(!state.display.dualScreenEnabled)
+        DisplaysItem.DualScreenMatchSize -> vm.setDualScreenMatchSize(!state.display.dualScreenMatchSize)
         DisplaysItem.DisplayRoles -> {
             vm.requestEnumPicker(DisplaysItem.DisplayRoles.key)
             return InputResult.handled(SoundType.OPEN_MODAL)
@@ -1014,7 +1021,12 @@ private fun routeHomeScreenConfirm(vm: SettingsViewModel, state: SettingsUiState
             vm.setInstalledOnlyHome(!state.display.installedOnlyHome)
             return InputResult.handled(SoundType.TOGGLE)
         }
-        HomeScreenItem.LayoutSelector, HomeScreenItem.BoxArt -> return InputResult.handled(SoundType.SILENT)
+        HomeScreenItem.RecentNewGames -> {
+            vm.requestEnumPicker(HomeScreenItem.RecentNewGames.key)
+            return InputResult.handled(SoundType.OPEN_MODAL)
+        }
+        HomeScreenItem.NewBadge, HomeScreenItem.LayoutSelector, HomeScreenItem.BoxArt ->
+            return InputResult.handled(SoundType.SILENT)
         is HomeScreenItem.LayoutField -> {
             val updated = toggleHomeLayoutField(state.display.homeLayout, focused.field)
             if (updated == state.display.homeLayout) return InputResult.handled(SoundType.SILENT)
@@ -1102,6 +1114,11 @@ private fun routeNavigationConfirm(vm: SettingsViewModel, state: SettingsUiState
             vm.setSwapStartSelect(swapped)
             return InputResult.toggled(swapped)
         }
+        NavigationItem.IgnoreControllerTouchpad -> {
+            val enabled = !state.controls.ignoreControllerTouchpad
+            vm.setIgnoreControllerTouchpad(enabled)
+            return InputResult.toggled(enabled)
+        }
         NavigationItem.QuickNavigation -> {
             val enabled = !state.controls.quickNavigation
             vm.setQuickNavigation(enabled)
@@ -1123,6 +1140,20 @@ private fun routeNavigationConfirm(vm: SettingsViewModel, state: SettingsUiState
         }
         NavigationItem.OpenQuickPanelShortcut -> {
             vm.startShortcutCapture(UiShortcut.OPEN_QUICK_PANEL)
+            return InputResult.handled(SoundType.OPEN_MODAL)
+        }
+        NavigationItem.SystemHotkeys -> {
+            val enabled = !state.controls.systemHotkeysEnabled
+            vm.setSystemHotkeysEnabled(enabled)
+            return InputResult.toggled(enabled)
+        }
+        NavigationItem.SystemHotkeysAccess -> vm.openAccessibilitySettings()
+        NavigationItem.SystemHomeCombo -> {
+            vm.startSystemComboCapture(SystemHotkeyAction.HOME)
+            return InputResult.handled(SoundType.OPEN_MODAL)
+        }
+        NavigationItem.SystemBackCombo -> {
+            vm.startSystemComboCapture(SystemHotkeyAction.BACK)
             return InputResult.handled(SoundType.OPEN_MODAL)
         }
         else -> {}
@@ -1170,7 +1201,8 @@ private fun routeLibraryViewConfirm(vm: SettingsViewModel, state: SettingsUiStat
             vm.setSortFavoritesFirst(!state.display.sortFavoritesFirst)
             InputResult.handled(SoundType.TOGGLE)
         }
-        LibraryItem.LayoutItem, LibraryItem.GridDensityItem, LibraryItem.BoxArtItem, LibraryItem.DefaultSource ->
+        LibraryItem.LayoutItem, LibraryItem.ListStyleItem, LibraryItem.GridDensityItem,
+        LibraryItem.BoxArtItem, LibraryItem.DefaultSource ->
             InputResult.handled(SoundType.SILENT)
         else -> {
             vm.requestEnumPicker(item.key)
@@ -1324,6 +1356,7 @@ private fun routeDismissTopOverlay(vm: SettingsViewModel): Boolean {
         state.rootScriptDialog != null -> { vm.dismissRootScriptDialog(); true }
         state.storagePlatformGames.deleteConfirm != null -> { vm.dismissStoragePlatformGameDelete(); true }
         state.storagePlatformGames.categoryDeleteConfirm != null -> { vm.dismissStoragePlatformCategoryDelete(); true }
+        state.playTime.deleteConfirm != null -> { vm.dismissPlayTimeGameDelete(); true }
         state.emulators.showSavePathModal -> { vm.dismissSavePathModal(); true }
         state.emulators.showMemcardPicker -> { vm.dismissMemcardPicker(); true }
         state.storage.platformSettingsModalId != null -> { vm.closePlatformSettingsModal(); true }
@@ -1343,6 +1376,7 @@ private fun routeDismissTopOverlay(vm: SettingsViewModel): Boolean {
         state.builtinControls.showHotkeysModal -> { vm.hideHotkeysModal(); true }
         state.controls.shortcutCaptureTarget != null -> { vm.cancelShortcutCapture(); true }
         state.controls.buttonMappingCapture != null -> { vm.cancelButtonCapture(); true }
+        state.controls.systemComboCaptureTarget != null -> { vm.cancelSystemComboCapture(); true }
         state.controls.showNavRingModal -> { vm.backNavRing(); true }
         vm.shaderChainManager.shaderStack.isReordering -> { vm.cancelShaderLift(); true }
         state.accounts.pairing.active -> { vm.cancelAddAccount(); true }
@@ -1581,6 +1615,10 @@ private fun routePlatformDetailConfirm(vm: SettingsViewModel, state: SettingsUiS
                 .find { it.platformId == config.platform.id }
                 ?.combineContent ?: false
             vm.togglePlatformCombineContent(config.platform.id, !current)
+        }
+        PlatformDetailItem.SkipFullSync -> {
+            val current = storageConfig?.skipFullSync ?: false
+            vm.togglePlatformSkipFullSync(config.platform.id, !current)
         }
         PlatformDetailItem.SyncNow -> vm.syncPlatform(config.platform.id, config.platform.getDisplayName())
         PlatformDetailItem.RemoveFiles -> vm.requestRemoveLocalFiles()

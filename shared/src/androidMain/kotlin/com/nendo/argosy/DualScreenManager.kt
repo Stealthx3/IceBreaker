@@ -55,8 +55,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
@@ -116,11 +118,9 @@ actual class DualScreenManager(
     internal val configureEmulatorUseCase: com.nendo.argosy.domain.usecase.game.ConfigureEmulatorUseCase,
     internal val builtinCoreResolver: com.nendo.argosy.data.emulator.BuiltinCoreResolver,
     internal val saveHandlerRegistry: com.nendo.argosy.data.sync.platform.PlatformSaveHandlerRegistry,
-    internal val steamDownloadQueueDao: com.nendo.argosy.data.local.dao.SteamDownloadQueueDao,
     internal val steamRepository: com.nendo.argosy.data.repository.SteamRepository,
     internal val playSessionTracker: com.nendo.argosy.data.emulator.PlaySessionTracker,
     internal val permissionHelper: com.nendo.argosy.util.PermissionHelper,
-    internal val steamContentManager: com.nendo.argosy.data.steam.SteamContentManager,
     internal val repairImageCacheUseCase: com.nendo.argosy.domain.usecase.cache.RepairImageCacheUseCase? = null,
     internal val downloadFileStatusRepository: com.nendo.argosy.data.repository.DownloadFileStatusRepository,
     internal val gradientExtractionDelegate: com.nendo.argosy.ui.screens.common.GradientExtractionDelegate,
@@ -138,6 +138,7 @@ actual class DualScreenManager(
     internal val resolveMediaPlayTargetUseCase:
         com.nendo.argosy.domain.usecase.media.ResolveMediaPlayTargetUseCase,
     private val mediaPlaybackTracker: com.nendo.argosy.data.media.MediaPlaybackTracker,
+    private val launchProgressTracker: com.nendo.argosy.data.emulator.LaunchProgressTracker,
     internal val mediaAvailabilityVerifier:
         com.nendo.argosy.data.media.MediaAvailabilityVerifier? = null,
     internal val mediaDownloadDelegate:
@@ -193,6 +194,25 @@ actual class DualScreenManager(
 
     private val _hasPresentationScreen = MutableStateFlow(false)
     actual val hasPresentationScreen: StateFlow<Boolean> = _hasPresentationScreen
+
+    private val screenEventTick = MutableStateFlow(0)
+
+    /**
+     * True while a lit external display mirrors the built-in panel: one is attached, dual screen
+     * is off and DeX is not running. Launcher surfaces skip the panel's camera cutout inset then
+     * and draw to its edge, the frame the external display shows.
+     */
+    val panelMirroredToExternal: StateFlow<Boolean> =
+        kotlinx.coroutines.flow.combine(
+            preferencesRepository.userPreferences
+                .map { it.dualScreenEnabled }
+                .distinctUntilChanged(),
+            screenEventTick
+        ) { dualScreenEnabled, _ ->
+            !dualScreenEnabled &&
+                !displayAffinityHelper.isDesktopMode &&
+                displayAffinityHelper.hasLitExternalDisplay
+        }.stateIn(activityIndependentScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
 
     private val _controlHints =
         MutableStateFlow<List<com.nendo.argosy.ui.dualscreen.CompanionHint>>(emptyList())
@@ -256,11 +276,20 @@ actual class DualScreenManager(
         com.nendo.argosy.hardware.DisplayBadgeOverlay(appContext)
     }
 
-    actual fun showScreenNumbers(
-        size: com.nendo.argosy.hardware.DisplayBadgeSize) {
-        val numbers = attachedScreens().associate { it.displayId to it.number }
+    fun showScreenNumbers(
+        size: com.nendo.argosy.hardware.DisplayBadgeSize =
+            com.nendo.argosy.hardware.DisplayBadgeSize.LARGE,
+        inContentDisplayId: Int? = null
+    ) {
+        val screens = attachedScreens()
+        val numbers = screens.associate { it.displayId to it.number }
         _screenNumbers.value = numbers
-        displayBadges.show(numbers, size)
+        val overlayNumbers = if (displayAffinityHelper.hasSecondaryDisplay || displayAffinityHelper.isDesktopMode) {
+            numbers
+        } else {
+            screens.filter { it.builtIn }.associate { it.displayId to it.number }
+        }
+        displayBadges.show(overlayNumbers.filterKeys { it != inContentDisplayId }, size)
     }
 
     actual fun hideScreenNumbers() {
@@ -314,7 +343,7 @@ actual class DualScreenManager(
         val keys = attached.map { it.key }
         val setKey = com.nendo.argosy.domain.model.ScreenLayouts.setKeyOf(keys)
         val stored = preferencesRepository.userPreferences.first().screenLayouts
-        val known = stored.layoutFor(setKey)
+        val known = stored.layoutFor(setKey)?.takeIf { stored -> attached.any { it.key == stored.primaryKey } }
         val layout = known ?: com.nendo.argosy.domain.model.ScreenLayout.defaultFor(
             attached.map {
                 com.nendo.argosy.domain.model.ScreenSpec(
@@ -519,6 +548,7 @@ actual class DualScreenManager(
     actual fun onDesktopModeChanged() {
         val active = displayAffinityHelper.isDesktopMode
         Log.i(TAG, "Samsung DeX ${if (active) "active" else "inactive"}")
+        screenEventTick.update { it + 1 }
         if (active) {
             teardownCompanion()
             setSecondaryHomeComponentEnabled(false)
@@ -798,10 +828,11 @@ actual class DualScreenManager(
         observeActiveAccount()
         observeMedia()
         observeAchievementUnlocks()
+        observeLaunchLive()
     }
     interface SessionQuickActions {
         fun quickSave()
-        fun loadState(slotNumber: Int)
+        fun loadState(slotNumber: Int, savedAtMillis: Long)
         fun screenshot()
         fun openCheats()
         fun openGameSettings()
@@ -814,6 +845,37 @@ actual class DualScreenManager(
             _swappedCompanionState.update { it.copy(quickActionsAvailable = value != null) }
             if (value == null) _sessionControls.value = com.nendo.argosy.ui.dualscreen.dashboard.SessionControls()
         }
+
+    /**
+     * Quits the running game from the dashboard. A built-in game quits itself. An external one is
+     * covered by the launcher on its display, which ends the session the way leaving any game does.
+     */
+    fun quitSession() {
+        sessionQuickActions?.let {
+            it.quit()
+            return
+        }
+        if (!_swappedCompanionState.value.externalEmulator) return
+        val gameDisplay = emulatorDisplayId ?: return
+        val roles = displayAffinityHelper.getRoleDisplayIds(_isRolesSwapped.value) ?: return
+        if (gameDisplay != roles.first && gameDisplay != roles.second) return
+        val launcher = if (gameDisplay == android.view.Display.DEFAULT_DISPLAY) {
+            ArgosyActivity::class.java
+        } else {
+            SecondaryHomeActivity::class.java
+        }
+        Log.d(TAG, "Quitting the external game on display $gameDisplay")
+        activityContext.startActivity(
+            Intent(activityContext, launcher).apply {
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                )
+            },
+            displayAffinityHelper.getActivityOptions(forEmulator = false, overrideDisplayId = gameDisplay)
+        )
+    }
 
     private val _sessionControls = MutableStateFlow(com.nendo.argosy.ui.dualscreen.dashboard.SessionControls())
     actual val sessionControls: StateFlow<com.nendo.argosy.ui.dualscreen.dashboard.SessionControls> = _sessionControls
@@ -871,8 +933,8 @@ actual class DualScreenManager(
     private val companionHosts =
         com.nendo.argosy.ui.dualscreen.DisplayHostRegistry<CompanionHost>()
 
-    actual fun registerCompanionHost(displayId: Int, host: CompanionHost) {
-        companionHosts.register(displayId, host)
+    fun registerCompanionHost(displayId: Int, host: CompanionHost) {
+        companionHosts.register(displayId, host)?.finishCompanion()
     }
 
     actual fun unregisterCompanionHost(displayId: Int, host: CompanionHost) {
@@ -918,13 +980,15 @@ actual class DualScreenManager(
      * The displays a viewer can hand input to, in screen-number order, each with the number the
      * badge draws for it.
      */
-    actual fun focusableDisplays(): List<com.nendo.argosy.util.AttachedScreen> = attachedScreens()
+    fun focusableDisplays(): List<com.nendo.argosy.util.AttachedScreen> =
+        attachedScreens().filter { displayAffinityHelper.usableDisplayId(it.displayId) != null }
 
     /**
      * Moves input focus to [displayId], through whichever surface of ours is rendered there.
      */
     actual fun focusDisplay(displayId: Int) {
         if (isKeyguardShowing) return
+        if (displayAffinityHelper.usableDisplayId(displayId) == null) return
         FocusDirectorActivity.launchOnDisplay(activityContext, displayId)
     }
 
@@ -1082,26 +1146,14 @@ actual class DualScreenManager(
     actual val mediaPlayback: StateFlow<com.nendo.argosy.data.media.ActiveMediaPlayback?> =
         mediaPlaybackTracker.activePlayback
 
-    private val _mediaSignedIn = MutableStateFlow(false)
+    private val _mediaPanelItemId = MutableStateFlow<String?>(null)
 
     /**
-     * Whether a media account exists at all. The companion's media button is offered on this rather
-     * than on a live playback, so the panel is reachable to pick something up from where it was left
-     * as well as to look at what is already running.
+     * The item the presentation screen's media panel describes: the open playback's item, held
+     * for [MEDIA_PANEL_SWITCH_GRACE_MS] after the player closes it. The player closes the outgoing
+     * episode before the next one opens, and the hold keeps the panel in place across that gap.
      */
-    actual val mediaSignedIn: StateFlow<Boolean> = _mediaSignedIn
-
-    private val _companionMediaVisible = MutableStateFlow(false)
-
-    /**
-     * Whether the companion is showing the media panel rather than its home.
-     *
-     * Context decides it: a playback opening turns it on and a playback ending turns it off, so a
-     * film starting on the main screen puts its episode list on the companion without anyone asking.
-     * [toggleCompanionMediaView] is the manual override on top of that, which is why the flag is
-     * held rather than derived - a derived flag could not be overridden.
-     */
-    actual val companionMediaVisible: StateFlow<Boolean> = _companionMediaVisible
+    val mediaPanelItemId: StateFlow<String?> = _mediaPanelItemId
 
     private val _mediaPlayerDisplay = MutableStateFlow<Int?>(null)
 
@@ -1164,15 +1216,6 @@ actual class DualScreenManager(
         if (_mediaPlayerControlsLocked.value == locked) return
         _mediaPlayerControlsLocked.value = locked
         if (locked) controlCompanion?.refocusSelf()
-    }
-
-    actual fun toggleCompanionMediaView() {
-        _companionMediaVisible.value = !_companionMediaVisible.value &&
-            (_mediaSignedIn.value || mediaPlaybackTracker.activePlayback.value != null)
-    }
-
-    actual fun setCompanionMediaVisible(visible: Boolean) {
-        _companionMediaVisible.value = visible
     }
 
     private val _mediaInfoRequest = MutableStateFlow<String?>(null)
@@ -1326,41 +1369,57 @@ actual class DualScreenManager(
         }
     }
 
+    private var launchLiveObserverJob: Job? = null
+    private var launchWasLive = false
+    private val focusedLaunchers = HashMap<Int, java.lang.ref.WeakReference<android.app.Activity>>()
+
+    private fun observeLaunchLive() {
+        launchLiveObserverJob?.cancel()
+        launchLiveObserverJob = scope.launch {
+            launchProgressTracker.launchLive.collect { live ->
+                val fell = launchWasLive && !live
+                launchWasLive = live
+                if (live) focusCheck?.cancel()
+                if (!fell) return@collect
+                yield()
+                focusedLaunchers.values.mapNotNull { it.get() }
+                    .filter { it.hasWindowFocus() }
+                    .forEach(::onLauncherWindowFocused)
+            }
+        }
+    }
+
     init {
         observePreferences()
         observeActiveAccount()
         observeMedia()
         observeMediaDim()
         observeAchievementUnlocks()
+        observeLaunchLive()
     }
 
-    /**
-     * Turns the companion's media panel on and off with the playback itself.
-     *
-     * This is the whole of "automatic by context": nobody asks for the panel, it is there while
-     * something is being watched and gone afterwards. A manual return to home during a playback
-     * survives, because only the transitions write here - a viewer who went back to their library
-     * mid-film is not sent to the film again on the next transport change.
-     */
     private fun observeMedia() {
         mediaObserverJob?.cancel()
         mediaObserverJob = scope.launch {
-            launch {
-                mediaRepository.isSignedIn.collect { _mediaSignedIn.value = it }
-            }
             var wasOpen = false
-            mediaPlaybackTracker.activePlayback.collect { playback ->
+            mediaPlaybackTracker.activePlayback.collectLatest { playback ->
                 val isOpen = playback != null
-                if (isOpen == wasOpen) return@collect
-                wasOpen = isOpen
-                _companionMediaVisible.value = isOpen
-                if (!isOpen) {
-                    mediaFocusJob?.cancel()
-                    mediaFocusJob = null
-                    mediaPlayerDisplayId = null
-                    mediaPlayerKeyDispatcher = null
-                    mediaPlayerMotionDispatcher = null
-                    _mediaPlayerControlsLocked.value = false
+                if (isOpen != wasOpen) {
+                    wasOpen = isOpen
+                    if (!isOpen) {
+                        mediaFocusJob?.cancel()
+                        mediaFocusJob = null
+                        mediaPlayerDisplayId = null
+                        mediaPlayerKeyDispatcher = null
+                        mediaPlayerMotionDispatcher = null
+                        _mediaPlayerControlsLocked.value = false
+                    }
+                }
+                if (playback != null) {
+                    _mediaPanelItemId.value = playback.itemId
+                } else if (_mediaPanelItemId.value != null) {
+                    delay(MEDIA_PANEL_SWITCH_GRACE_MS)
+                    _mediaPanelItemId.value = null
                 }
             }
         }
@@ -1445,19 +1504,28 @@ actual class DualScreenManager(
 
     actual val presentationSlot: StateFlow<com.nendo.argosy.ui.dualscreen.PresentationSlot> =
         kotlinx.coroutines.flow.combine(
-            _presentationSlots,
-            _companionDetails,
-            _swappedIsGameActive,
-            _swappedCompanionState,
-            _companionAchievements
-        ) { slots, details, gameActive, inGame, achievements ->
-            val detail = details.lastOrNull()?.second
-            when {
-                gameActive && inGame.isLoaded ->
-                    com.nendo.argosy.ui.dualscreen.PresentationSlot.InGame(inGame, achievements)
-                slots.isNotEmpty() -> slots.last().second
-                detail != null -> com.nendo.argosy.ui.dualscreen.PresentationSlot.Detail(detail)
-                else -> com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback
+            kotlinx.coroutines.flow.combine(
+                _presentationSlots,
+                _companionDetails,
+                _swappedIsGameActive,
+                _swappedCompanionState,
+                _companionAchievements
+            ) { slots, details, gameActive, inGame, achievements ->
+                val detail = details.lastOrNull()?.second
+                when {
+                    gameActive && inGame.isLoaded ->
+                        com.nendo.argosy.ui.dualscreen.PresentationSlot.InGame(inGame, achievements)
+                    slots.isNotEmpty() -> slots.last().second
+                    detail != null -> com.nendo.argosy.ui.dualscreen.PresentationSlot.Detail(detail)
+                    else -> com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback
+                }
+            },
+            _mediaPanelItemId
+        ) { slot, mediaItemId ->
+            if (mediaItemId != null && slot !is com.nendo.argosy.ui.dualscreen.PresentationSlot.InGame) {
+                com.nendo.argosy.ui.dualscreen.PresentationSlot.MediaPlayback(mediaItemId)
+            } else {
+                slot
             }
         }
             .stateIn(
@@ -1550,7 +1618,7 @@ actual class DualScreenManager(
             target = role,
             roleDisplayIds = displayAffinityHelper.getRoleDisplayIds(newSwapped),
             appScreenDisplayId = displayAffinityHelper.appScreenDisplayId(newSwapped)
-        )?.takeIf { it != gameDisplay }
+        )?.takeIf { it != gameDisplay }?.let(displayAffinityHelper::usableDisplayId)
     }
 
     private fun moveGameWithRoles(newSwapped: Boolean, commit: () -> Unit) {
@@ -1625,16 +1693,19 @@ actual class DualScreenManager(
     private val displayListener: DisplayManager.DisplayListener = object : DisplayManager.DisplayListener {
         override fun onDisplayAdded(displayId: Int) {
             if (!isScreenEvent(displayId)) return
+            screenEventTick.update { it + 1 }
             onScreenAdded(displayId)
         }
 
         override fun onDisplayRemoved(displayId: Int) {
             if (!isScreenEvent(displayId)) return
+            screenEventTick.update { it + 1 }
             onScreenRemoved(displayId)
         }
 
         override fun onDisplayChanged(displayId: Int) {
             if (!isScreenEvent(displayId)) return
+            screenEventTick.update { it + 1 }
             onScreenChanged(displayId)
         }
     }
@@ -1748,21 +1819,55 @@ actual class DualScreenManager(
     }
 
     /**
-     * Whether the emulator has left the screen a launcher surface just resumed on. The emulator
-     * reports stopped only after the launcher resumes, so a first answer of "still there" is asked
-     * again after [EMULATOR_SETTLE_MS] while [launcherStillInFront] holds.
+     * Whether the emulator has left the display a launcher surface just took focus on. Focus on the
+     * game's own display ([onGameDisplay]) past [EMULATOR_SETTLE_MS] into the session answers yes.
+     * A younger session first waits [EMULATOR_SETTLE_MS]. A remaining answer of "still there" is
+     * asked again every [EMULATOR_SETTLE_MS], up to [EMULATOR_SETTLE_CHECKS] times, while
+     * [launcherStillInFront] holds.
      */
-    actual suspend fun emulatorLeftScreen(context: Context, launcherStillInFront: () -> Boolean): Boolean {
-        if (!isEmulatorStillOnScreen(context)) return true
-        delay(EMULATOR_SETTLE_MS)
-        return launcherStillInFront() && !isEmulatorStillOnScreen(context)
+    suspend fun emulatorLeftScreen(
+        context: Context,
+        onGameDisplay: Boolean,
+        launcherStillInFront: () -> Boolean
+    ): Boolean {
+        if (isSessionSettling()) {
+            delay(EMULATOR_SETTLE_MS)
+            if (!launcherStillInFront()) return false
+        } else if (onGameDisplay) {
+            return true
+        }
+        return awaitEmulatorLeft(
+            stillOnScreen = { isEmulatorStillOnScreen(context) },
+            launcherStillInFront = launcherStillInFront,
+            checks = EMULATOR_SETTLE_CHECKS,
+            intervalMs = EMULATOR_SETTLE_MS
+        )
+    }
+
+    private suspend fun closeBackgroundedBuiltInGame(activity: android.app.Activity) {
+        val builtIn = com.nendo.argosy.data.emulator.EmulatorRegistry.BUILTIN_PACKAGE
+        if (sessionStateStore.getEmulatorPackage() != builtIn) return
+        if (!sessionEndCoordinator.stopsAfterLeavingScreen(builtIn)) return
+        if (isSessionSettling()) {
+            delay(EMULATOR_SETTLE_MS)
+            if (!activity.hasWindowFocus() || launchProgressTracker.launchLive.value) return
+        }
+        val activityManager = activity.getSystemService(android.app.ActivityManager::class.java) ?: return
+        val gameTask = com.nendo.argosy.hardware.builtInGameAppTask(activityManager) ?: return
+        Log.d(TAG, "Launcher focused while the built-in game is in the background, closing it")
+        runCatching { gameTask.finishAndRemoveTask() }
+    }
+
+    private fun isSessionSettling(): Boolean {
+        val startedAt = playSessionTracker.activeSession.value?.startTime ?: return false
+        return java.time.Duration.between(startedAt, java.time.Instant.now()).toMillis() < EMULATOR_SETTLE_MS
     }
 
     /**
      * Ends the session whose emulator [emulatorLeftScreen] reported gone. On a dual-screen device it
-     * then kills the stopped emulator along with any presentation window it left on the other
-     * display, retrying until the process is cached or a new session starts. On any other device
-     * [SessionEndCoordinator] stops the emulator once its session end completes.
+     * also force-stops the emulator [EMULATOR_RELEASE_ATTEMPTS] times beside the save sync, ending
+     * early if a new session starts, unless [SessionEndCoordinator.stopsAfterLeavingScreen] keeps it
+     * running. Elsewhere [SessionEndCoordinator] stops it after the sync.
      */
     actual fun endSessionAfterEmulatorLeft() {
         val emulatorPackage = sessionStateStore.getEmulatorPackage()
@@ -1770,12 +1875,12 @@ actual class DualScreenManager(
         emulatorDisplayId = null
         sessionStateStore.clearSession()
         rederiveRolesFromLayout()
-        val sessionEnd = sessionEndCoordinator.endClosedSession()
-        broadcastSessionCleared()
+        sessionEndCoordinator.endClosedSession()
+        if (_swappedIsGameActive.value) onSessionChanged(-1L) else broadcastSessionCleared()
         if (emulatorPackage == null || !_isDualScreenDevice.value) return
         if (emulatorPackage == com.nendo.argosy.data.emulator.EmulatorRegistry.BUILTIN_PACKAGE) return
-        scope.launch {
-            sessionEnd.join()
+        activityIndependentScope.launch {
+            if (!sessionEndCoordinator.stopsAfterLeavingScreen(emulatorPackage)) return@launch
             releaseStoppedEmulator(
                 emulatorPackage = emulatorPackage,
                 endedSession = endedSession,
@@ -1793,18 +1898,28 @@ actual class DualScreenManager(
     /**
      * A launcher window gaining focus on the display its game ran on is the launcher's signal that
      * the game closed. The session ends once [emulatorLeftScreen] confirms it; a game on another
-     * display keeps running.
+     * display keeps running. A built-in game left paused in the background is closed first when games
+     * do not stay open, and its own teardown ends the session; one that stays open keeps running and
+     * only its session ends. While a launch is live the focus gain is a launcher surface returning
+     * before its game window exists, not the game closing; the check waits for the launch to clear.
+     * A launch that goes live while the check is settling stops it the same way.
      */
     fun onLauncherWindowFocused(activity: android.app.Activity) {
-        if (isMovingGame || focusCheck?.isActive == true) return
         val ownDisplay = activity.window.decorView.display?.displayId ?: return
+        focusedLaunchers[ownDisplay] = java.lang.ref.WeakReference(activity)
+        if (launchProgressTracker.launchLive.value) return
+        if (isMovingGame || focusCheck?.isActive == true) return
         val gameDisplay = emulatorDisplayId
         if (gameDisplay != null && gameDisplay != ownDisplay) return
         focusCheck = scope.launch {
             if (playSessionTracker.activeSession.value == null &&
                 preferencesRepository.getPersistedSession() == null
             ) return@launch
-            if (!emulatorLeftScreen(activity) { activity.hasWindowFocus() }) return@launch
+            closeBackgroundedBuiltInGame(activity)
+            if (!emulatorLeftScreen(activity, onGameDisplay = gameDisplay == ownDisplay) { activity.hasWindowFocus() }) {
+                return@launch
+            }
+            if (launchProgressTracker.launchLive.value) return@launch
             Log.d(TAG, "Launcher focused on display $ownDisplay and the game is gone, ending session")
             endSessionAfterEmulatorLeft()
         }
@@ -1819,10 +1934,15 @@ actual class DualScreenManager(
     actual fun cancelDockReorder(token: Long) = dockCoordinator.cancel(token)
     actual fun saveDockReorder(token: Long) = dockCoordinator.save(token)
 
-    actual suspend fun installedAppLabels(): List<Pair<String, String>> =
-        appsRepository.getInstalledApps()
-            .map { it.packageName to it.label }
-            .sortedBy { it.second.lowercase() }
+    suspend fun installedAppLabels(): List<Pair<String, String>> {
+        val prefs = preferencesRepository.preferences.first()
+        return com.nendo.argosy.data.repository.AppListFilter.visibleThenHidden(
+            appsRepository.getInstalledApps(includeSystemApps = true),
+            prefs.hiddenApps,
+            prefs.visibleSystemApps,
+            prefs.appOrder
+        ).map { it.packageName to it.label }
+    }
 
     actual fun appLabel(packageName: String): String =
         appsRepository.getAppLabel(packageName) ?: packageName
@@ -1870,9 +1990,9 @@ actual class DualScreenManager(
                 launchCompanionApp(packageName, row.screenKey)
             is com.nendo.argosy.ui.components.AppMenuRow.Action -> when (row.item) {
                 com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_SECONDARY_HOME ->
-                    scope.launch { appShortcutActions.togglePinned(packageName) }
+                    activityIndependentScope.launch { appShortcutActions.togglePinned(packageName) }
                 com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_VISIBILITY ->
-                    scope.launch { appShortcutActions.toggleHidden(packageName) }
+                    activityIndependentScope.launch { appShortcutActions.toggleHidden(packageName) }
                 com.nendo.argosy.ui.components.AppContextMenuItem.UNINSTALL ->
                     activityContext.startActivity(appShortcutActions.uninstallIntent(packageName))
                 else -> Unit
@@ -1979,33 +2099,41 @@ actual class DualScreenManager(
             swappedSessionTimer?.stop(appContext)
             swappedSessionTimer = com.nendo.argosy.hardware.CompanionSessionTimer().also { it.start(appContext) }
             companionSessionGameId = gameId
-            scope.launch { refreshCompanionAchievements(gameId) }
-            scope.launch(Dispatchers.IO) {
-                val game = gameDao.getById(gameId) ?: return@launch
-                val art = imageCacheManager.loadArt(gameId)
-                val platform = platformRepository.getById(game.platformId)
-                val documents = com.nendo.argosy.ui.screens.gamedetail.components.gameDocuments(
-                    game = game,
-                    files = gameFileDao.getFilesForGame(gameId),
-                    romMRepository = romMRepository
-                )
+            activityIndependentScope.launch { refreshCompanionAchievements(gameId) }
+            activityIndependentScope.launch(Dispatchers.IO) {
+                val game = companionLookup(gameId) { gameDao.getById(gameId) }
+                val art = companionLookup(gameId) { imageCacheManager.loadArt(gameId) }
+                    ?: com.nendo.argosy.data.model.ResolvedGameArt()
+                val platform = game?.let { companionLookup(gameId) { platformRepository.getById(it.platformId) } }
+                val documents = game?.let {
+                    companionLookup(gameId) {
+                        com.nendo.argosy.ui.screens.gamedetail.components.gameDocuments(
+                            game = it,
+                            files = gameFileDao.getFilesForGame(gameId),
+                            romMRepository = romMRepository
+                        )
+                    }
+                }.orEmpty()
                 _swappedCompanionState.update {
+                    if (companionSessionGameId != gameId || !_swappedIsGameActive.value) return@update it
                     com.nendo.argosy.hardware.CompanionInGameState(
                         gameId = gameId,
-                        title = game.title,
+                        title = game?.title.orEmpty(),
                         coverPath = art.coverPath,
-                        platformName = platform?.getDisplayName() ?: game.platformSlug,
-                        developer = game.developer,
-                        releaseYear = game.releaseYear,
-                        playTimeMinutes = game.playTimeMinutes,
-                        playCount = game.playCount,
-                        achievementCount = game.achievementCount,
-                        earnedAchievementCount = game.earnedAchievementCount,
+                        platformName = platform?.getDisplayName() ?: game?.platformSlug.orEmpty(),
+                        developer = game?.developer,
+                        releaseYear = game?.releaseYear,
+                        playTimeMinutes = game?.playTimeMinutes ?: 0,
+                        playCount = game?.playCount ?: 0,
+                        achievementCount = game?.achievementCount ?: 0,
+                        earnedAchievementCount = game?.earnedAchievementCount ?: 0,
                         sessionStartTimeMillis = sessionStateStore.getSessionStartTimeMillis(),
                         channelName = sessionStateStore.getChannelName(),
                         isHardcore = sessionStateStore.isHardcore(),
                         isDirty = sessionStateStore.isSaveDirty(),
                         isLoaded = true,
+                        externalEmulator = sessionStateStore.getEmulatorPackage()
+                            ?.let { it != com.nendo.argosy.data.emulator.EmulatorRegistry.BUILTIN_PACKAGE } == true,
                         backgroundPath = art.backgroundPath,
                         manual = documents.firstOrNull {
                             it.category == com.nendo.argosy.data.model.VariantCategory.MANUAL.key
@@ -2038,6 +2166,14 @@ actual class DualScreenManager(
             }
         }
     }
+
+    private suspend fun <T> companionLookup(gameId: Long, lookup: suspend () -> T): T? =
+        runCatching { lookup() }
+            .onFailure {
+                if (it is kotlin.coroutines.cancellation.CancellationException) throw it
+                Log.w(TAG, "Companion in-game lookup failed for game $gameId", it)
+            }
+            .getOrNull()
 
     /**
      * The hardcore claim of the running session changed after it started (RetroAchievements
@@ -2117,7 +2253,7 @@ actual class DualScreenManager(
      */
     actual fun applyDisplayRoleOverride(override: DisplayRoleOverride) {
         sessionStateStore.setDisplayRoleOverride(override.name)
-        scope.launch { preferencesRepository.setDisplayRoleOverride(override) }
+        activityIndependentScope.launch { preferencesRepository.setDisplayRoleOverride(override) }
         val resolved = DisplayRoleResolver(displayAffinityHelper, sessionStateStore).isSwapped
         if (resolved == _isRolesSwapped.value) return
         if (sessionStateStore.hasActiveSession()) {
@@ -2128,6 +2264,11 @@ actual class DualScreenManager(
     }
 
     private fun applyUserRoleChange(swapped: Boolean) {
+        val nextPrimary = displayAffinityHelper.getRoleDisplayIds(swapped)?.first
+        if (nextPrimary != null && displayAffinityHelper.usableDisplayId(nextPrimary) == null) {
+            Log.i(TAG, "Role swap refused: display $nextPrimary is off in the screen layout")
+            return
+        }
         commitRoleSwap(swapped)
         activityIndependentScope.launch {
             withContext(Dispatchers.IO) { persistPrimaryRole(swapped) }
@@ -2268,10 +2409,12 @@ actual class DualScreenManager(
     actual fun launchCompanionApp(packageName: String, pinnedScreenKey: String?) {
         val intent = appsRepository.getLaunchIntent(packageName) ?: return
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        scope.launch {
-            if (pinnedScreenKey != null) {
+        if (pinnedScreenKey != null) {
+            activityIndependentScope.launch {
                 preferencesRepository.setAppDisplayTarget(packageName, pinnedScreenKey)
             }
+        }
+        scope.launch {
             val prefs = preferencesRepository.userPreferences.first()
             val options = displayAffinityHelper.getAppLaunchOptions(
                 preferredScreenKey = pinnedScreenKey ?: prefs.appDisplayTargets[packageName],
@@ -2313,6 +2456,8 @@ actual class DualScreenManager(
 
     actual companion object {
         private const val EMULATOR_SETTLE_MS = 2_000L
+        private const val EMULATOR_SETTLE_CHECKS =
+            (com.nendo.argosy.util.PermissionHelper.RECENT_USE_WINDOW_MS / EMULATOR_SETTLE_MS).toInt() + 2
         private const val EMULATOR_RELEASE_ATTEMPTS = 6
         private const val EMULATOR_RELEASE_INTERVAL_MS = 5_000L
         actual const val ACTION_WIZARD_STATE = "com.nendo.argosy.WIZARD_STATE"
@@ -2350,6 +2495,7 @@ actual class DualScreenManager(
          * input.
          */
         private const val MEDIA_DIM_PARTIAL_DELAY_MS = 30_000L
+        private const val MEDIA_PANEL_SWITCH_GRACE_MS = 5_000L
         private const val MEDIA_DIM_OFF_DELAY_MS = 60_000L
         private const val MEDIA_DIM_PARTIAL_BRIGHTNESS = 0.4f
         private const val MEDIA_DIM_OFF_BRIGHTNESS = 0f

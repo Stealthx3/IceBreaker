@@ -8,10 +8,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.local.entity.SaveCacheEntity
+import com.nendo.argosy.data.platform.PlatformDefinitions
+import com.nendo.argosy.data.repository.ActiveSaveDiskJudge
 import com.nendo.argosy.data.repository.ActiveSaveRepository
+import com.nendo.argosy.data.repository.DiskVerdict
 import com.nendo.argosy.data.repository.SaveCacheManager
 import com.nendo.argosy.data.sync.platform.SigilRestore
 import com.swordfish.libretrodroid.GLRetroView
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
@@ -23,12 +28,16 @@ actual class SaveStateManager actual constructor(
     private val gameId: Long,
     private val activeSaveRepository: ActiveSaveRepository,
     private val saveCacheManager: SaveCacheManager,
-    private val usesExternalMemcard: Boolean,
-    private val channelName: String?,
-    private val isVariant: Boolean,
-    primarySavePath: String?,
-    private val onLiveStateWritten: ((Int, File) -> Unit)?,
-    private val onLiveStateRemoved: ((Int, File) -> Unit)?) {
+    private val diskJudge: ActiveSaveDiskJudge,
+    private val secureSaves: Boolean,
+    private val ownerUserId: Long?,
+    private val usesExternalMemcard: Boolean = false,
+    private val channelName: String? = null,
+    private val isVariant: Boolean = false,
+    primarySavePath: String? = null,
+    private val onLiveStateWritten: ((Int, File) -> Unit)? = null,
+    private val onLiveStateRemoved: ((Int, File) -> Unit)? = null
+) {
     private var lastSramHash: String? = null
     var hasQuickSave by mutableStateOf(false)
         private set
@@ -257,15 +266,14 @@ actual class SaveStateManager actual constructor(
     }
 
     /**
-     * Resolves the SRAM to load for [launchMode], writes it to the live .srm, and returns the bytes
-     * plus mode hints. Two non-obvious rules: an explicit save-management restore (activeSaveApplied)
-     * wins over the default resume pick; and RESUME_HARDCORE falls back to the active save when no
-     * hardcore save exists, because RetroAchievements forbids only save states in hardcore, not SRAM
-     * battery saves (that fallback is flagged casualSaveInHardcore so the UI can surface it).
+     * The SRAM to load for [launchMode], placed on the live .srm as [ActiveSaveDiskJudge] decides
+     * against the save already there. An explicit save-management restore wins over the resume
+     * pick; RESUME_HARDCORE with no hardcore save falls back to the active save, flagged
+     * casualSaveInHardcore.
      */
     actual suspend fun restoreSaveForLaunchMode(launchMode: LaunchMode): RestoreResult {
         if (usesExternalMemcard) {
-            Log.d(TAG, "External memcard (GCI folder) - skipping flat .srm restore")
+            Log.d(TAG, "External memcard - skipping flat .srm restore")
             return RestoreResult(null)
         }
         if (isVariant) {
@@ -313,11 +321,10 @@ actual class SaveStateManager actual constructor(
                     if (!isValid) {
                         Log.w(TAG, "Hardcore save missing trailer - save may have been modified externally")
                     }
-                    val bytes = placeCachedSave(hardcoreSave)
-                    if (bytes != null) {
-                        Log.d(TAG, "Restored hardcore save (${bytes.size} bytes, valid=$isValid)")
-                    }
-                    RestoreResult(coreBytes(bytes))
+                    val placement = placeCachedSave(hardcoreSave)
+                    Log.d(TAG, "Hardcore save cache=${hardcoreSave.id} valid=$isValid inPlay=${placement.targetInPlay} bytes=${placement.bytes?.size ?: -1}")
+                    val sram = coreBytes(placement.bytes)
+                    RestoreResult(sram, casualSaveInHardcore = sram != null && !placement.targetInPlay)
                 } else {
                     Log.d(TAG, "No hardcore save; using active save for hardcore session")
                     val fallback = restoreResumeSave(activeSave)
@@ -332,15 +339,76 @@ actual class SaveStateManager actual constructor(
         }
     }
 
-    private suspend fun placeCachedSave(entity: SaveCacheEntity): ByteArray? {
+    private class Placement(val bytes: ByteArray?, val targetInPlay: Boolean)
+
+    private suspend fun placeCachedSave(entity: SaveCacheEntity): Placement {
+        val primaryPath = primarySaveFile.absolutePath
+        val diskHash = when (val disk = saveCacheManager.probeLocalSave(primaryPath, gameId, EmulatorRegistry.BUILTIN_ID)) {
+            SaveCacheManager.LocalSaveProbe.Absent -> return Placement(writeCachedSave(entity), targetInPlay = true)
+            SaveCacheManager.LocalSaveProbe.Unreadable -> {
+                Log.w(TAG, "[SRAM] save on disk could not be read, writing nothing over it | cache=${entity.id} file=$primaryPath")
+                return keepDisk()
+            }
+            is SaveCacheManager.LocalSaveProbe.Present -> disk.contentHash
+        }
+        val judgement = diskJudge.judge(
+            gameId, EmulatorRegistry.BUILTIN_ID, channelName, primaryPath, diskHash, entity, secureSaves, ownerUserId
+        )
+        return when (val verdict = judgement.verdict) {
+            DiskVerdict.Matches -> Placement(diskBytes(), targetInPlay = true)
+            is DiskVerdict.Progress -> {
+                Log.i(TAG, "[SRAM] disk matches unsynced cache=${verdict.cacheId}, keeping it as the active version")
+                activeSaveRepository.activateCache(gameId, verdict.cacheId)
+                keepDisk()
+            }
+            DiskVerdict.Adopt -> {
+                val adopted = withContext(NonCancellable) {
+                    saveCacheManager.cacheCurrentSave(
+                        gameId = gameId,
+                        emulatorId = EmulatorRegistry.BUILTIN_ID,
+                        savePath = primaryPath,
+                        channelName = channelName,
+                        needsRemoteSync = true
+                    )
+                }
+                Log.i(TAG, "[SRAM] disk differs from cache=${entity.id}, adopting it (Secure Saves off) | result=${adopted::class.simpleName}")
+                keepDisk()
+            }
+            DiskVerdict.Foreign -> {
+                Log.i(TAG, "[SRAM] disk save belongs to another account, leaving it | cache=${entity.id}")
+                keepDisk()
+            }
+            DiskVerdict.ProtectThenRestore -> protectThenWrite(entity, primaryPath)
+        }
+    }
+
+    private suspend fun protectThenWrite(entity: SaveCacheEntity, primaryPath: String): Placement =
+        withContext(NonCancellable) {
+            when (saveCacheManager.cacheAsRollback(gameId, EmulatorRegistry.BUILTIN_ID, primaryPath)) {
+                is SaveCacheManager.CacheResult.Created, is SaveCacheManager.CacheResult.Duplicate -> {
+                    Log.i(TAG, "[SRAM] disk differs from cache=${entity.id}, kept as rollback, restoring (Secure Saves on)")
+                    Placement(writeCachedSave(entity), targetInPlay = true)
+                }
+                SaveCacheManager.CacheResult.Failed -> {
+                    Log.e(TAG, "[SRAM] rollback of the disk save failed, writing nothing over it | cache=${entity.id}")
+                    keepDisk()
+                }
+            }
+        }
+
+    private fun diskBytes(): ByteArray? = primarySaveFile.takeIf { it.exists() }?.readBytes()
+
+    private fun keepDisk(): Placement = Placement(diskBytes(), targetInPlay = false)
+
+    private suspend fun writeCachedSave(entity: SaveCacheEntity): ByteArray? {
         when (val restored = saveCacheManager.restoreThroughSigil(entity)) {
             is SigilRestore.Restored -> {
                 Log.i(TAG, "[SRAM] cache=${entity.id} restored through Sigil -> ${savesDir.absolutePath}")
-                return primarySaveFile.takeIf { it.exists() }?.readBytes()
+                return diskBytes()
             }
             is SigilRestore.Refused -> {
                 Log.w(TAG, "[SRAM] Sigil refused cache=${entity.id}, keeping the save on disk | ${restored.reason}")
-                return primarySaveFile.takeIf { it.exists() }?.readBytes()
+                return diskBytes()
             }
             SigilRestore.NotRouted -> Unit
         }
@@ -354,6 +422,33 @@ actual class SaveStateManager actual constructor(
         if (!saveCacheManager.isUnitCache(entity)) return
         val ok = saveCacheManager.materializeUnit(entity, primarySaveFile.absolutePath)
         Log.i(TAG, "[SRAM] unit members ${if (ok) "placed" else "NOT placed"} | cache=${entity.id}")
+    }
+
+    /**
+     * Keeps the on-disk save the core refused at load as a rollback entry, so the session's first
+     * write cannot be the only copy left. True when a copy exists in the cache afterwards.
+     */
+    @Volatile private var sramWritesHeld = false
+
+    /**
+     * Holds every save memory write from the moment the core refuses the save on disk. The hold
+     * lifts only once [preserveUnloadedSave] has kept a copy, so the refused save is never
+     * overwritten without one.
+     */
+    fun holdWritesForRefusedSave() {
+        sramWritesHeld = true
+    }
+
+    suspend fun preserveUnloadedSave(): Boolean {
+        val sramFile = primarySaveFile
+        val kept = !sramFile.exists() ||
+            when (saveCacheManager.cacheAsRollback(gameId, EmulatorRegistry.BUILTIN_ID, sramFile.absolutePath)) {
+                is SaveCacheManager.CacheResult.Created, is SaveCacheManager.CacheResult.Duplicate -> true
+                is SaveCacheManager.CacheResult.Failed -> false
+            }
+        if (kept) sramWritesHeld = false
+        else Log.e(TAG, "[SRAM] refused save could not be copied; save memory writes stay held this session")
+        return kept
     }
 
     private suspend fun clearSaveForFreshStart() {
@@ -407,8 +502,9 @@ actual class SaveStateManager actual constructor(
             return RestoreResult(coreBytes(bytes))
         }
         if (targetSave != null) {
+            val placement = placeCachedSave(targetSave)
             var switchToHardcore = false
-            if (targetSave.isHardcore) {
+            if (targetSave.isHardcore && placement.targetInPlay) {
                 val isValid = saveCacheManager.isValidHardcoreSave(targetSave)
                 if (isValid) {
                     switchToHardcore = true
@@ -417,11 +513,8 @@ actual class SaveStateManager actual constructor(
                     Log.w(TAG, "RESUME: Hardcore save missing trailer, loading as casual")
                 }
             }
-            val bytes = placeCachedSave(targetSave)
-            if (bytes != null) {
-                Log.d(TAG, "RESUME: Restored save (${bytes.size} bytes, hardcore=${targetSave.isHardcore}) -> ${primarySaveFile.name}")
-            }
-            return RestoreResult(coreBytes(bytes), switchToHardcore)
+            Log.d(TAG, "RESUME: cache=${targetSave.id} inPlay=${placement.targetInPlay} bytes=${placement.bytes?.size ?: -1} hardcore=${targetSave.isHardcore} -> ${primarySaveFile.name}")
+            return RestoreResult(coreBytes(placement.bytes), switchToHardcore)
         } else {
             val f = primarySaveFile
             val bytes = f.takeIf { it.exists() }?.readBytes()
@@ -454,6 +547,10 @@ actual class SaveStateManager actual constructor(
             Log.w(TAG, "[SRAM] saveSram SKIP | external memcard platform, nothing written")
             return
         }
+        if (sramWritesHeld) {
+            Log.w(TAG, "[SRAM] saveSram SKIP | the refused save has no copy yet, file left alone")
+            return
+        }
         saveRtc(retroView)
         try {
             val sramData = retroView.serializeSRAM()
@@ -480,7 +577,7 @@ actual class SaveStateManager actual constructor(
                     Log.w(TAG, "[SRAM] saves dir missing, creating ${dir.absolutePath} -> ${dir.mkdirs()}")
                 }
             }
-            target.writeBytes(sramData)
+            writeAtomically(target, sramData)
             lastSramHash = currentHash
             Log.i(
                 TAG,
@@ -494,13 +591,22 @@ actual class SaveStateManager actual constructor(
 
     private var lastRtcHash: String? = null
 
+    private fun writeAtomically(target: File, bytes: ByteArray) {
+        val temp = File(target.parentFile, "${target.name}.tmp")
+        temp.writeBytes(bytes)
+        if (!temp.renameTo(target)) {
+            target.writeBytes(bytes)
+            temp.delete()
+        }
+    }
+
     private fun saveRtc(retroView: GLRetroView) {
         val target = getRtcFile()
         try {
             val rtc = retroView.getRtcData() ?: return
             val hash = hashBytes(rtc)
             if (hash == lastRtcHash) return
-            target.writeBytes(rtc)
+            writeAtomically(target, rtc)
             lastRtcHash = hash
             Log.i(TAG, "[RTC] wrote ${rtc.size} bytes -> ${target.absolutePath}")
         } catch (e: Exception) {
@@ -564,11 +670,15 @@ actual class SaveStateManager actual constructor(
         return performSlotLoad(retroView, newest)
     }
 
-    actual fun performSlotSave(slotNumber: Int, stateData: ByteArray, screenshot: Bitmap?): Boolean {
+    fun performSlotSave(slotNumber: Int, stateData: ByteArray, screenshot: Bitmap? = null): Boolean {
+        if (stateData.isEmpty()) {
+            Log.e(TAG, "Refusing to save an empty state to slot $slotNumber; the core produced nothing")
+            return false
+        }
         return try {
             statesDir.mkdirs()
             val stateFile = getSlotFile(slotNumber)
-            stateFile.writeBytes(stateData)
+            writeAtomically(stateFile, stateData)
 
             writeScreenshot(slotNumber, screenshot)
 
@@ -584,6 +694,8 @@ actual class SaveStateManager actual constructor(
             false
         }
     }
+
+    fun slotSavedAtMillis(slotNumber: Int): Long = getSlotFile(slotNumber).lastModified()
 
     fun performSlotLoad(retroView: GLRetroView, slotNumber: Int): Boolean {
         return try {
@@ -606,7 +718,39 @@ actual class SaveStateManager actual constructor(
         }
     }
 
-    actual fun deleteSlot(slotNumber: Int): Boolean {
+    enum class AutoLoadOutcome { LOADED, KEPT_SAVE, FAILED }
+
+    /**
+     * Loads the auto slot only when the save memory it carries matches the save on disk. On a
+     * mismatch the save on disk is written into the core and the game boots fresh from it; the
+     * booted game is restored only when the core refuses the save.
+     */
+    fun loadAutoSlotMatchingSave(retroView: GLRetroView): AutoLoadOutcome {
+        val saveHash = lastSramHash
+        if (saveHash == null || usesExternalMemcard) {
+            return if (performSlotLoad(retroView, AUTO_SLOT)) AutoLoadOutcome.LOADED else AutoLoadOutcome.FAILED
+        }
+        val bootState = retroView.serializeState()
+        if (bootState.isEmpty()) {
+            Log.w(TAG, "[SRAM] auto state skipped | the core could not snapshot the booted game to compare against")
+            return AutoLoadOutcome.KEPT_SAVE
+        }
+        if (!performSlotLoad(retroView, AUTO_SLOT)) return AutoLoadOutcome.FAILED
+        val stateSram = retroView.serializeSRAM()
+        if (stateSram.isEmpty() || hashBytes(stateSram) == saveHash) return AutoLoadOutcome.LOADED
+
+        Log.i(TAG, "[SRAM] auto state skipped | its save memory ${hashBytes(stateSram)} differs from the save $saveHash")
+        val disk = coreBytes(getSramFile().takeIf { it.isFile }?.readBytes())
+        if (disk != null && retroView.unserializeSRAM(disk)) {
+            retroView.reset()
+            return AutoLoadOutcome.KEPT_SAVE
+        }
+        Log.e(TAG, "[SRAM] the save on disk could not be written into the core; returning to the booted game")
+        retroView.unserializeState(bootState)
+        return AutoLoadOutcome.KEPT_SAVE
+    }
+
+    fun deleteSlot(slotNumber: Int): Boolean {
         return try {
             val stateFile = getSlotFile(slotNumber)
             val screenshotFile = getSlotScreenshotFile(slotNumber)
@@ -698,6 +842,10 @@ actual class SaveStateManager actual constructor(
 
     actual companion object {
         private const val TAG = "SaveStateManager"
+        private val EXTERNAL_MEMCARD_PLATFORMS = setOf("gc", "ps2")
+
+        fun usesExternalMemcard(platformSlug: String): Boolean =
+            PlatformDefinitions.getCanonicalSlug(platformSlug) in EXTERNAL_MEMCARD_PLATFORMS
         private const val LEGACY_CARD_SUFFIX = "_1.mcd"
         private val IGNORED_SAVE_EXTENSIONS = setOf("rtc", "tmp", "bak", "png")
         private val SHARED_CART_BRAM = Regex("""^(128Kbit|256Kbit|512Kbit|1Mbit|2Mbit|4Mbit)_cart\.brm$""")

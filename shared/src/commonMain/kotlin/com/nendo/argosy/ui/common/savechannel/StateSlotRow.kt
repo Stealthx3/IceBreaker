@@ -1,7 +1,6 @@
 package com.nendo.argosy.ui.common.savechannel
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +56,7 @@ import com.nendo.argosy.platform.image.intrinsicHeight
 import com.nendo.argosy.platform.image.intrinsicWidth
 import com.nendo.argosy.res.ArgosyR as R
 import com.nendo.argosy.domain.model.UnifiedStateEntry
+import com.nendo.argosy.ui.common.ScreenshotImage
 import com.nendo.argosy.ui.common.displayName
 import com.nendo.argosy.ui.common.sizeFormatted
 import com.nendo.argosy.ui.common.slotLabel
@@ -78,19 +78,7 @@ fun StateSlotRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                    .copy(alpha = 0.6f)
-                else Color.Transparent
-            )
-            .then(
-                if (isSelected) Modifier.border(
-                    width = 2.dp,
-                    color = MaterialTheme.colorScheme.secondary,
-                    shape = RoundedCornerShape(8.dp)
-                ) else Modifier
-            )
+            .saveRowFocus(isSelected)
             .then(clickModifier)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -107,10 +95,9 @@ fun StateSlotRow(
             contentAlignment = Alignment.Center
         ) {
             if (screenshotFile != null) {
-                AsyncImage(
+                ScreenshotImage(
                     model = screenshotFile,
                     contentDescription = entry.displayName(context),
-                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(width = 64.dp, height = 48.dp)
                 )

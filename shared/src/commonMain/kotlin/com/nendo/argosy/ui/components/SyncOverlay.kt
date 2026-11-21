@@ -15,7 +15,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import com.nendo.argosy.ui.util.clickableNoFocus
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,14 +28,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.PhoneAndroid
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -84,6 +77,7 @@ import com.nendo.argosy.platform.resources
 import com.nendo.argosy.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import com.nendo.argosy.res.ArgosyR as R
+import com.nendo.argosy.data.repository.SaveSyncApiClient
 import com.nendo.argosy.domain.model.SnapshotConflictChoice
 import com.nendo.argosy.ui.common.labelRes
 import com.nendo.argosy.ui.common.subtitleRes
@@ -98,11 +92,10 @@ import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.ui.input.ModalInputEffect
 import com.nendo.argosy.ui.common.detailMessage
 import com.nendo.argosy.ui.common.statusMessage
+import com.nendo.argosy.ui.components.launch.LaunchQuestionCard
+import com.nendo.argosy.ui.components.launch.LaunchQuestionChoice
 import com.nendo.argosy.ui.primitives.ActionButton
 import com.nendo.argosy.ui.theme.Dimens
-import com.nendo.argosy.ui.theme.LocalArgosyTheme
-import com.nendo.argosy.ui.theme.LocalLauncherTheme
-import com.nendo.argosy.util.formatRelativeTimeShort
 
 @Composable
 fun SyncOverlay(
@@ -119,8 +112,7 @@ fun SyncOverlay(
         syncProgress != SyncProgress.Skipped
 
     val isBlocked = syncProgress is SyncProgress.BlockedReason
-    val isPostSessionConflict = syncProgress is SyncProgress.PostSessionConflict
-    val isActiveSync = syncProgress != null && syncProgress !is SyncProgress.Error && !isBlocked && !isPostSessionConflict
+    val isActiveSync = syncProgress != null && syncProgress !is SyncProgress.Error && !isBlocked
 
     val spinTransition = if (isActiveSync) {
         rememberInfiniteTransition(label = "sync_rotation")
@@ -168,18 +160,6 @@ fun SyncOverlay(
             contentAlignment = Alignment.Center
         ) {
             when {
-                isPostSessionConflict && syncProgress is SyncProgress.PostSessionConflict -> {
-                    PostSessionConflictContent(
-                        gameTitle = syncProgress.gameTitle,
-                        channelName = syncProgress.channelName,
-                        localTimestamp = syncProgress.localTimestamp,
-                        serverTimestamp = syncProgress.serverTimestamp,
-                        serverDeviceName = syncProgress.serverDeviceName,
-                        focusIndex = 0,
-                        onSkipSync = syncProgress.onSkipSync,
-                        onOverwrite = syncProgress.onOverwrite
-                    )
-                }
                 isBlocked -> {
                     BlockedSyncContent(
                         syncProgress = syncProgress as SyncProgress.BlockedReason,
@@ -229,7 +209,7 @@ private fun ActiveSyncContent(
             text = buildAnnotatedString {
                 append(stringResource(R.string.ui_sync_overlay_slot_prefix))
                 withStyle(SpanStyle(color = LocalLauncherTheme.current.semanticColors.info)) {
-                    append(channelName ?: stringResource(R.string.ui_sync_overlay_slot_default))
+                    append(SaveSyncApiClient.syncKeyOf(channelName))
                 }
             },
             style = MaterialTheme.typography.bodyMedium,
@@ -276,11 +256,10 @@ private fun BlockedSyncContent(
 ) {
     val isPermissionIssue = syncProgress is SyncProgress.BlockedReason.PermissionRequired
     val isAccessDenied = syncProgress is SyncProgress.BlockedReason.AccessDenied
-    val isSavePathNotFound = syncProgress is SyncProgress.BlockedReason.SavePathNotFound
 
     val showGrantPermission = isPermissionIssue && onGrantPermission != null
-    val showOpenSettings = (isSavePathNotFound || (isAccessDenied && onOpenSettings != null)) && onOpenSettings != null
-    val showDisableSync = !showOpenSettings && onDisableSync != null && !isSavePathNotFound
+    val showOpenSettings = isAccessDenied && onOpenSettings != null
+    val showDisableSync = !showOpenSettings && onDisableSync != null
 
     var nextIndex = 0
     val grantIndex = if (showGrantPermission) nextIndex++ else -1
@@ -342,8 +321,7 @@ private fun BlockedSyncContent(
 
     val icon = when {
         isPermissionIssue -> Icons.Default.Lock
-        isAccessDenied -> Icons.Default.Block
-        else -> Icons.Default.FolderOff
+        else -> Icons.Default.Block
     }
 
     Column(
@@ -439,92 +417,25 @@ internal fun HardcoreConflictContent(
     onKeepLocal: (() -> Unit)?,
     onCancelLaunch: () -> Unit
 ) {
-    val warningColor = Color(0xFFFF9800)
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(horizontal = Dimens.spacingXl)
-    ) {
-        Icon(
-            imageVector = Icons.Default.Warning,
-            contentDescription = null,
-            tint = warningColor,
-            modifier = Modifier.size(Dimens.iconXl + Dimens.spacingSm)
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingLg))
-
-        Text(
-            text = stringResource(R.string.ui_sync_overlay_hardcore_title),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingSm))
-
-        Text(
-            text = stringResource(R.string.ui_sync_overlay_hardcore_message, gameName),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingSm))
-
-        Text(
-            text = stringResource(R.string.ui_sync_overlay_hardcore_note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingLg))
-
-        Column(
-            modifier = Modifier.fillMaxWidth(0.85f)
-        ) {
-            if (onKeepHardcore != null) {
-                ConflictOption(
-                    label = stringResource(R.string.ui_sync_overlay_hardcore_keep),
-                    subtitle = stringResource(R.string.ui_sync_overlay_hardcore_keep_subtitle),
-                    isFocused = focusIndex == 0,
-                    onClick = onKeepHardcore
-                )
-            }
-
+    val keepLabel = stringResource(R.string.ui_sync_overlay_hardcore_keep)
+    val keepDescription = stringResource(R.string.ui_sync_overlay_hardcore_keep_subtitle)
+    val downgradeLabel = stringResource(R.string.ui_sync_overlay_hardcore_downgrade)
+    val downgradeDescription = stringResource(R.string.ui_sync_overlay_hardcore_downgrade_subtitle)
+    val skipLabel = stringResource(R.string.ui_sync_overlay_hardcore_skip)
+    val skipDescription = stringResource(R.string.ui_sync_overlay_hardcore_skip_subtitle)
+    LaunchQuestionCard(
+        title = stringResource(R.string.ui_sync_overlay_hardcore_title),
+        message = stringResource(R.string.ui_sync_overlay_hardcore_message, gameName),
+        note = stringResource(R.string.ui_sync_overlay_hardcore_note),
+        choices = buildList<LaunchQuestionChoice> {
+            if (onKeepHardcore != null) add(LaunchQuestionChoice(keepLabel, keepDescription, onKeepHardcore))
             if (onDowngradeToCasual != null) {
-                ConflictOption(
-                    label = stringResource(R.string.ui_sync_overlay_hardcore_downgrade),
-                    subtitle = stringResource(
-                        R.string.ui_sync_overlay_hardcore_downgrade_subtitle
-                    ),
-                    isFocused = focusIndex == 1,
-                    onClick = onDowngradeToCasual
-                )
+                add(LaunchQuestionChoice(downgradeLabel, downgradeDescription, onDowngradeToCasual))
             }
-
-            if (onKeepLocal != null) {
-                ConflictOption(
-                    label = stringResource(R.string.ui_sync_overlay_hardcore_skip),
-                    subtitle = stringResource(R.string.ui_sync_overlay_hardcore_skip_subtitle),
-                    isFocused = focusIndex == 2,
-                    onClick = onKeepLocal
-                )
-            }
-
-            CancelLaunchOption(isFocused = focusIndex == 3, onClick = onCancelLaunch)
-        }
-    }
-}
-
-@Composable
-internal fun CancelLaunchOption(isFocused: Boolean, onClick: () -> Unit) {
-    ConflictOption(
-        label = stringResource(R.string.ui_launch_overlay_cancel_option),
-        subtitle = stringResource(R.string.ui_launch_overlay_cancel_option_subtitle),
-        isFocused = isFocused,
-        onClick = onClick
+            if (onKeepLocal != null) add(LaunchQuestionChoice(skipLabel, skipDescription, onKeepLocal))
+        },
+        focusIndex = focusIndex,
+        onCancel = onCancelLaunch
     )
 }
 
@@ -536,76 +447,23 @@ internal fun LocalModifiedContent(
     onRestoreSelected: (() -> Unit)?,
     onCancelLaunch: () -> Unit
 ) {
-    val warningColor = Color(0xFFFF9800)
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(horizontal = Dimens.spacingXl)
-    ) {
-        Icon(
-            imageVector = Icons.Default.Warning,
-            contentDescription = null,
-            tint = warningColor,
-            modifier = Modifier.size(Dimens.iconXl + Dimens.spacingSm)
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingLg))
-
-        Text(
-            text = stringResource(R.string.ui_sync_overlay_local_modified_title),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingSm))
-
-        Text(
-            text = stringResource(R.string.ui_sync_overlay_local_modified_message, gameTitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingSm))
-
-        Text(
-            text = stringResource(R.string.ui_sync_overlay_local_modified_question),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingLg))
-
-        Column(
-            modifier = Modifier.fillMaxWidth(0.85f)
-        ) {
-            if (onKeepLocal != null) {
-                ConflictOption(
-                    label = stringResource(R.string.ui_sync_overlay_local_modified_apply),
-                    subtitle = stringResource(
-                        R.string.ui_sync_overlay_local_modified_apply_subtitle
-                    ),
-                    isFocused = focusIndex == 0,
-                    onClick = onKeepLocal
-                )
-            }
-
+    val applyLabel = stringResource(R.string.ui_sync_overlay_local_modified_apply)
+    val applyDescription = stringResource(R.string.ui_sync_overlay_local_modified_apply_subtitle)
+    val restoreLabel = stringResource(R.string.ui_sync_overlay_local_modified_restore)
+    val restoreDescription = stringResource(R.string.ui_sync_overlay_local_modified_restore_subtitle)
+    LaunchQuestionCard(
+        title = stringResource(R.string.ui_sync_overlay_local_modified_title),
+        message = stringResource(R.string.ui_sync_overlay_local_modified_message, gameTitle),
+        note = stringResource(R.string.ui_sync_overlay_local_modified_question),
+        choices = buildList<LaunchQuestionChoice> {
+            if (onKeepLocal != null) add(LaunchQuestionChoice(applyLabel, applyDescription, onKeepLocal))
             if (onRestoreSelected != null) {
-                ConflictOption(
-                    label = stringResource(R.string.ui_sync_overlay_local_modified_restore),
-                    subtitle = stringResource(
-                        R.string.ui_sync_overlay_local_modified_restore_subtitle
-                    ),
-                    isFocused = focusIndex == 1,
-                    onClick = onRestoreSelected
-                )
+                add(LaunchQuestionChoice(restoreLabel, restoreDescription, onRestoreSelected))
             }
-
-            CancelLaunchOption(isFocused = focusIndex == 2, onClick = onCancelLaunch)
-        }
-    }
+        },
+        focusIndex = focusIndex,
+        onCancel = onCancelLaunch
+    )
 }
 
 @Composable
@@ -615,49 +473,19 @@ internal fun SnapshotConflictContent(
     onChoice: (SnapshotConflictChoice) -> Unit,
     onCancelLaunch: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(horizontal = Dimens.spacingXl)
-    ) {
-        Icon(
-            imageVector = Icons.Default.Warning,
-            contentDescription = null,
-            tint = LocalLauncherTheme.current.semanticColors.warning,
-            modifier = Modifier.size(Dimens.iconXl + Dimens.spacingSm)
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingLg))
-
-        Text(
-            text = stringResource(R.string.ui_sync_overlay_snapshot_conflict_title),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingSm))
-
-        Text(
-            text = stringResource(R.string.ui_sync_overlay_snapshot_conflict_message, gameTitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingLg))
-
-        Column(modifier = Modifier.fillMaxWidth(0.85f)) {
-            SnapshotConflictChoice.entries.forEachIndexed { index, choice ->
-                ConflictOption(
-                    label = stringResource(choice.labelRes),
-                    subtitle = stringResource(choice.subtitleRes),
-                    isFocused = focusIndex == index,
-                    onClick = { onChoice(choice) }
-                )
-            }
-            CancelLaunchOption(isFocused = focusIndex == SnapshotConflictChoice.entries.size, onClick = onCancelLaunch)
-        }
-    }
+    LaunchQuestionCard(
+        title = stringResource(R.string.ui_sync_overlay_snapshot_conflict_title),
+        message = stringResource(R.string.ui_sync_overlay_snapshot_conflict_message, gameTitle),
+        choices = SnapshotConflictChoice.entries.map { choice ->
+            LaunchQuestionChoice(
+                label = stringResource(choice.labelRes),
+                description = stringResource(choice.subtitleRes),
+                onClick = { onChoice(choice) }
+            )
+        },
+        focusIndex = focusIndex,
+        onCancel = onCancelLaunch
+    )
 }
 
 @Composable
@@ -668,226 +496,22 @@ internal fun RestoreFailedContent(
     onLaunchWithoutSync: () -> Unit,
     onCancelLaunch: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(horizontal = Dimens.spacingXl)
-    ) {
-        Icon(
-            imageVector = Icons.Default.Warning,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.error,
-            modifier = Modifier.size(Dimens.iconXl + Dimens.spacingSm)
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingLg))
-
-        Text(
-            text = stringResource(R.string.ui_sync_overlay_restore_failed_title),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingSm))
-
-        Text(
-            text = stringResource(R.string.ui_sync_overlay_restore_failed_message, gameTitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingLg))
-
-        Column(modifier = Modifier.fillMaxWidth(0.85f)) {
-            ConflictOption(
+    LaunchQuestionCard(
+        title = stringResource(R.string.ui_sync_overlay_restore_failed_title),
+        message = stringResource(R.string.ui_sync_overlay_restore_failed_message, gameTitle),
+        choices = listOf(
+            LaunchQuestionChoice(
                 label = stringResource(R.string.ui_sync_overlay_local_modified_restore),
-                subtitle = stringResource(R.string.ui_sync_overlay_local_modified_restore_subtitle),
-                isFocused = focusIndex == 0,
+                description = stringResource(R.string.ui_sync_overlay_local_modified_restore_subtitle),
                 onClick = onRestoreSynced
-            )
-            ConflictOption(
+            ),
+            LaunchQuestionChoice(
                 label = stringResource(R.string.ui_sync_overlay_restore_failed_launch),
-                subtitle = stringResource(R.string.ui_sync_overlay_restore_failed_launch_subtitle),
-                isFocused = focusIndex == 1,
+                description = stringResource(R.string.ui_sync_overlay_restore_failed_launch_subtitle),
                 onClick = onLaunchWithoutSync
             )
-            CancelLaunchOption(isFocused = focusIndex == 2, onClick = onCancelLaunch)
-        }
-    }
+        ),
+        focusIndex = focusIndex,
+        onCancel = onCancelLaunch
+    )
 }
-
-@Composable
-private fun PostSessionConflictContent(
-    gameTitle: String,
-    channelName: String?,
-    localTimestamp: java.time.Instant,
-    serverTimestamp: java.time.Instant,
-    serverDeviceName: String?,
-    focusIndex: Int,
-    onSkipSync: (() -> Unit)?,
-    onOverwrite: (() -> Unit)?
-) {
-    val warningColor = Color(0xFFFF9800)
-    val localIsNewer = localTimestamp.isAfter(serverTimestamp)
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(horizontal = Dimens.spacingXl)
-    ) {
-        Icon(
-            imageVector = Icons.Default.Warning,
-            contentDescription = null,
-            tint = warningColor,
-            modifier = Modifier.size(Dimens.iconXl + Dimens.spacingSm)
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingLg))
-
-        Text(
-            text = stringResource(R.string.ui_sync_overlay_post_session_title),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingSm))
-
-        Text(
-            text = stringResource(
-                R.string.ui_sync_overlay_post_session_subject,
-                gameTitle,
-                channelName ?: stringResource(R.string.ui_sync_overlay_post_session_default_slot)
-            ),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingSm))
-
-        Text(
-            text = stringResource(R.string.ui_sync_overlay_post_session_message),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(Dimens.spacingMd))
-
-        val context = LocalContext.current
-        val localLabel = formatRelativeTimeShort(context, localTimestamp)
-        val serverLabel = formatRelativeTimeShort(context, serverTimestamp)
-        val serverLabelText = if (serverDeviceName != null) {
-            stringResource(R.string.ui_sync_overlay_post_session_server_named, serverDeviceName)
-        } else {
-            stringResource(R.string.ui_sync_overlay_post_session_server)
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(0.85f),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            TimestampLabel(
-                icon = Icons.Default.PhoneAndroid,
-                label = stringResource(R.string.ui_sync_overlay_post_session_local),
-                timestamp = localLabel,
-                isNewer = localIsNewer
-            )
-            TimestampLabel(
-                icon = Icons.Default.Cloud,
-                label = serverLabelText,
-                timestamp = serverLabel,
-                isNewer = !localIsNewer
-            )
-        }
-
-        Spacer(modifier = Modifier.height(Dimens.spacingLg))
-
-        Column(modifier = Modifier.fillMaxWidth(0.85f)) {
-            if (onSkipSync != null) {
-                ConflictOption(
-                    label = stringResource(R.string.ui_sync_overlay_post_session_skip),
-                    subtitle = stringResource(
-                        R.string.ui_sync_overlay_post_session_skip_subtitle
-                    ),
-                    isFocused = focusIndex == 0,
-                    onClick = onSkipSync
-                )
-            }
-            if (onOverwrite != null) {
-                ConflictOption(
-                    label = stringResource(R.string.ui_sync_overlay_post_session_overwrite),
-                    subtitle = stringResource(
-                        R.string.ui_sync_overlay_post_session_overwrite_subtitle
-                    ),
-                    isFocused = focusIndex == 1,
-                    onClick = onOverwrite
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TimestampLabel(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    timestamp: String,
-    isNewer: Boolean
-) {
-    val tint = if (isNewer) MaterialTheme.colorScheme.primary
-    else MaterialTheme.colorScheme.onSurfaceVariant
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(Dimens.iconMd))
-        Text(label, style = MaterialTheme.typography.labelMedium, color = tint)
-        Text(timestamp, style = MaterialTheme.typography.bodySmall, color = tint)
-    }
-}
-
-@Composable
-internal fun ConflictOption(
-    label: String,
-    subtitle: String,
-    isFocused: Boolean,
-    onClick: () -> Unit
-) {
-    val focusAccent = LocalArgosyTheme.current.focusAccent
-    val backgroundColor = if (isFocused) {
-        focusAccent.copy(alpha = 0.15f)
-    } else {
-        Color.Transparent
-    }
-    val contentColor = if (isFocused) {
-        lerp(focusAccent, Color.White, 0.45f)
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-    val subtitleColor = if (isFocused) {
-        lerp(focusAccent, Color.White, 0.45f).copy(alpha = 0.7f)
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(Dimens.radiusMd))
-            .background(backgroundColor)
-            .clickableNoFocus(onClick = onClick)
-            .padding(horizontal = Dimens.spacingMd, vertical = Dimens.spacingSm)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = contentColor
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodySmall,
-            color = subtitleColor
-        )
-    }
-}
-

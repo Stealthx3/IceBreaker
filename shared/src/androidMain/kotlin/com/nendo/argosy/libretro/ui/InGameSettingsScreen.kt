@@ -57,8 +57,6 @@ import com.nendo.argosy.ui.components.SwitchPreference
 import com.nendo.argosy.ui.screens.settings.CoreOptionViewItem
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
-import com.nendo.argosy.ui.screens.settings.components.ControllerOrderModal
-import com.nendo.argosy.ui.screens.settings.components.ControllerSeatController
 import com.nendo.argosy.ui.screens.settings.components.GripSettingsModal
 import com.nendo.argosy.ui.screens.settings.components.HotkeysModal
 import com.nendo.argosy.data.repository.MappingPlatforms
@@ -101,6 +99,8 @@ data class ControllerPortOption(
     val port: Int,
     val options: List<String>,
     val selectedIndex: Int,
+    val autoIndex: Int?,
+    val followsAuto: Boolean,
     val isOverridden: Boolean,
     val pendingRestart: Boolean = false
 )
@@ -110,11 +110,18 @@ data class InGameControlsState(
     val supportsGameSpecificControls: Boolean = false,
     val controllerPorts: List<ControllerPortOption> = emptyList(),
     val rumbleEnabled: Boolean = true,
+    val motionEnabled: Boolean = true,
+    val gyroAimAvailable: Boolean = false,
+    val gyroAimSensitivity: Int = com.nendo.argosy.data.preferences.GyroAimSensitivity.DEFAULT,
+    val gyroAimInvertX: Boolean = false,
+    val gyroAimInvertY: Boolean = false,
     val analogAsDpad: Boolean = false,
     val dpadAsAnalog: Boolean = false,
     val limitHotkeysToPlayer1: Boolean = true,
     val fastForwardMode: com.nendo.argosy.data.local.entity.FastForwardMode =
         com.nendo.argosy.data.local.entity.FastForwardMode.HOLD,
+    val selectAsBack: com.nendo.argosy.data.local.entity.SelectAsBackMode =
+        com.nendo.argosy.data.local.entity.SelectAsBackMode.AUTO,
     val fastForwardPreservePitch: Boolean = false,
     val controllerOrderCount: Int = 0,
     val gripReserveMode: GripReserveMode = GripReserveMode.OFF,
@@ -139,6 +146,10 @@ data class InGameControlsState(
 sealed class InGameControlsAction {
     data class SetGameSpecificControls(val enabled: Boolean) : InGameControlsAction()
     data class SetRumble(val enabled: Boolean) : InGameControlsAction()
+    data class SetMotion(val enabled: Boolean) : InGameControlsAction()
+    data class StepGyroAimSensitivity(val direction: Int) : InGameControlsAction()
+    data class SetGyroAimInvertX(val enabled: Boolean) : InGameControlsAction()
+    data class SetGyroAimInvertY(val enabled: Boolean) : InGameControlsAction()
     data class SetAnalogAsDpad(val enabled: Boolean) : InGameControlsAction()
     data class SetDpadAsAnalog(val enabled: Boolean) : InGameControlsAction()
     data class SetLimitHotkeys(val enabled: Boolean) : InGameControlsAction()
@@ -146,6 +157,9 @@ sealed class InGameControlsAction {
         val mode: com.nendo.argosy.data.local.entity.FastForwardMode
     ) : InGameControlsAction()
     data class SetFastForwardPreservePitch(val enabled: Boolean) : InGameControlsAction()
+    data class SetSelectAsBack(
+        val mode: com.nendo.argosy.data.local.entity.SelectAsBackMode
+    ) : InGameControlsAction()
     data class CycleControllerType(val port: Int, val direction: Int) : InGameControlsAction()
     data class SelectControllerType(val port: Int, val optionIndex: Int) : InGameControlsAction()
     data class ResetControllerType(val port: Int) : InGameControlsAction()
@@ -171,7 +185,6 @@ sealed class InGameControlsAction {
 }
 
 data class InGameModalCallbacks(
-    val controllerSeats: ControllerSeatController,
     val hotkeys: List<HotkeyEntity>,
     val connectedControllers: StateFlow<List<ControllerInfo>>,
     val activeController: StateFlow<ActiveController?>,
@@ -206,6 +219,11 @@ internal sealed class InGameControlsItem(
     data object InputMapping : InGameControlsItem("inputMapping", "controllers")
     data object ControllerGrip : InGameControlsItem("controllerGrip", "controllers")
     data object Rumble : InGameControlsItem("rumble", "controllers")
+    data object Motion : InGameControlsItem("motion", "controllers")
+    data object GyroAimSensitivity : InGameControlsItem("gyroAimSensitivity", "controllers")
+    data object GyroAimInvertX : InGameControlsItem("gyroAimInvertX", "controllers")
+    data object GyroAimInvertY : InGameControlsItem("gyroAimInvertY", "controllers")
+    data object SelectAsBack : InGameControlsItem("selectAsBack", "controllers")
     data object AnalogAsDpad : InGameControlsItem("analogAsDpad", "sticks")
     data object DpadAsAnalog : InGameControlsItem("dpadAsAnalog", "sticks")
     data object Hotkeys : InGameControlsItem("hotkeys", "hotkeys")
@@ -230,6 +248,11 @@ internal sealed class InGameControlsItem(
                 InputMapping,
                 ControllerGrip,
                 Rumble,
+                Motion,
+                GyroAimSensitivity,
+                GyroAimInvertX,
+                GyroAimInvertY,
+                SelectAsBack,
                 Header("sticksHeader", "sticks", R.string.ingame_settings_header_sticks),
                 AnalogAsDpad,
                 DpadAsAnalog,
@@ -284,6 +307,8 @@ private fun hudSwitchAction(item: InGameHudItem, enabled: Boolean): InGameContro
 internal data class InGameControlsVisibility(
     val hasAnalogStick: Boolean,
     val hasRumble: Boolean,
+    val hasMotion: Boolean,
+    val hasGyroAim: Boolean,
     val hasGame: Boolean,
     val selectablePorts: Set<Int>
 )
@@ -294,6 +319,10 @@ private val controlsLayout = SettingsLayout<InGameControlsItem, InGameControlsVi
     visibleWhen = { item, visibility ->
         when (item) {
             InGameControlsItem.Rumble -> visibility.hasRumble
+            InGameControlsItem.Motion -> visibility.hasMotion
+            InGameControlsItem.GyroAimSensitivity,
+            InGameControlsItem.GyroAimInvertX,
+            InGameControlsItem.GyroAimInvertY -> visibility.hasGyroAim
             InGameControlsItem.DpadAsAnalog -> visibility.hasAnalogStick
             InGameControlsItem.GameSpecificControls -> visibility.hasGame
             is InGameControlsItem.ControllerType -> item.port in visibility.selectablePorts
@@ -326,7 +355,6 @@ fun InGameSettingsScreen(
     val videoListState = rememberLazyListState()
     val controlsListState = rememberLazyListState()
     val coreOptionsListState = rememberLazyListState()
-    var showControllerOrderModal by remember { mutableStateOf(false) }
     var showInputMappingModal by remember { mutableStateOf(false) }
     var showHotkeysModal by remember { mutableStateOf(false) }
     var showGripSettingsModal by remember { mutableStateOf(false) }
@@ -348,11 +376,14 @@ fun InGameSettingsScreen(
     val controlsVisibility = remember(
         platformSlug,
         controlsState.supportsGameSpecificControls,
+        controlsState.gyroAimAvailable,
         selectablePorts
     ) {
         InGameControlsVisibility(
             hasAnalogStick = platformSlug != null && PlatformWeightRegistry.hasAnalogStick(platformSlug),
             hasRumble = platformSlug != null && PlatformWeightRegistry.hasRumble(platformSlug),
+            hasMotion = platformSlug != null && PlatformWeightRegistry.hasMotion(platformSlug),
+            hasGyroAim = controlsState.gyroAimAvailable,
             hasGame = controlsState.supportsGameSpecificControls,
             selectablePorts = selectablePorts
         )
@@ -432,15 +463,28 @@ fun InGameSettingsScreen(
     }
 
     fun openControllerOrder() {
-        modalCallbacks.controllerSeats.open()
-        showControllerOrderModal = true
+        currentOnControlsAction.value(InGameControlsAction.ShowControllerOrder)
     }
 
     fun cycleControlsItem(direction: Int): Boolean {
-        val item = controlsLayout.itemAtFocusIndex(focusedIndex, controlsVisibility)
-        if (item !is InGameControlsItem.ControllerType) return false
-        currentOnControlsAction.value(InGameControlsAction.CycleControllerType(item.port, direction))
-        return true
+        return when (val item = controlsLayout.itemAtFocusIndex(focusedIndex, controlsVisibility)) {
+            is InGameControlsItem.ControllerType -> {
+                currentOnControlsAction.value(InGameControlsAction.CycleControllerType(item.port, direction))
+                true
+            }
+            InGameControlsItem.GyroAimSensitivity -> {
+                currentOnControlsAction.value(InGameControlsAction.StepGyroAimSensitivity(direction))
+                true
+            }
+            InGameControlsItem.SelectAsBack -> {
+                val modes = com.nendo.argosy.data.local.entity.SelectAsBackMode.entries
+                val current = modes.indexOf(currentControlsState.value.selectAsBack)
+                val next = (current + direction).coerceIn(0, modes.lastIndex)
+                if (next != current) currentOnControlsAction.value(InGameControlsAction.SetSelectAsBack(modes[next]))
+                true
+            }
+            else -> false
+        }
     }
 
     fun handleControlsConfirm() {
@@ -450,6 +494,10 @@ fun InGameSettingsScreen(
         when (item) {
             InGameControlsItem.GameSpecificControls -> action(InGameControlsAction.SetGameSpecificControls(!state.gameSpecificControls))
             InGameControlsItem.Rumble -> action(InGameControlsAction.SetRumble(!state.rumbleEnabled))
+            InGameControlsItem.Motion -> action(InGameControlsAction.SetMotion(!state.motionEnabled))
+            InGameControlsItem.GyroAimSensitivity -> action(InGameControlsAction.StepGyroAimSensitivity(1))
+            InGameControlsItem.GyroAimInvertX -> action(InGameControlsAction.SetGyroAimInvertX(!state.gyroAimInvertX))
+            InGameControlsItem.GyroAimInvertY -> action(InGameControlsAction.SetGyroAimInvertY(!state.gyroAimInvertY))
             InGameControlsItem.ControllerOrder -> openControllerOrder()
             is InGameControlsItem.ControllerType ->
                 action(InGameControlsAction.CycleControllerType(item.port, 1))
@@ -657,6 +705,7 @@ fun InGameSettingsScreen(
                             canEnableBFI = canEnableBFI,
                             listState = videoListState,
                             enablePicker = false,
+                            inSession = true,
                             trailingContent = { InGameHudHeader() },
                             trailingFocusCount = InGameHudItem.entries.size,
                             trailingItems = {
@@ -716,13 +765,6 @@ fun InGameSettingsScreen(
                         else -> {}
                     }
                 }
-            )
-        }
-
-        if (showControllerOrderModal) {
-            ControllerOrderModal(
-                controller = modalCallbacks.controllerSeats,
-                onDismiss = { showControllerOrderModal = false }
             )
         }
 
@@ -879,6 +921,54 @@ private fun InGameControlsSection(
                     onToggle = { onAction(InGameControlsAction.SetRumble(it)) }
                 )
 
+                InGameControlsItem.Motion -> SwitchPreference(
+                    title = stringResource(R.string.ingame_settings_motion_title),
+                    subtitle = stringResource(R.string.ingame_settings_motion_subtitle),
+                    isEnabled = state.motionEnabled,
+                    isFocused = isFocused(item),
+                    onToggle = { onAction(InGameControlsAction.SetMotion(it)) }
+                )
+
+                InGameControlsItem.GyroAimSensitivity -> CyclePreference(
+                    title = stringResource(R.string.ingame_settings_gyro_sensitivity_title),
+                    subtitle = stringResource(R.string.ingame_settings_gyro_sensitivity_subtitle),
+                    value = stringResource(R.string.ingame_settings_percent_value, state.gyroAimSensitivity),
+                    isFocused = isFocused(item),
+                    onClick = { onAction(InGameControlsAction.StepGyroAimSensitivity(1)) },
+                    onPrev = { onAction(InGameControlsAction.StepGyroAimSensitivity(-1)) }
+                )
+
+                InGameControlsItem.GyroAimInvertX -> SwitchPreference(
+                    title = stringResource(R.string.ingame_settings_gyro_invert_x_title),
+                    subtitle = stringResource(R.string.ingame_settings_gyro_invert_x_subtitle),
+                    isEnabled = state.gyroAimInvertX,
+                    isFocused = isFocused(item),
+                    onToggle = { onAction(InGameControlsAction.SetGyroAimInvertX(it)) }
+                )
+
+                InGameControlsItem.GyroAimInvertY -> SwitchPreference(
+                    title = stringResource(R.string.ingame_settings_gyro_invert_y_title),
+                    subtitle = stringResource(R.string.ingame_settings_gyro_invert_y_subtitle),
+                    isEnabled = state.gyroAimInvertY,
+                    isFocused = isFocused(item),
+                    onToggle = { onAction(InGameControlsAction.SetGyroAimInvertY(it)) }
+                )
+
+                InGameControlsItem.SelectAsBack -> SegmentedPreference(
+                    title = stringResource(R.string.ingame_settings_select_as_back_title),
+                    subtitle = stringResource(R.string.ingame_settings_select_as_back_subtitle),
+                    options = com.nendo.argosy.data.local.entity.SelectAsBackMode.entries.map {
+                        stringResource(it.labelRes)
+                    },
+                    selectedIndex = com.nendo.argosy.data.local.entity.SelectAsBackMode.entries.indexOf(state.selectAsBack),
+                    isFocused = isFocused(item),
+                    onSelect = {
+                        onAction(InGameControlsAction.SetSelectAsBack(
+                            com.nendo.argosy.data.local.entity.SelectAsBackMode.entries[it]
+                        ))
+                    }
+                )
+
                 InGameControlsItem.ControllerOrder -> NavigationPreference(
                     icon = Icons.Default.SortByAlpha,
                     title = stringResource(R.string.ingame_settings_controller_order_title),
@@ -899,13 +989,18 @@ private fun InGameControlsSection(
                     val portState = state.controllerPorts.firstOrNull { it.port == item.port }
                     if (portState != null) {
                         val focused = isFocused(item)
+                        val autoName = portState.autoIndex?.let { portState.options.getOrNull(it) }
                         CyclePreference(
                             title = stringResource(
                                 R.string.ingame_settings_controller_type_title,
                                 item.port + 1
                             ),
-                            value = portState.options.getOrElse(portState.selectedIndex) {
-                                stringResource(R.string.ingame_settings_controller_type_default_fallback)
+                            value = if (portState.followsAuto && autoName != null) {
+                                stringResource(R.string.ingame_settings_controller_type_auto, autoName)
+                            } else {
+                                portState.options.getOrElse(portState.selectedIndex) {
+                                    stringResource(R.string.ingame_settings_controller_type_default_fallback)
+                                }
                             },
                             isFocused = focused,
                             subtitle = when {

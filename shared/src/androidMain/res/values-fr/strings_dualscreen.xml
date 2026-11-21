@@ -57,7 +57,7 @@
     <string name="dual_companion_saves_dirty">Nouvelles données de sauvegarde</string>
     <string name="dual_companion_saves_synced">Sauvegardes synchronisées</string>
 
-    <string name="dual_companion_app_drawer_title">Toutes les applications</string>
+    <string name="dual_companion_app_drawer_title">Applis</string>
     <string name="dual_companion_app_bar_keyboard_description">Clavier</string>
     <string name="dual_companion_app_bar_swap_description">Permuter les écrans</string>
     <string name="dual_companion_app_bar_focus_description">Envoyer les commandes vers un écran</string>
@@ -110,7 +110,7 @@
 
     <string name="dual_home_hint_app_bar_select">Sélectionner</string>
     <string name="dual_home_hint_app_bar_open_top">Ouvrir en haut</string>
-    <string name="dual_home_hint_app_bar_all_apps">Toutes les applications</string>
+    <string name="dual_home_hint_app_bar_all_apps">Applis</string>
 
     <string name="dual_home_hint_carousel_platform">Plateforme</string>
     <string name="dual_home_hint_carousel_details">Détails</string>
@@ -161,6 +161,7 @@
     <string name="dual_media_episodes_empty_title">Aucun épisode pour l\'instant</string>
 
     <string name="dual_media_cast_header">Distribution</string>
+    <string name="dual_media_related_header">Titres similaires</string>
     <string name="dual_media_browse_back_description">Retour</string>
     <plurals name="dual_media_browse_episode_count">
         <item quantity="one">%d épisode</item>
@@ -441,7 +442,6 @@
     <string name="dual_detail_file_picker_choose_title">Choisir les fichiers</string>
 
     <string name="dual_detail_steam_install_heading">EMPLACEMENT D\'INSTALLATION</string>
-    <string name="dual_detail_steam_install_argosy">Télécharger via Argosy</string>
     <string name="dual_detail_steam_install_external">Marquer comme installé</string>
     <string name="dual_detail_steam_install_managed_by">Géré par %1$s</string>
 

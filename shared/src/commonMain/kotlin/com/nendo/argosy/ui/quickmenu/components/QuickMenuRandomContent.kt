@@ -50,6 +50,34 @@ import com.nendo.argosy.platform.image.intrinsicHeight
 import com.nendo.argosy.platform.image.intrinsicWidth
 import com.nendo.argosy.res.ArgosyR as R
 import com.nendo.argosy.ui.common.rememberFileImageModel
+import com.nendo.argosy.ui.common.stackedScreenshotBackdrop
+import androidx.compose.runtime.remember
+import com.nendo.argosy.platform.LocalPlatformContext as LocalContext
+import com.nendo.argosy.platform.startActivity
+import com.nendo.argosy.platform.getApplicationInfo
+import com.nendo.argosy.platform.getApplicationLabel
+import com.nendo.argosy.platform.applicationContext
+import com.nendo.argosy.platform.packageName
+import com.nendo.argosy.platform.getSystemService
+import com.nendo.argosy.platform.getExternalFilesDir
+import com.nendo.argosy.platform.externalCacheDir
+import com.nendo.argosy.platform.dataDir
+import com.nendo.argosy.platform.packageManager
+import com.nendo.argosy.platform.getPackageInfo
+import com.nendo.argosy.platform.getLaunchIntentForPackage
+import com.nendo.argosy.platform.addFlags
+import com.nendo.argosy.platform.versionName
+import com.nendo.argosy.platform.assets
+import com.nendo.argosy.platform.contentResolver
+import com.nendo.argosy.platform.getSharedPreferences
+import com.nendo.argosy.platform.list
+import com.nendo.argosy.platform.open
+import com.nendo.argosy.platform.cacheDir
+import com.nendo.argosy.platform.filesDir
+import com.nendo.argosy.platform.getQuantityString
+import com.nendo.argosy.platform.getString
+import com.nendo.argosy.platform.resources
+import com.nendo.argosy.platform.image.ImageRequest
 import com.nendo.argosy.ui.components.FooterHint
 import com.nendo.argosy.ui.components.FooterStyleConfig
 import com.nendo.argosy.ui.components.InputButton
@@ -98,7 +126,7 @@ fun QuickMenuRandomContent(
                 label = "quickMenuRandomGame"
             ) { shown ->
                 Box(modifier = Modifier.fillMaxSize()) {
-                    RandomBackdrop(path = shown.backdropPath)
+                    RandomBackdrop(path = shown.backdropPath, isScreenshot = shown.backdropIsScreenshotOrArt)
                     RandomGameLayout(
                         game = shown,
                         onPlay = onPlay,
@@ -121,10 +149,17 @@ fun QuickMenuRandomContent(
 }
 
 @Composable
-private fun RandomBackdrop(path: String?) {
+private fun RandomBackdrop(path: String?, isScreenshot: Boolean) {
     val surface = MaterialTheme.colorScheme.surface
+    val model = rememberFileImageModel(path)
+    val context = LocalContext.current
     AsyncImage(
-        model = rememberFileImageModel(path),
+        model = remember(model, isScreenshot) {
+            ImageRequest.Builder(context)
+                .data(model)
+                .apply { if (isScreenshot) stackedScreenshotBackdrop() }
+                .build()
+        },
         contentDescription = null,
         contentScale = ContentScale.Crop,
         modifier = Modifier

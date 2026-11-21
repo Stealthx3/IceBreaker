@@ -132,18 +132,15 @@ class PlayStoreService @Inject constructor() {
 
     private fun extractFeatureGraphic(html: String): String? {
         val patterns = listOf(
-            // Priority 1: Actual feature graphic patterns (promotional banners)
             """"featureGraphic":\s*\{"url":\s*"([^"]+)"""",
             """srcset="([^"]*=w\d+-h\d+[^"]*)"[^>]*class="[^"]*feature"""",
             """data-screenshot-item-src-large="([^"]+)"""",
-            // Priority 2: Meta tags (often return icons, but better than nothing)
             """<meta property="og:image" content="([^"]+)"""",
             """<meta name="twitter:image" content="([^"]+)""""
         )
         for (pattern in patterns) {
             extractPattern(html, pattern)?.let { url ->
                 val cleaned = cleanImageUrl(url)
-                // Skip icon-like URLs (square dimensions or small)
                 if (cleaned.contains("=s") && !cleaned.contains("=w")) {
                     return@let
                 }
@@ -156,13 +153,11 @@ class PlayStoreService @Inject constructor() {
     private fun extractScreenshots(html: String): List<String> {
         val screenshots = mutableListOf<String>()
 
-        // Pattern 1: img tags with data-screenshot-index attribute
         val screenshotIndexMatches = Regex("""<img[^>]*src="([^"]+)"[^>]*data-screenshot-index=""").findAll(html)
         for (match in screenshotIndexMatches) {
             match.groupValues.getOrNull(1)?.let { screenshots.add(cleanImageUrl(it)) }
         }
 
-        // Pattern 2: img tags with alt="Screenshot image"
         if (screenshots.isEmpty()) {
             val altMatches = Regex("""<img[^>]*src="([^"]+)"[^>]*alt="Screenshot image"""").findAll(html)
             for (match in altMatches) {
@@ -170,7 +165,6 @@ class PlayStoreService @Inject constructor() {
             }
         }
 
-        // Pattern 3: srcset with screenshot class (legacy)
         if (screenshots.isEmpty()) {
             val srcsetMatches = Regex("""srcset="([^"]+)"[^>]*class="[^"]*screenshot""").findAll(html)
             for (match in srcsetMatches) {
@@ -182,7 +176,6 @@ class PlayStoreService @Inject constructor() {
             }
         }
 
-        // Pattern 4: JSON screenshotUrls array
         if (screenshots.isEmpty()) {
             val urlMatches = Regex(""""screenshotUrls":\s*\[(.*?)\]""", RegexOption.DOT_MATCHES_ALL).find(html)
             urlMatches?.groupValues?.getOrNull(1)?.let { arrayStr ->

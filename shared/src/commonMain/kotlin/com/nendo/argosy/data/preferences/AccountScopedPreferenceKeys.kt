@@ -14,6 +14,7 @@ object AccountScopedPreferenceKeys {
 
     private val SYNC_WATERMARKS_AND_FILTERS = setOf(
         "last_romm_sync",
+        "romm_changes_watermark",
         "last_favorites_sync",
         "last_favorites_check",
         "last_negotiate_at",
@@ -112,6 +113,8 @@ object AccountScopedPreferenceKeys {
         "use_accent_color_footer",
         "icon_pack",
         "installed_only_home",
+        "recent_new_games_limit",
+        "new_badge_placement",
         "video_wallpaper_enabled",
         "video_wallpaper_muted",
         "video_wallpaper_delay_seconds",

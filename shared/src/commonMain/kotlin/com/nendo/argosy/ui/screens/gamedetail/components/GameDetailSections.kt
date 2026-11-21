@@ -80,6 +80,8 @@ import com.nendo.argosy.platform.image.bitmap
 import com.nendo.argosy.platform.image.intrinsicHeight
 import com.nendo.argosy.platform.image.intrinsicWidth
 import com.nendo.argosy.res.ArgosyR as R
+import com.nendo.argosy.data.repository.SaveSyncApiClient
+import com.nendo.argosy.ui.common.ScreenshotImage
 import com.nendo.argosy.ui.common.rememberFileImageModel
 import com.nendo.argosy.ui.common.supersedesCommunityRating
 import com.nendo.argosy.ui.screens.gamedetail.GameDetailUi
@@ -380,8 +382,7 @@ fun ActionButtons(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(stringResource(R.string.gamedetail_action_buttons_play))
                                 Text(
-                                    text = saveInfo.channelName
-                                        ?: stringResource(R.string.gamedetail_action_buttons_autosave),
+                                    text = SaveSyncApiClient.syncKeyOf(saveInfo.channelName),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
                                 )
@@ -477,14 +478,27 @@ fun ActionButtons(
     }
 }
 
+private const val DESCRIPTION_PAGE_FRACTION = 0.75f
+
+internal fun descriptionScrollTarget(scroll: Int, viewport: Int, top: Int, height: Int, direction: Int): Int? {
+    if (viewport <= 0 || height <= 0) return null
+    val step = (viewport * DESCRIPTION_PAGE_FRACTION).toInt()
+    return if (direction > 0) {
+        val endInView = top + height - viewport
+        if (scroll >= endInView) null else minOf(scroll + step, endInView)
+    } else {
+        if (scroll <= top) null else maxOf(scroll - step, top)
+    }
+}
+
 @Composable
 fun DescriptionSection(
     description: String,
-    onPositioned: (Int) -> Unit
+    onPositioned: (top: Int, height: Int) -> Unit
 ) {
     Column(
         modifier = Modifier.onGloballyPositioned { coords ->
-            onPositioned(coords.positionInParent().y.toInt())
+            onPositioned(coords.positionInParent().y.toInt(), coords.size.height)
         }
     ) {
         Text(
@@ -496,9 +510,7 @@ fun DescriptionSection(
         Text(
             text = description,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-            maxLines = 6,
-            overflow = TextOverflow.Ellipsis
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
         )
     }
 }
@@ -587,17 +599,15 @@ fun ScreenshotsSection(
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     if (useRemote) {
-                        AsyncImage(
+                        ScreenshotImage(
                             model = screenshot.remoteUrl,
                             contentDescription = null,
-                            contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
-                        AsyncImage(
+                        ScreenshotImage(
                             model = java.io.File(screenshot.cachedPath!!),
                             contentDescription = null,
-                            contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize(),
                             onError = { failedCachePaths[index] = true }
                         )

@@ -65,7 +65,6 @@ class SyncSettingsDelegate @Inject constructor(
     private val rommRepository: RomMRepository,
     private val imageCacheManager: ImageCacheManager,
     private val notificationManager: NotificationManager,
-    private val permissionHelper: com.nendo.argosy.util.PermissionHelper,
     private val attributionRepository: StorageAttributionRepository,
     private val retroAchievementsRepository: RetroAchievementsRepository
 ) {
@@ -77,9 +76,6 @@ class SyncSettingsDelegate @Inject constructor(
 
     private val _requestNotificationPermissionEvent = MutableSharedFlow<Unit>()
     val requestNotificationPermissionEvent: SharedFlow<Unit> = _requestNotificationPermissionEvent.asSharedFlow()
-
-    private val _requestMediaPermissionEvent = MutableSharedFlow<Unit>()
-    val requestMediaPermissionEvent: SharedFlow<Unit> = _requestMediaPermissionEvent.asSharedFlow()
 
     private val _openImageCachePickerEvent = MutableSharedFlow<Unit>()
     val openImageCachePickerEvent: SharedFlow<Unit> = _openImageCachePickerEvent.asSharedFlow()
@@ -446,39 +442,8 @@ class SyncSettingsDelegate @Inject constructor(
     fun toggleUploadScreenshots(scope: CoroutineScope, currentValue: Boolean, onChanged: (Boolean) -> Unit) {
         scope.launch {
             val newValue = !currentValue
-            if (newValue && !checkMediaPermission()) {
-                _requestMediaPermissionEvent.emit(Unit)
-                return@launch
-            }
             preferencesRepository.setUploadScreenshotsEnabled(newValue)
             onChanged(newValue)
-            if (newValue) promptUsageAccessIfMissing()
-        }
-    }
-
-    fun onMediaPermissionResult(scope: CoroutineScope, granted: Boolean, onChanged: (Boolean) -> Unit) {
-        if (!granted) return
-        scope.launch {
-            preferencesRepository.setUploadScreenshotsEnabled(true)
-            onChanged(true)
-            promptUsageAccessIfMissing()
-        }
-    }
-
-    private fun promptUsageAccessIfMissing() {
-        if (!permissionHelper.hasUsageStatsPermission(application)) {
-            permissionHelper.openUsageStatsSettings(application)
-        }
-    }
-
-    fun checkMediaPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(
-                application,
-                Manifest.permission.READ_MEDIA_IMAGES
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
         }
     }
 
@@ -652,12 +617,10 @@ class SyncSettingsDelegate @Inject constructor(
         scope.launch {
             val currentPath = _state.value.imageCachePath ?: imageCacheManager.getDefaultCachePath()
 
-            // Update state and preferences immediately
             preferencesRepository.setImageCachePath(newPath)
             imageCacheManager.setCustomCachePath(newPath)
             _state.update { it.copy(imageCachePath = newPath) }
 
-            // Migrate in background if there are existing files
             val hasExistingFiles = imageCacheManager.getCacheFileCountForBasePath(currentPath) > 0
             if (hasExistingFiles) {
                 _state.update { it.copy(isImageCacheMigrating = true) }
@@ -682,12 +645,10 @@ class SyncSettingsDelegate @Inject constructor(
             val currentPath = _state.value.imageCachePath ?: return@launch
             val defaultPath = imageCacheManager.getDefaultCachePath()
 
-            // Update state and preferences immediately
             preferencesRepository.setImageCachePath(null)
             imageCacheManager.setCustomCachePath(null)
             _state.update { it.copy(imageCachePath = null, imageCacheActionIndex = 0) }
 
-            // Migrate in background if there are existing files
             val hasExistingFiles = imageCacheManager.getCacheFileCountForBasePath(currentPath) > 0
             if (hasExistingFiles) {
                 _state.update { it.copy(isImageCacheMigrating = true) }

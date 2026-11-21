@@ -125,7 +125,17 @@ actual class AndroidDataAccessor @Inject constructor(
         return mirror.sync(paths.map { mirror.realPathOf(it) ?: it })
     }
 
-    actual fun transformPath(path: String): String {
+    /**
+     * Names and sizes of the files directly inside the real folder at [path], read without
+     * copying them into the mirror. Null when Android/data is not mirrored on this device or
+     * [path] is not mirrored.
+     */
+    fun mirroredFileSizes(path: String): Map<String, Long>? {
+        if (!mirror.isActive || !isRestrictedAndroidPath(path)) return null
+        return mirror.realFileSizes(mirror.realPathOf(path) ?: path)
+    }
+
+    fun transformPath(path: String): String {
         if (mirror.isActive) {
             if (mirror.isMirrorPath(path)) {
                 mirror.realPathOf(path)?.let { mirror.mirrorPathFor(it) }

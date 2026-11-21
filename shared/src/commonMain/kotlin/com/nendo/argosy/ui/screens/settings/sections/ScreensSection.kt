@@ -122,9 +122,9 @@ fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     val hereNumber = remember(screens, hereDisplayId) {
         screens.find { it.displayId == hereDisplayId }?.number
     }
-    DisposableEffect(Unit) {
+    DisposableEffect(hereDisplayId) {
         val manager = DualScreenManagerHolder.instance
-        manager?.showScreenNumbers()
+        manager?.showScreenNumbers(inContentDisplayId = hereDisplayId)
         onDispose { manager?.hideScreenNumbers() }
     }
 
@@ -192,6 +192,10 @@ fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
 
     }
 
+    ScreenSetupIdentity(
+        number = hereNumber,
+        modifier = Modifier.align(Alignment.BottomEnd).padding(Dimens.spacingLg)
+    )
     }
 
     if (uiState.display.screenRoleModalOpen) {
@@ -205,7 +209,12 @@ fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
 }
 
 @Composable
-private fun ScreenCard(
+internal fun ScreenSetupIdentity(number: Int?, modifier: Modifier = Modifier) {
+    if (number != null) ScreenNumberBadge(number = number, modifier = modifier)
+}
+
+@Composable
+internal fun ScreenCard(
     screen: ScreenAssignment,
     perPixel: Dp,
     isFocused: Boolean,
@@ -216,15 +225,15 @@ private fun ScreenCard(
         modifier = Modifier
             .width(perPixel * screen.widthPx.toFloat())
             .height(perPixel * screen.heightPx.toFloat())
-            .argosyFocusIndicators(
-                focused = isFocused,
-                indicators = FocusIndicators.ListRow,
-                shape = RoundedCornerShape(Dimens.radiusSm)
-            )
             .clip(RoundedCornerShape(Dimens.radiusSm))
             .background(
                 if (dimmed) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                 else MaterialTheme.colorScheme.surfaceVariant
+            )
+            .argosyFocusIndicators(
+                focused = isFocused,
+                indicators = FocusIndicators.ListRow,
+                shape = RoundedCornerShape(Dimens.radiusSm)
             )
             .clickableNoFocus(onClick = onClick),
         contentAlignment = Alignment.Center

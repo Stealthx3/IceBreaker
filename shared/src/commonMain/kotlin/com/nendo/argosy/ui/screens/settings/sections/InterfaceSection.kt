@@ -46,6 +46,7 @@ import com.nendo.argosy.platform.resources
 import com.nendo.argosy.res.stringResource
 import com.nendo.argosy.res.ArgosyR as R
 import com.nendo.argosy.data.preferences.AppLanguage
+import com.nendo.argosy.data.preferences.ScreenOrientationMode
 import com.nendo.argosy.ui.components.CyclePreference
 import com.nendo.argosy.ui.components.InfoPreference
 import androidx.lifecycle.Lifecycle
@@ -60,6 +61,7 @@ import com.nendo.argosy.ui.screens.settings.SettingsUiState
 import com.nendo.argosy.ui.screens.settings.SettingsViewModel
 import com.nendo.argosy.ui.screens.settings.menu.SettingsLayout
 import com.nendo.argosy.ui.theme.Dimens
+import com.nendo.argosy.ui.theme.LocalLauncherTheme
 
 internal data class InterfaceLayoutState(
     val display: DisplayState
@@ -83,6 +85,8 @@ internal sealed class InterfaceItem(
 
     data object Language : InterfaceItem("language", SECTION_GENERAL)
     data object UiScale : InterfaceItem("uiScale", SECTION_GENERAL)
+    data object ScreenOrientation :
+        InterfaceItem("screenOrientation", SECTION_GENERAL, { !it.display.desktopWindow })
     data object CompactFooter : InterfaceItem("compactFooter", SECTION_GENERAL)
     data object DisplayProfile : InterfaceItem("displayProfile", SECTION_GENERAL, { it.display.desktopWindow })
     data object SafeArea : InterfaceItem("safeArea", SECTION_GENERAL, { it.display.desktopWindow })
@@ -91,6 +95,8 @@ internal sealed class InterfaceItem(
         InterfaceItem("hideSystemNavigationBar", SECTION_GENERAL, { !it.display.desktopWindow })
     data object HideSystemStatusBar :
         InterfaceItem("hideSystemStatusBar", SECTION_GENERAL, { !it.display.desktopWindow })
+    data object QuickPanelInEmulators :
+        InterfaceItem("quickPanelInEmulators", SECTION_GENERAL, { !it.display.desktopWindow })
     data object ControllerGrip : InterfaceItem("controllerGrip", SECTION_GENERAL)
     data object HomeScreen : InterfaceItem("homeScreen", SECTION_SCREENS)
     data object LibraryView : InterfaceItem("libraryView", SECTION_SCREENS)
@@ -131,7 +137,7 @@ internal sealed class InterfaceItem(
             get() = listOf(
                 Header("generalHeader", SECTION_GENERAL, R.string.settings_interface_section_general),
                 Language, DisplayProfile, UiScale, CompactFooter, SafeArea, StartFullScreen, HideSystemNavigationBar, HideSystemStatusBar,
-                ControllerGrip,
+                QuickPanelInEmulators, ControllerGrip, ScreenOrientation,
                 Header("screensHeader", SECTION_SCREENS, R.string.settings_interface_section_screens),
                 HomeScreen, LibraryView, BoxArt, Presentation, LockScreenArt,
                 HomeApp, HomeAppLocked,
@@ -166,6 +172,13 @@ internal fun languageLabelRes(language: AppLanguage): Int = when (language) {
     AppLanguage.CHINESE_TRADITIONAL -> R.string.settings_main_language_name_zh_hant
     AppLanguage.RUSSIAN -> R.string.settings_main_language_name_ru
     AppLanguage.HINDI -> R.string.settings_main_language_name_hi
+    AppLanguage.PORTUGUESE_BRAZIL -> R.string.settings_main_language_name_pt_br
+}
+
+internal fun screenOrientationLabelRes(mode: ScreenOrientationMode): Int = when (mode) {
+    ScreenOrientationMode.AUTO -> R.string.settings_interface_screen_orientation_auto
+    ScreenOrientationMode.LANDSCAPE -> R.string.settings_interface_screen_orientation_landscape
+    ScreenOrientationMode.PORTRAIT -> R.string.settings_interface_screen_orientation_portrait
 }
 
 private val interfaceLayout = SettingsLayout<InterfaceItem, InterfaceLayoutState>(
@@ -259,6 +272,20 @@ fun InterfaceSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                     onAdjust = { viewModel.adjustUiScale(it) }
                 )
 
+                InterfaceItem.ScreenOrientation -> CyclePreference(
+                    title = stringResource(R.string.settings_interface_screen_orientation_title),
+                    value = stringResource(screenOrientationLabelRes(display.screenOrientation)),
+                    subtitle = stringResource(R.string.settings_interface_screen_orientation_subtitle),
+                    isFocused = isFocused(item),
+                    onClick = { viewModel.cycleScreenOrientation() },
+                    onPrev = { viewModel.cycleScreenOrientation(-1) },
+                    options = remember(context) {
+                        ScreenOrientationMode.entries.map { context.getString(screenOrientationLabelRes(it)) }
+                    },
+                    onSelect = { index -> viewModel.setScreenOrientation(ScreenOrientationMode.entries[index]) },
+                    pickerRequestToken = pickerToken(item)
+                )
+
                 InterfaceItem.CompactFooter -> SwitchPreference(
                     title = stringResource(R.string.settings_interface_compact_footer_title),
                     subtitle = stringResource(R.string.settings_interface_compact_footer_subtitle),
@@ -321,6 +348,23 @@ fun InterfaceSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                     isFocused = isFocused(item),
                     onToggle = { viewModel.setHideSystemStatusBar(it) }
                 )
+
+                InterfaceItem.QuickPanelInEmulators -> {
+                    val serviceOff = display.quickPanelInEmulators &&
+                        !uiState.permissions.hasAccessibilityService
+                    SwitchPreference(
+                        title = stringResource(R.string.settings_interface_quick_panel_in_emulators_title),
+                        subtitle = if (serviceOff) {
+                            stringResource(R.string.settings_interface_quick_panel_in_emulators_service_off)
+                        } else {
+                            stringResource(R.string.settings_interface_quick_panel_in_emulators_subtitle)
+                        },
+                        subtitleColor = if (serviceOff) LocalLauncherTheme.current.semanticColors.warning else null,
+                        isEnabled = display.quickPanelInEmulators,
+                        isFocused = isFocused(item),
+                        onToggle = { viewModel.setQuickPanelInEmulators(it) }
+                    )
+                }
 
                 InterfaceItem.LockScreenArt -> SwitchPreference(
                     title = stringResource(R.string.settings_interface_lock_screen_art_title),

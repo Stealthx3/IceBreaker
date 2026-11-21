@@ -40,6 +40,7 @@
 
     <string name="social_profile_hint_avatar">Avatar</string>
     <string name="social_profile_hint_view_game">View Game</string>
+    <string name="social_profile_unavailable_offline">This profile loads once you are back online</string>
     <string name="social_profile_hint_settings">Settings</string>
 
     <string name="social_tabbar_feed">Feed</string>
@@ -226,6 +227,7 @@
     <string name="social_friendcard_hosting">Hosting %1$s</string>
     <!-- Play: verb, describes a friend currently playing the named game. -->
     <string name="social_friendcard_playing">Playing %1$s</string>
+    <string name="social_friendcard_playing_online">Playing %1$s online</string>
     <string name="social_friendcard_watching">Watching %1$s</string>
     <string name="social_friendcard_favorite_remove_desc">Remove favorite</string>
     <string name="social_friendcard_favorite_add_desc">Add favorite</string>

@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.nendo.argosy.ui.util.verticalEdgeFade
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.nendo.argosy.domain.model.AutoGridConfig
 import com.nendo.argosy.domain.model.HomeScrollAxis
 import com.nendo.argosy.ui.common.GridDirection
@@ -132,6 +133,7 @@ fun HomeAutoGrid(
     onItemLongPress: (Int) -> Unit,
     modifier: Modifier = Modifier,
     showPlatformBadge: Boolean = true,
+    showDownloadedIndicator: Boolean = true,
     showFocusVisuals: Boolean = true,
     downloadIndicatorFor: (CarouselItem) -> GameDownloadIndicator = { GameDownloadIndicator.NONE },
     onCoverLoadFailed: ((Long, String) -> Unit)? = null,
@@ -171,6 +173,7 @@ fun HomeAutoGrid(
                     showFocusVisuals = showFocusVisuals,
                     showTitle = false,
                     showPlatformBadge = showPlatformBadge,
+                    showDownloadedIndicator = showDownloadedIndicator,
                     useBoxArt = useBoxArt,
                     downloadIndicator = indicator,
                     cellWidth = metrics.cellWidth,
@@ -179,7 +182,9 @@ fun HomeAutoGrid(
                     onCoverLoadFailed = onCoverLoadFailed,
                     onCoverLoaded = onCoverLoaded,
                     onPosterLoaded = onPosterLoaded,
-                    modifier = entry?.modifierFor(item.key) ?: Modifier
+                    modifier = Modifier
+                        .zIndex(if (index == focusedIndex) FOCUSED_CELL_Z else 0f)
+                        .then(entry?.modifierFor(item.key) ?: Modifier)
                 )
             }
             when (config.scrollAxis) {
@@ -408,6 +413,7 @@ private fun AutoGridCell(
     showFocusVisuals: Boolean,
     showTitle: Boolean,
     showPlatformBadge: Boolean,
+    showDownloadedIndicator: Boolean,
     useBoxArt: Boolean,
     downloadIndicator: GameDownloadIndicator,
     cellWidth: Dp?,
@@ -452,6 +458,7 @@ private fun AutoGridCell(
                         scaleOverride = if (isFocused) ComponentDefaults.Focus.scaleFocused else null,
                         downloadIndicator = downloadIndicator,
                         showPlatformBadge = showPlatformBadge,
+                        showDownloadedIndicator = showDownloadedIndicator,
                         useBoxArt = useBoxArt,
                         coverPathOverride = item.coverPathOverride,
                         onCoverLoadFailed = onCoverLoadFailed,
@@ -506,3 +513,5 @@ private fun AutoGridCell(
         }
     }
 }
+
+private const val FOCUSED_CELL_Z = 1f

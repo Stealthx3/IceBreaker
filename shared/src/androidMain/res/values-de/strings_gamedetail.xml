@@ -36,7 +36,6 @@
     <string name="gamedetail_menu_play_button_waiting_for_server">Warten auf Server…</string>
 
     <string name="gamedetail_menu_saves_syncing">Wird synchronisiert...</string>
-    <string name="gamedetail_menu_saves_default_channel">Autospeicherung</string>
 
     <string name="gamedetail_menu_favorite_label">Favorit</string>
     <string name="gamedetail_menu_favorite_compact_remove_description">Aus Favoriten entfernen</string>
@@ -84,6 +83,7 @@
     <string name="gamedetail_footer_view_reviews">Rezensionen lesen</string>
     <string name="gamedetail_footer_open_related">Öffnen</string>
     <string name="gamedetail_footer_back">Zurück</string>
+    <string name="gamedetail_footer_scroll">Scrollen</string>
     <string name="gamedetail_header_back_desc">Zurück</string>
     <string name="gamedetail_footer_new_game">Neues Spiel</string>
     <string name="gamedetail_footer_shortcut_make_public">Öffentlich machen</string>
@@ -170,7 +170,6 @@
 
     <!-- ================================ Save status =================================== -->
 
-    <string name="gamedetail_save_status_latest_label">Neueste</string>
     <string name="gamedetail_save_status_time">· %1$s</string>
     <string name="gamedetail_save_status_synced">Synchronisiert</string>
     <string name="gamedetail_save_status_local_newer">Lokal neuer</string>

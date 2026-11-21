@@ -34,8 +34,8 @@ android {
         applicationId = "com.nendo.argosy"
         minSdk = 26
         targetSdk = 35
-        versionCode = 358
-        versionName = "2.24.0"
+        versionCode = 375
+        versionName = "2.31.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -66,6 +66,7 @@ android {
         buildConfigField("int", "DOLPHIN_SYS_VERSION", "2")
         buildConfigField("int", "PPSSPP_SYS_VERSION", "1")
         buildConfigField("int", "ARMSX2_SYS_VERSION", "2")
+        buildConfigField("int", "SCUMMVM_SYS_VERSION", "1")
     }
 
     signingConfigs {
@@ -237,6 +238,8 @@ tasks.withType<Test> {
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
+    implementation(libs.shizuku.api)
+    implementation(libs.shizuku.provider)
     implementation(libs.bundles.lifecycle)
     implementation(libs.kotlinx.coroutines.android)
 
@@ -332,7 +335,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation("net.java.dev.jna:jna:5.14.0")
-    testImplementation("org.json:json:20260522")
+    testImplementation("org.json:json:20260814")
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

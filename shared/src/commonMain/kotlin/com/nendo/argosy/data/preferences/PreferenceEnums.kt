@@ -21,6 +21,15 @@ enum class ThemeMode(val displayName: String) {
     }
 }
 
+enum class ScreenOrientationMode {
+    AUTO, LANDSCAPE, PORTRAIT;
+
+    companion object {
+        fun fromString(value: String?): ScreenOrientationMode =
+            entries.find { it.name == value } ?: AUTO
+    }
+}
+
 enum class GridDensity {
     COMPACT, NORMAL, SPACIOUS;
 
@@ -36,6 +45,15 @@ enum class LibraryLayout {
     companion object {
         fun fromString(value: String?): LibraryLayout =
             entries.find { it.name == value } ?: GRID
+    }
+}
+
+enum class LibraryListStyle {
+    COMPACT, RELAXED;
+
+    companion object {
+        fun fromString(value: String?): LibraryListStyle =
+            entries.find { it.name == value } ?: RELAXED
     }
 }
 
@@ -86,6 +104,15 @@ enum class BoxArtGlowStrength(val alpha: Float, val isShadow: Boolean = false) {
     companion object {
         fun fromString(value: String?): BoxArtGlowStrength =
             entries.find { it.name == value } ?: MEDIUM
+    }
+}
+
+enum class NewBadgePlacement {
+    RIGHT, LEFT, HIDDEN;
+
+    companion object {
+        fun fromString(value: String?): NewBadgePlacement =
+            entries.find { it.name == value } ?: RIGHT
     }
 }
 

@@ -90,6 +90,7 @@ class SigilSharedContainerRouteTest {
             cartFeatureScanner = mockk(relaxed = true),
             saveLocator = saveLocator
         )
+        every { saveLocator.accessPaths(any()) } answers { listOf(firstArg<SigilRoute>().root) }
     }
 
     @After
@@ -110,6 +111,18 @@ class SigilSharedContainerRouteTest {
         assertEquals("pcsx2", route?.layout)
         assertEquals(memcards.absolutePath, route?.root)
         assertEquals(true, route?.libretro)
+    }
+
+    @Test
+    fun `routing prepares save access on the layout's folders, not the whole root`() = runTest {
+        located(shared = listOf("Mcd001.ps2"), own = emptyList())
+        val layoutFolder = "${memcards.absolutePath}/cards"
+        every { saveLocator.accessPaths(any()) } returns listOf(layoutFolder)
+
+        handler.route(GAME_ID, BUILTIN)
+
+        verify { fal.prepareSaveAccess(layoutFolder) }
+        verify(exactly = 0) { fal.prepareSaveAccess(memcards.absolutePath) }
     }
 
     @Test
@@ -182,6 +195,28 @@ class SigilSharedContainerRouteTest {
 
         assertEquals("pcsx2", handler.route(GAME_ID, BUILTIN)?.layout)
         verify(exactly = 0) { saveLocator.locate(any(), any(), any()) }
+    }
+
+    @Test
+    fun `a game's source paths are its own files under the root, never the shared card or the root`() = runTest {
+        every { connectionManager.snapshotsEnabled() } returns true
+        val context = SaveContext(
+            config = com.nendo.argosy.data.emulator.SavePathRegistry.getConfig(BUILTIN)!!,
+            romPath = null,
+            saveId = null,
+            emulatorPackage = null,
+            gameId = GAME_ID,
+            gameTitle = GAME.title,
+            platformSlug = GAME.platformSlug,
+            emulatorId = BUILTIN,
+            localSavePath = memcards.absolutePath
+        )
+
+        located(shared = listOf("Mcd001.ps2"), own = listOf("$ROM_STEM.ps2"))
+        assertEquals(listOf(File(memcards, "$ROM_STEM.ps2").path), handler.sourcePathsFor(memcards.absolutePath, context))
+
+        located(shared = listOf("Mcd001.ps2"), own = emptyList())
+        assertEquals(emptyList<String>(), handler.sourcePathsFor(memcards.absolutePath, context))
     }
 
     @Test

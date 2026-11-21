@@ -1,7 +1,10 @@
 package com.nendo.argosy.data.social.uploader
 
 import com.nendo.argosy.data.local.dao.GameDao
+import com.nendo.argosy.data.local.dao.PlayRecordDeletionDao
 import com.nendo.argosy.data.local.dao.PlaySessionDao
+import com.nendo.argosy.data.local.dao.cutoffsFor
+import com.nendo.argosy.data.model.PlayRecordCutoffs
 import com.nendo.argosy.data.preferences.SyncPreferencesRepository
 import com.nendo.argosy.data.remote.romm.RomMApi
 import com.nendo.argosy.data.remote.romm.RomMConnectionManager
@@ -34,13 +37,15 @@ private val UNASSIGNED_DEVICE = RomMDevice(
  * ingest acknowledged as a duplicate carries no server id to match on. A full account pass,
  * which also takes sessions whose device was removed, runs until one completes and then once
  * per [FULL_PULL_INTERVAL]; runs in between ask each device only for sessions newer than the
- * latest one held. A pulled session whose game and start time are already held is skipped.
- * Runs after the first-connect backfill, after each upload, on the [PlaySessionPullScheduler]
- * cadence, and on demand from the Play Time hub.
+ * latest one held. A pulled session whose game and start time are already held, or that falls
+ * under a deleted play record, is skipped. Runs after the first-connect backfill, after each
+ * upload, on the [PlaySessionPullScheduler] cadence at RomM connect and Home resume, before a
+ * monthly recap decides or loads, and on demand from the Play Time hub.
  */
 @Singleton
 class PlaySessionPull @Inject constructor(
     private val playSessionDao: PlaySessionDao,
+    private val playRecordDeletionDao: PlayRecordDeletionDao,
     private val gameDao: GameDao,
     private val syncPreferencesRepository: SyncPreferencesRepository,
     private val connectionManager: RomMConnectionManager
@@ -62,6 +67,7 @@ class PlaySessionPull @Inject constructor(
         val api = connectionManager.getApi() ?: return Summary(0, 0, "No api")
         val ownerUserId = syncPreferencesRepository.getRommUserId() ?: return Summary(0, 0, "No account")
         val thisDeviceId = connectionManager.getDeviceId()
+        val cutoffs = playRecordDeletionDao.cutoffsFor(ownerUserId)
 
         val relinked = playSessionDao.relinkPulledByRommId(ownerUserId)
         if (relinked > 0) Logger.info(TAG, "run: relinked $relinked pulled sessions by rom id")
@@ -80,9 +86,9 @@ class PlaySessionPull @Inject constructor(
         val now = Instant.now()
         val lastFull = syncPreferencesRepository.getRommPlaySessionFullPull()
         val summary = if (lastFull == null || Duration.between(lastFull, now) >= FULL_PULL_INTERVAL) {
-            pullAccount(api, devices, thisDeviceId, ownerUserId, resolve)
+            pullAccount(api, devices, thisDeviceId, ownerUserId, cutoffs, resolve)
         } else {
-            pullDevices(api, devices, thisDeviceId, ownerUserId, resolve)
+            pullDevices(api, devices, thisDeviceId, ownerUserId, cutoffs, resolve)
         }
         if (summary.stoppedBy != null) return Summary(summary.added, summary.devices, summary.stoppedBy)
         if (summary.full) syncPreferencesRepository.setRommPlaySessionFullPull(now)
@@ -103,6 +109,7 @@ class PlaySessionPull @Inject constructor(
         devices: List<RomMDevice>,
         thisDeviceId: String?,
         ownerUserId: Long,
+        cutoffs: PlayRecordCutoffs,
         resolve: suspend (Long) -> PulledGameRef
     ): PassResult {
         val byId = devices.associateBy { it.id }
@@ -119,7 +126,7 @@ class PlaySessionPull @Inject constructor(
                 .groupBy { it.deviceId }
                 .forEach { (deviceId, sessions) ->
                     val device = deviceId?.let { byId[it] ?: unknownDevice(it) } ?: UNASSIGNED_DEVICE
-                    added += insertMissing(sessions, device, ownerUserId, resolve)
+                    added += insertMissing(sessions, device, ownerUserId, cutoffs, resolve)
                 }
             if (page.size < PAGE_SIZE) break
             offset += page.size
@@ -132,6 +139,7 @@ class PlaySessionPull @Inject constructor(
         devices: List<RomMDevice>,
         thisDeviceId: String?,
         ownerUserId: Long,
+        cutoffs: PlayRecordCutoffs,
         resolve: suspend (Long) -> PulledGameRef
     ): PassResult {
         var added = 0
@@ -146,7 +154,7 @@ class PlaySessionPull @Inject constructor(
                     is PageResult.Stopped -> return PassResult(added, devicesDone, full = false, stoppedBy = result.reason)
                 }
                 if (page.isEmpty()) break
-                added += insertMissing(page, device, ownerUserId, resolve)
+                added += insertMissing(page, device, ownerUserId, cutoffs, resolve)
                 if (page.size < PAGE_SIZE) break
                 offset += page.size
             }
@@ -179,15 +187,11 @@ class PlaySessionPull @Inject constructor(
         }
 
     private fun unknownDevice(id: String) = RomMDevice(id = id, name = null, platform = null, client = null, clientVersion = null)
-
-    /**
-     * Inserts every session in [page] whose server id is not already held, filed under the
-     * game [resolveGame] answers for its rom. Returns how many rows were written.
-     */
     internal suspend fun insertMissing(
         page: List<RomMPlaySession>,
         device: RomMDevice,
         ownerUserId: Long,
+        cutoffs: PlayRecordCutoffs,
         resolveGame: suspend (Long) -> PulledGameRef
     ): Int {
         val held = playSessionDao.getHeldRommSessionIds(page.map { it.id }).toSet()
@@ -196,6 +200,7 @@ class PlaySessionPull @Inject constructor(
         var noRom = 0
         var unmappable = 0
         var sameStart = 0
+        var deleted = 0
         for (remote in page) {
             if (remote.id in held) {
                 alreadyHeld++
@@ -211,6 +216,10 @@ class PlaySessionPull @Inject constructor(
                 unmappable++
                 continue
             }
+            if (cutoffs.blocks(entity.gameId, entity.startTime)) {
+                deleted++
+                continue
+            }
             if (playSessionDao.existsForOwnerByGameAndStart(ownerUserId, entity.gameId, entity.startTime)) {
                 sameStart++
                 continue
@@ -222,7 +231,7 @@ class PlaySessionPull @Inject constructor(
             Logger.info(
                 TAG,
                 "insertMissing: device=${device.id} page=${page.size} added=$added held=$alreadyHeld " +
-                    "noRom=$noRom unmappable=$unmappable sameStart=$sameStart sample=${page.firstOrNull()?.startTime}"
+                    "noRom=$noRom unmappable=$unmappable sameStart=$sameStart deleted=$deleted sample=${page.firstOrNull()?.startTime}"
             )
         }
         return added

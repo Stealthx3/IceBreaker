@@ -43,15 +43,12 @@
     <string name="ui_save_channel_tab_states">États</string>
     <string name="ui_save_channel_states_empty">Aucun emplacement d\'état disponible</string>
     <string name="ui_save_channel_states_heading_named">États dans %1$s</string>
-    <string name="ui_save_channel_states_heading_default">États dans l\'emplacement par défaut</string>
     <string name="ui_save_channel_slot_new">Nouvel emplacement</string>
     <string name="ui_save_channel_slot_legacy_tag">[Ancien]</string>
     <string name="ui_save_channel_history_active_point">Point de restauration actif</string>
     <string name="ui_save_channel_history_latest">Dernière</string>
     <string name="ui_save_channel_history_tag_synced">[Synchronisée]</string>
     <string name="ui_save_channel_history_tag_local">[Locale]</string>
-    <string name="ui_save_channel_active_default">Dernière</string>
-    <string name="ui_save_channel_slot_autosave">Sauvegarde automatique</string>
     <string name="ui_save_channel_slot_archived">Archivé</string>
 
     <string name="ui_save_channel_footer_migrate">Migrer</string>
@@ -115,6 +112,23 @@
     <string name="ui_save_channel_delete_slot_cancel">Annuler</string>
     <string name="ui_save_channel_delete_slot_message">Supprimer \"%1$s\" ?</string>
     <string name="ui_save_channel_delete_slot_note">Cela le supprimera du serveur et du stockage local. Cette action est irréversible.</string>
+    <string name="ui_save_channel_footer_delete_archived">Tout supprimer</string>
+    <string name="ui_save_channel_footer_delete_version">Supprimer</string>
+    <string name="ui_save_channel_delete_version_title">SUPPRIMER LA SAUVEGARDE</string>
+    <string name="ui_save_channel_delete_version_message">Supprimer la sauvegarde du %1$s ?</string>
+    <string name="ui_save_channel_delete_archived_title">SUPPRIMER LES SAUVEGARDES ARCHIVÉES</string>
+    <plurals name="ui_save_channel_delete_archived_message">
+        <item quantity="one">Supprimer %1$d sauvegarde archivée ?</item>
+        <item quantity="many">Supprimer %1$d sauvegardes archivées ?</item>
+        <item quantity="other">Supprimer %1$d sauvegardes archivées ?</item>
+    </plurals>
+    <string name="ui_save_channel_delete_local_note">Cela supprime la copie sur cet appareil. La copie sur le serveur est conservée. Cette action est irréversible.</string>
+    <string name="ui_save_channel_delete_only_copy_note">Cet appareil détient la seule copie. Elle sera perdue définitivement.</string>
+    <plurals name="ui_save_channel_notice_versions_deleted">
+        <item quantity="one">%1$d sauvegarde supprimée</item>
+        <item quantity="many">%1$d sauvegardes supprimées</item>
+        <item quantity="other">%1$d sauvegardes supprimées</item>
+    </plurals>
 
     <string name="ui_save_channel_version_mismatch_title">INCOMPATIBILITÉ DE VERSION DU CORE</string>
     <string name="ui_save_channel_version_mismatch_confirm">Charger quand même</string>
@@ -190,6 +204,12 @@
     <!-- Shared modals and controls (ui/components, ui/primitives) -->
 
     <string name="ui_confirm_modal_cancel">Annuler</string>
+    <string name="ui_pushed_apk_title">Installer %1$s ?</string>
+    <string name="ui_pushed_apk_message">%1$s a envoyé cette app sur cet appareil.\n\nPaquet : %2$s\nSignature : %3$s</string>
+    <string name="ui_pushed_apk_unknown_server">Votre serveur RomM</string>
+    <string name="ui_pushed_apk_unknown_signer">inconnue</string>
+    <string name="ui_pushed_apk_install">Installer</string>
+    <string name="ui_pushed_apk_not_now">Plus tard</string>
 
     <string name="ui_modal_search_placeholder">Rechercher...</string>
 
@@ -218,7 +238,6 @@
     <string name="ui_changelog_action_relogin_romm">Se reconnecter à RomM</string>
     <string name="ui_changelog_action_resync_library">Resynchroniser la bibliothèque</string>
     <string name="ui_changelog_action_clear_cache">Vider le cache</string>
-    <string name="ui_changelog_action_set_steam_path">Définir le chemin d\'installation Steam</string>
 
     <string name="ui_background_conflict_title">Conflit de synchro des sauvegardes</string>
     <string name="ui_background_conflict_default_slot">Sauvegarde par défaut</string>
@@ -315,7 +334,6 @@
     <string name="ui_add_to_collection_create">Créer une nouvelle collection</string>
     <string name="ui_add_to_collection_member">Dans la collection</string>
 
-    <string name="ui_steam_location_download">Télécharger via Argosy</string>
     <string name="ui_steam_location_mark_installed">Marquer comme installé</string>
     <string name="ui_steam_location_managed_by">Géré par %1$s</string>
 
@@ -508,6 +526,7 @@
     <!-- Storage meter, preference rows, home layout rows (ui/components) -->
 
     <string name="ui_volume_meter_other">Autres applis et fichiers</string>
+    <string name="ui_volume_meter_unknown_location">%1$s de jeux se trouvent à un emplacement inconnu</string>
     <string name="ui_volume_meter_free">%1$s libres</string>
 
     <string name="ui_cycle_preference_reset_to_global">Réinitialiser au réglage global</string>
@@ -589,12 +608,18 @@
     <string name="ui_close_app_confirm_title">Fermer Argosy ?</string>
     <string name="ui_close_app_confirm_message">Argosy s\'arrête et sa fenêtre se ferme. Les synchronisations en cours reprendront à la prochaine ouverture.</string>
     <string name="ui_quick_settings_device_access_allow">Autoriser</string>
+    <string name="ui_quick_settings_root_access_notice">Argosy a besoin d\'un accès root pour modifier ces réglages. Autorisez-le dans votre gestionnaire root lorsqu\'il vous le demande.</string>
+    <string name="ui_quick_settings_root_access_request">Demander</string>
     <string name="ui_quick_settings_theme">Thème</string>
     <string name="ui_quick_settings_accent">Couleur d\'accent</string>
     <string name="ui_quick_settings_accent_default">Par défaut</string>
     <string name="ui_quick_settings_theme_light">Clair</string>
     <string name="ui_quick_settings_theme_dark">Sombre</string>
     <string name="ui_quick_settings_theme_system">Auto</string>
+    <string name="ui_quick_settings_orientation">Orientation</string>
+    <string name="ui_quick_settings_orientation_auto">Auto</string>
+    <string name="ui_quick_settings_orientation_landscape">Paysage</string>
+    <string name="ui_quick_settings_orientation_portrait">Portrait</string>
     <string name="ui_quick_settings_haptics">Vibrations</string>
     <string name="ui_quick_settings_ui_sounds">Sons de l\'interface</string>
     <string name="ui_quick_settings_swap_ab">Inverser A/B</string>
@@ -616,6 +641,8 @@
     <string name="ui_quick_settings_group_performance">Performances</string>
     <string name="ui_quick_settings_group_fan">Ventilateur</string>
     <string name="ui_quick_settings_group_overlay">Surimpression</string>
+    <string name="ui_quick_settings_stats_fan">Ventilateur</string>
+    <string name="ui_quick_settings_stats_battery">Batterie</string>
     <string name="ui_quick_settings_music_nothing_playing">Aucune lecture</string>
     <string name="ui_quick_settings_music_source_launcher">Musique du launcher</string>
     <string name="ui_quick_settings_music_track_position">%1$d sur %2$d</string>
@@ -668,6 +695,7 @@
     <string name="ui_quick_friends_appear_online">Apparaître en ligne</string>
     <string name="ui_drawer_friend_hosting">Héberge %1$s</string>
     <string name="ui_drawer_friend_playing">Joue à %1$s</string>
+    <string name="ui_drawer_friend_playing_online">Joue à %1$s en ligne</string>
     <string name="ui_drawer_friend_in_game">En jeu</string>
     <string name="ui_drawer_friend_favorite">Favori</string>
     <string name="ui_drawer_account_none">Aucun compte</string>
@@ -689,7 +717,6 @@
 
     <string name="ui_sync_overlay_unknown_game">Jeu</string>
     <string name="ui_sync_overlay_slot_prefix">"Emplacement : "</string>
-    <string name="ui_sync_overlay_slot_default">Dernière</string>
     <string name="ui_sync_overlay_blocked_grant">Autoriser l\'accès</string>
     <string name="ui_sync_overlay_blocked_configure_path">Configurer le chemin de sauvegarde</string>
     <string name="ui_sync_overlay_blocked_disable">Désactiver la synchro</string>
@@ -703,18 +730,29 @@
     <string name="ui_sync_overlay_hardcore_downgrade_subtitle">Utiliser la sauvegarde du serveur, perdre le statut hardcore</string>
     <string name="ui_sync_overlay_hardcore_skip">Ignorer la synchro</string>
     <string name="ui_sync_overlay_hardcore_skip_subtitle">Lancer sans synchroniser</string>
-    <string name="ui_launch_overlay_step_finishing_previous">Fin du lancement précédent</string>
-    <string name="ui_launch_overlay_step_downloading_core">Téléchargement du cœur</string>
-    <string name="ui_launch_overlay_step_preparing_system_files">Préparation des fichiers système</string>
-    <string name="ui_launch_overlay_step_preparing_ui">Préparation de l\'interface</string>
-    <string name="ui_launch_overlay_step_launching">Lancement</string>
     <string name="ui_launch_overlay_cancel">Annuler</string>
     <string name="ui_launch_overlay_cancel_option">Annuler le lancement</string>
     <string name="ui_launch_overlay_cancel_option_subtitle">Revenir sans lancer le jeu</string>
+    <string name="ui_launch_overlay_wait_previous">Fin du lancement précédent en cours</string>
+    <string name="ui_launch_overlay_wait_recap">Chargement de votre dernière session en cours</string>
+    <string name="ui_launch_overlay_wait_save">Synchronisation de votre sauvegarde en cours</string>
+    <string name="ui_launch_overlay_wait_core">Téléchargement du cœur de l\'émulateur en cours</string>
+    <string name="ui_launch_overlay_wait_core_sized">Téléchargement du cœur de l\'émulateur en cours &#183; %1$s</string>
+    <string name="ui_launch_overlay_wait_prepare">Préparation de l\'émulateur en cours</string>
+    <string name="ui_launch_overlay_failed_connect">RomM n\'a pas répondu. Démarrage avec la sauvegarde de cet appareil.</string>
+    <string name="ui_launch_overlay_failed_timeout">RomM a mis trop de temps à répondre. Démarrage avec la sauvegarde de cet appareil.</string>
+    <string name="ui_launch_overlay_failed_download">Votre sauvegarde n\'a pas pu être téléchargée. Démarrage avec la sauvegarde de cet appareil.</string>
+    <string name="ui_launch_overlay_failed_write">Votre sauvegarde n\'a pas pu être écrite. Démarrage avec la sauvegarde de cet appareil.</string>
+    <string name="ui_launch_overlay_percent">%1$d %%</string>
+    <plurals name="ui_launch_overlay_percent_eta">
+        <item quantity="one">%1$d %% &#183; encore environ %2$d seconde</item>
+        <item quantity="many">%1$d %% &#183; encore environ %2$d secondes</item>
+        <item quantity="other">%1$d %% &#183; encore environ %2$d secondes</item>
+    </plurals>
+    <string name="ui_launch_overlay_hint_cancel">Annuler</string>
     <string name="ui_launch_overlay_launcher_choice_title">Choisir un lanceur</string>
     <string name="ui_launch_overlay_launcher_choice_message">%1$s est installé dans plusieurs lanceurs. Épinglez-en un avec \"Changer de lanceur\" sur la page du jeu pour ne plus voir cette question.</string>
     <string name="ui_launch_overlay_launcher_choice_option_subtitle">Lancer le jeu dans %1$s</string>
-    <string name="ui_launch_overlay_step_loading_recap">Chargement de votre dernière session</string>
     <string name="ui_launch_recap_meta">Dernière session &#183; %1$s</string>
     <string name="ui_launch_recap_meta_duration">Dernière session &#183; %1$s &#183; %2$s</string>
     <plurals name="ui_launch_recap_meta_unlocked">
@@ -789,17 +827,6 @@
     <string name="ui_sync_overlay_snapshot_conflict_branch_subtitle">Déplacer la sauvegarde de cet appareil vers un nouveau canal</string>
     <string name="ui_sync_overlay_snapshot_conflict_revert">Revenir en arrière</string>
     <string name="ui_sync_overlay_snapshot_conflict_revert_subtitle">Revenir à la dernière sauvegarde synchronisée par cet appareil (une copie de sauvegarde est créée)</string>
-    <string name="ui_sync_overlay_post_session_title">Conflit de sauvegarde</string>
-    <string name="ui_sync_overlay_post_session_subject">\"%1$s\" -- %2$s</string>
-    <string name="ui_sync_overlay_post_session_default_slot">Sauvegarde par défaut</string>
-    <string name="ui_sync_overlay_post_session_message">Le serveur possède une sauvegarde plus récente. L\'envoi fait de votre sauvegarde locale la plus récente, et la copie du serveur est conservée.</string>
-    <string name="ui_sync_overlay_post_session_local">Locale</string>
-    <string name="ui_sync_overlay_post_session_server">Serveur</string>
-    <string name="ui_sync_overlay_post_session_server_named">Serveur (%1$s)</string>
-    <string name="ui_sync_overlay_post_session_skip">Ignorer la synchro</string>
-    <string name="ui_sync_overlay_post_session_skip_subtitle">Conserver votre sauvegarde locale, ne pas envoyer</string>
-    <string name="ui_sync_overlay_post_session_overwrite">Envoyer la sauvegarde locale</string>
-    <string name="ui_sync_overlay_post_session_overwrite_subtitle">Votre sauvegarde locale devient la plus récente. La copie du serveur est conservée.</string>
     <string name="ui_sync_overlay_legacy_status">Synchronisation...</string>
 
     <!-- Quick menu (ui/quickmenu) -->
@@ -1017,7 +1044,6 @@
     <string name="media_library_viewmodel_refresh_label">Actualisation</string>
 
     <string name="gamedetail_action_buttons_play">JOUER</string>
-    <string name="gamedetail_action_buttons_autosave">Sauvegarde auto</string>
     <string name="gamedetail_action_buttons_download">TÉLÉCHARGER</string>
     <string name="gamedetail_action_buttons_install">INSTALLER</string>
     <string name="gamedetail_action_buttons_queued">EN ATTENTE...</string>
@@ -1034,6 +1060,42 @@
     <string name="home_grid_local_video_row_title">Choisir une vidéo sur cet appareil</string>
     <string name="home_grid_local_video_row_subtitle">Lit directement depuis votre stockage</string>
     <string name="ui_quick_settings_swap_displays">Permuter les écrans</string>
+    <string name="ui_quick_settings_page_connections">Connexions</string>
+    <string name="ui_quick_connections_unsupported">Cet appareil n\'autorise pas le contrôle direct du Wi-Fi et du Bluetooth</string>
+    <string name="ui_quick_connections_tab_wifi">Wi-Fi</string>
+    <string name="ui_quick_connections_tab_bluetooth">Bluetooth</string>
+    <string name="ui_quick_connections_wifi_off">Le Wi-Fi est désactivé</string>
+    <string name="ui_quick_connections_bluetooth_off">Le Bluetooth est désactivé</string>
+    <string name="ui_quick_connections_nearby">Réseaux à proximité</string>
+    <string name="ui_quick_connections_saved">Réseaux enregistrés</string>
+    <string name="ui_quick_connections_paired">Appareils associés</string>
+    <string name="ui_quick_connections_scanning">Recherche de réseaux</string>
+    <string name="ui_quick_connections_no_networks">Aucun réseau trouvé</string>
+    <string name="ui_quick_connections_no_paired">Aucun appareil associé</string>
+    <string name="ui_quick_connections_row_joining">Connexion</string>
+    <string name="ui_quick_connections_row_failed">Échec</string>
+    <string name="ui_quick_connections_secured">Sécurisé</string>
+    <string name="ui_quick_connections_forget">Oublier</string>
+    <string name="ui_quick_connections_bluetooth_permission">Argosy a besoin d\'une autorisation pour afficher les appareils associés.</string>
+    <string name="ui_quick_connections_bluetooth_permission_allow">Autoriser</string>
+    <string name="ui_quick_connections_device_connected">Connecté</string>
+    <string name="ui_quick_connections_device_not_connected">Non connecté</string>
+    <string name="ui_quick_connections_battery">%1$d %%</string>
+    <string name="ui_quick_connections_band_2_4">2,4 GHz</string>
+    <string name="ui_quick_connections_band_5">5 GHz</string>
+    <string name="ui_quick_connections_band_6">6 GHz</string>
+    <string name="ui_quick_connections_join_title">Rejoindre %1$s</string>
+    <string name="ui_quick_connections_join_password">Mot de passe</string>
+    <string name="ui_quick_connections_join_confirm">Rejoindre</string>
+    <string name="ui_quick_connections_join_busy">Connexion</string>
+    <string name="ui_quick_connections_join_cancel">Annuler</string>
+    <string name="ui_quick_connections_join_failed">L\'appareil n\'a pas pu rejoindre ce réseau.</string>
+    <string name="ui_quick_settings_wifi">Wi-Fi</string>
+    <string name="ui_quick_settings_bluetooth">Bluetooth</string>
+    <string name="ui_quick_settings_radio_on">Activé</string>
+    <string name="ui_quick_settings_radio_off">Désactivé</string>
+    <string name="ui_quick_settings_wifi_connected">Connecté</string>
+    <string name="ui_quick_settings_wifi_not_connected">Non connecté</string>
     <string name="ui_sibling_choice_title_download">CHOISIR UNE VARIANTE</string>
     <string name="ui_sibling_choice_title_active">VARIANTE ACTIVE</string>
     <string name="ui_sibling_choice_automatic">Automatique</string>
@@ -1067,4 +1129,14 @@
     <string name="gamelist_row_genre_board_game">Jeu de société</string>
     <string name="gamelist_row_genre_quiz">Quiz</string>
     <string name="gamelist_row_genre_sim">Simulation</string>
+    <string name="common_game_confirm_hide_title">Masquer %1$s ?</string>
+    <string name="common_game_confirm_hide_message">Les jeux masqués peuvent être réaffichés dans la Bibliothèque en filtrant Source sur Masqués.</string>
+    <string name="common_game_confirm_hide_confirm">Masquer</string>
+    <string name="ui_launch_overlay_running_busy_title">%1$s est en cours</string>
+    <string name="ui_launch_overlay_running_busy_message_game">%1$s exécute toujours %2$s en arrière-plan.</string>
+    <string name="ui_launch_overlay_running_busy_message">%1$s est toujours ouvert en arrière-plan.</string>
+    <string name="ui_launch_overlay_running_open_title">%1$s est toujours ouvert</string>
+    <string name="ui_launch_overlay_running_open_message">Lancer un autre jeu le ferme.</string>
+    <string name="ui_launch_overlay_running_close_label">Fermer et lancer</string>
+    <string name="ui_launch_overlay_running_close_subtitle">La progression non sauvegardée du jeu en cours sera perdue</string>
 </resources>

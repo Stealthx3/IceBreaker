@@ -35,6 +35,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 import com.nendo.argosy.data.download.ZipExtractor
 import com.nendo.argosy.data.emulator.M3uManager
+import com.nendo.argosy.util.DiscSheets
 import com.nendo.argosy.util.FileNames
 import com.nendo.argosy.data.local.dao.GameArtDao
 import com.nendo.argosy.data.local.dao.GameDao
@@ -211,9 +212,9 @@ class GameRepository @Inject constructor(
             .filter { it.isNotEmpty() }
             .toSet()
 
-        val topLevelMatch = rootFiles
-            .filter { it.extension.lowercase() in validExtensions }
-            .maxByOrNull { it.length() }
+        val topLevelRoms = rootFiles.filter { it.extension.lowercase() in validExtensions }
+        val topLevelMatch = topLevelRoms.filter { DiscSheets.isLoader(it.name) }.minByOrNull { it.name }
+            ?: topLevelRoms.maxByOrNull { it.length() }
         if (topLevelMatch != null) return topLevelMatch
 
         if (platformSlug == "wiiu") {
@@ -461,6 +462,7 @@ class GameRepository @Inject constructor(
             val m3u = File(path)
             if (!m3u.extension.equals("m3u", ignoreCase = true)) continue
             if (M3uManager.isMultiDiscContainer(m3u)) continue
+            if (gameDao.getById(info.id)?.isMultiDisc == true) continue
 
             val replacement = M3uManager.parseFirstDisc(m3u)
             if (replacement == null) {
@@ -606,8 +608,8 @@ class GameRepository @Inject constructor(
         gameDao.getGamesWithLocalPathIds().size
     }
 
-    suspend fun getAdoptedGamesCount(): Int = withContext(Dispatchers.IO) {
-        gameDao.countWithLocalPathByOrigin(FileOrigin.ADOPTED)
+    suspend fun getLocalOnlyGamesCount(): Int = withContext(Dispatchers.IO) {
+        gameDao.countWithLocalPathBySource(GameSource.LOCAL_ONLY)
     }
 
     suspend fun countBox3dCapableGames(): Int = withContext(Dispatchers.IO) {
@@ -756,11 +758,16 @@ class GameRepository @Inject constructor(
 
     suspend fun deleteLocalFilesForPlatform(platformId: Long): Int = withContext(Dispatchers.IO) {
         val games = gameDao.getDownloadedByPlatform(platformId)
+        val platformDir = getDownloadDirForPlatformId(platformId)
         var deleted = 0
         for (game in games) {
             val path = game.localPath ?: continue
             try {
                 val file = java.io.File(path)
+                if (file.isDirectory && FileNames.isWithin(platformDir, file)) {
+                    Log.w(TAG, "Refusing to delete folder $path: it holds the platform folder ${platformDir.path}")
+                    continue
+                }
                 if (file.exists()) {
                     if (file.isDirectory) file.deleteRecursively() else file.delete()
                 }
@@ -906,6 +913,8 @@ class GameRepository @Inject constructor(
         gameDao.getSearchCandidates(hiddenOwnerId())
 
     suspend fun getByIds(ids: List<Long>): List<GameEntity> = gameDao.getByIds(ids)
+
+    suspend fun getByIdsBatched(ids: List<Long>): List<GameEntity> = gameDao.getByIdsChunked(ids)
 
     private suspend fun hydrateByIds(ids: List<Long>): List<GameEntity> {
         if (ids.isEmpty()) return emptyList()
@@ -1119,6 +1128,8 @@ class GameRepository @Inject constructor(
         setManually: Boolean
     ) = gameDao.updateSteamLauncher(gameId, launcher, setManually)
 
+    suspend fun clearSteamLauncherPin(gameId: Long) = gameDao.clearSteamLauncherPin(gameId)
+
     suspend fun updateAchievementsFetchedAt(gameId: Long, timestamp: Long) =
         gameDao.updateAchievementsFetchedAt(gameId, timestamp)
 
@@ -1145,6 +1156,9 @@ class GameRepository @Inject constructor(
 
     suspend fun getScreenshots(gameId: Long): List<GameScreenshotEntity> =
         gameScreenshotDao.getForGame(gameId)
+
+    suspend fun getScreenshotsWithGallery(gameId: Long): List<GameScreenshotEntity> =
+        gameScreenshotDao.getAllForGame(gameId)
 
     suspend fun getScreenshots(gameIds: Collection<Long>): Map<Long, List<GameScreenshotEntity>> =
         gameScreenshotDao.forGames(gameIds)

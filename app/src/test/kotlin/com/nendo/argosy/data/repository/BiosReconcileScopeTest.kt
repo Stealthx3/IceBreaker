@@ -51,7 +51,7 @@ class BiosReconcileScopeTest {
             userPreferencesRepository = prefs,
             switchKeyManager = mockk(relaxed = true),
             attributionRepository = mockk(relaxed = true),
-            xboxDiskImageProvisioner = mockk(relaxed = true)
+            fal = mockk(relaxed = true)
         )
     }
 

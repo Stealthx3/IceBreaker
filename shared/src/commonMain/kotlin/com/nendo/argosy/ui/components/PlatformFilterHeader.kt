@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +41,7 @@ import com.nendo.argosy.platform.screenHeightDp
 import com.nendo.argosy.platform.screenWidthDp
 import com.nendo.argosy.res.pluralStringResource
 import com.nendo.argosy.res.stringResource
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import com.nendo.argosy.res.ArgosyR as R
@@ -52,8 +54,6 @@ const val PLATFORM_HEADER_SEARCH = 0
 const val PLATFORM_HEADER_SORT = 1
 const val PLATFORM_HEADER_FILTER = 2
 const val PLATFORM_HEADER_COUNT = 3
-
-private const val WIDE_SCREEN_DP = 900
 
 private val SORT_OPTIONS = listOf(
     PlatformFilterLogic.SortMode.DEFAULT to R.string.ui_platform_filter_sort_default,
@@ -83,11 +83,13 @@ fun PlatformFilterHeader(
     modifier: Modifier = Modifier
 ) {
     val searchFocusRequester = remember { FocusRequester() }
-    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(searchActive) {
-        if (searchActive && screenWidthDp > WIDE_SCREEN_DP) {
+        if (searchActive) {
             searchFocusRequester.requestFocus()
+            withFrameNanos { }
+            keyboardController?.show()
         }
     }
 

@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -91,19 +92,9 @@ private const val STREAM_TYPE_SUBTITLE = "Subtitle"
 private const val FAILED_ROW_RETENTION_DAYS = 14L
 
 /**
- * Fetches movies and episodes for offline playback.
- *
- * A separate resolver rather than a branch inside [DownloadManager]: that queue is keyed on a game id
- * end to end, so media gets its own queue and its own progress, and the downloads screen merges the
- * two the way it already merges Steam. Media inherits the same bandwidth contention Steam has today -
- * one shared slot budget, no global bandwidth scheduler.
- *
- * The two qualities are two different fetches, not one fetch with a parameter. The original is a
- * static file the server already has, so it carries a real size, honours a Range header and resumes
- * from a half-written file. A transcode is produced on demand: the server has to start ffmpeg before
- * any byte exists, there is no length to resume against, and abandoning one leaks that process until
- * the server times it out, which is why the play session is recorded on the queue row and explicitly
- * stopped.
+ * Fetches movies and episodes for offline playback, on a queue of its own that shares the rom
+ * downloads' slot budget. An original-quality fetch resumes from a partial file; a transcode cannot
+ * resume, and its server play session is recorded on the queue row and stopped when abandoned.
  */
 @Singleton
 @Suppress("TooManyFunctions")
@@ -158,9 +149,11 @@ actual class MediaDownloadManager @Inject constructor(
      * dropping either would strand both. Dismissing one is [removeFromCompleted], which is a
      * deliberate act on that title rather than a sweep of everything finished.
      */
-    actual fun clearCompletedDownloads() {
-        _completedDownloads.value = _completedDownloads.value.filter {
-            it.state is MediaDownloadState.Failed
+    fun clearCompletedDownloads() {
+        _completedDownloads.update { completed ->
+            completed.filter {
+                it.state is MediaDownloadState.Failed
+            }
         }
         if (_activeDownload.value?.state is MediaDownloadState.Completed) {
             _activeDownload.value = null
@@ -176,8 +169,8 @@ actual class MediaDownloadManager @Inject constructor(
         }
     }
 
-    actual fun removeFromCompleted(itemId: String) {
-        _completedDownloads.value = _completedDownloads.value.filterNot { it.itemId == itemId }
+    fun removeFromCompleted(itemId: String) {
+        _completedDownloads.update { completed -> completed.filterNot { it.itemId == itemId } }
         scope.launch {
             val owner = mediaRepository.currentUserId() ?: return@launch
             mediaDownloadQueueDao.getByItemId(owner, itemId)?.tempFilePath?.let { deleteIfPresent(it) }
@@ -362,7 +355,7 @@ actual class MediaDownloadManager @Inject constructor(
                 from = listOf(MediaDownloadDbState.QUEUED.name, MediaDownloadDbState.PREPARING.name),
                 to = MediaDownloadDbState.PAUSED.name
             )
-            _downloadQueue.value = _downloadQueue.value.filterNot { it.seriesId == seriesId }
+            _downloadQueue.update { queue -> queue.filterNot { it.seriesId == seriesId } }
         }
     }
 
@@ -381,9 +374,10 @@ actual class MediaDownloadManager @Inject constructor(
             )
             val rows = mediaDownloadQueueDao.getBySeries(owner, seriesId)
                 .filter { it.state == MediaDownloadDbState.QUEUED.name }
-            val known = _downloadQueue.value.map { it.itemId }.toSet()
-            _downloadQueue.value = _downloadQueue.value +
-                rows.filterNot { it.itemId in known }.map { it.toQueued() }
+            _downloadQueue.update { queue ->
+                val known = queue.map { it.itemId }.toSet()
+                queue + rows.filterNot { it.itemId in known }.map { it.toQueued() }
+            }
             processNextInQueue()
         }
     }
@@ -405,10 +399,10 @@ actual class MediaDownloadManager @Inject constructor(
         scope.launch {
             val owner = mediaRepository.currentUserId() ?: return@launch
             val row = mediaDownloadQueueDao.getByItemId(owner, itemId) ?: return@launch
-            _completedDownloads.value = _completedDownloads.value.filterNot { it.itemId == itemId }
+            _completedDownloads.update { completed -> completed.filterNot { it.itemId == itemId } }
             mediaDownloadQueueDao.updateState(owner, itemId, MediaDownloadDbState.QUEUED.name)
-            if (_downloadQueue.value.none { it.itemId == itemId }) {
-                _downloadQueue.value = _downloadQueue.value + row.toQueued()
+            _downloadQueue.update { queue ->
+                if (queue.none { it.itemId == itemId }) queue + row.toQueued() else queue
             }
             if (currentDownloadJob?.isActive != true) processNextInQueue()
         }
@@ -425,7 +419,7 @@ actual class MediaDownloadManager @Inject constructor(
                 _downloadState.value = MediaDownloadState.Idle
                 _activeDownload.value = null
             }
-            _downloadQueue.value = _downloadQueue.value.filterNot { it.itemId == itemId }
+            _downloadQueue.update { queue -> queue.filterNot { it.itemId == itemId } }
             stopTranscodeFor(owner, itemId)
             mediaDownloadQueueDao.getByItemId(owner, itemId)?.tempFilePath?.let { deleteIfPresent(it) }
             mediaDownloadQueueDao.deleteByItemId(owner, itemId)
@@ -499,7 +493,7 @@ actual class MediaDownloadManager @Inject constructor(
 
         releaseStaleRow(owner, itemId, quality)
         if (_activeDownload.value?.itemId == itemId) _activeDownload.value = null
-        _completedDownloads.value = _completedDownloads.value.filterNot { it.itemId == itemId }
+        _completedDownloads.update { completed -> completed.filterNot { it.itemId == itemId } }
 
         mediaDownloadQueueDao.insert(
             MediaDownloadQueueEntity(
@@ -515,15 +509,17 @@ actual class MediaDownloadManager @Inject constructor(
                 state = MediaDownloadDbState.QUEUED.name
             )
         )
-        _downloadQueue.value = _downloadQueue.value + QueuedMediaDownload(
-            itemId = itemId,
-            itemName = item.name,
-            seriesId = item.seriesId,
-            seriesName = item.seriesName,
-            itemType = item.itemType,
-            quality = quality,
-            posterUrl = mediaRepository.posterUrl(itemId, item.primaryImageTag)
-        )
+        _downloadQueue.update {
+            it + QueuedMediaDownload(
+                itemId = itemId,
+                itemName = item.name,
+                seriesId = item.seriesId,
+                seriesName = item.seriesName,
+                itemType = item.itemType,
+                quality = quality,
+                posterUrl = mediaRepository.posterUrl(itemId, item.primaryImageTag)
+            )
+        }
         return EnqueueOutcome.ACCEPTED
     }
 
@@ -638,7 +634,7 @@ actual class MediaDownloadManager @Inject constructor(
      */
     private suspend fun restoreFailedDownloads(rows: List<MediaDownloadQueueEntity>) {
         if (rows.isEmpty()) return
-        _completedDownloads.value = _completedDownloads.value + rows.map { row ->
+        val restored = rows.map { row ->
             val state = MediaDownloadState.Failed(
                 row.itemId,
                 row.itemName,
@@ -657,6 +653,7 @@ actual class MediaDownloadManager @Inject constructor(
                 state = state
             )
         }
+        _completedDownloads.update { it + restored }
     }
 
     /**
@@ -675,7 +672,7 @@ actual class MediaDownloadManager @Inject constructor(
                     Log.d(TAG, "No download slot for ${next.itemName}, staying queued")
                     return@launch
                 }
-                _downloadQueue.value = _downloadQueue.value.filterNot { it.itemId == next.itemId }
+                _downloadQueue.update { queue -> queue.filterNot { it.itemId == next.itemId } }
                 startDownload(next)
             } finally {
                 dispatching.set(false)
@@ -746,17 +743,19 @@ actual class MediaDownloadManager @Inject constructor(
                     queued.itemId, queued.itemName, destination.absolutePath
                 )
                 _downloadState.value = completedState
-                _completedDownloads.value = _completedDownloads.value + MediaDownloadProgress(
-                    itemId = queued.itemId,
-                    itemName = queued.itemName,
-                    seriesId = queued.seriesId,
-                    seriesName = queued.seriesName,
-                    posterUrl = queued.posterUrl,
-                    quality = negotiated.quality,
-                    totalBytes = written,
-                    bytesDownloaded = written,
-                    state = completedState
-                )
+                _completedDownloads.update {
+                    it + MediaDownloadProgress(
+                        itemId = queued.itemId,
+                        itemName = queued.itemName,
+                        seriesId = queued.seriesId,
+                        seriesName = queued.seriesName,
+                        posterUrl = queued.posterUrl,
+                        quality = negotiated.quality,
+                        totalBytes = written,
+                        bytesDownloaded = written,
+                        state = completedState
+                    )
+                }
                 _activeDownload.value = null
                 stopTranscodeFor(owner, queued.itemId)
                 advanceQueue()
@@ -775,7 +774,7 @@ actual class MediaDownloadManager @Inject constructor(
                 val message = e.message ?: "Download failed"
                 val failed = MediaDownloadState.Failed(queued.itemId, queued.itemName, message)
                 _downloadState.value = failed
-                _activeDownload.value = _activeDownload.value?.copy(state = failed, bytesPerSecond = 0L)
+                _activeDownload.update { it?.copy(state = failed, bytesPerSecond = 0L) }
                 mediaDownloadQueueDao.updateState(
                     owner, queued.itemId, MediaDownloadDbState.FAILED.name, message
                 )
@@ -801,7 +800,7 @@ actual class MediaDownloadManager @Inject constructor(
         notify(NotificationText.Res(R.string.sync_media_storage_title, listOf(queued.itemName)), NotificationText.Raw(message))
         val paused = MediaDownloadState.Paused(queued.itemId, queued.itemName, 0f, message)
         _downloadState.value = paused
-        _activeDownload.value = _activeDownload.value?.copy(state = paused)
+        _activeDownload.update { it?.copy(state = paused) }
         mediaDownloadQueueDao.updateState(owner, queued.itemId, MediaDownloadDbState.PAUSED.name, message)
         advanceQueue()
     }
@@ -1294,21 +1293,22 @@ actual class MediaDownloadManager @Inject constructor(
     private fun setPreparing(queued: QueuedMediaDownload, detail: String) {
         val state = MediaDownloadState.Preparing(queued.itemId, queued.itemName, detail)
         _downloadState.value = state
-        val existing = _activeDownload.value
-        _activeDownload.value = if (existing?.itemId == queued.itemId) {
-            existing.copy(state = state, bytesPerSecond = 0L)
-        } else {
-            MediaDownloadProgress(
-                itemId = queued.itemId,
-                itemName = queued.itemName,
-                seriesId = queued.seriesId,
-                seriesName = queued.seriesName,
-                posterUrl = queued.posterUrl,
-                quality = queued.quality,
-                totalBytes = 0L,
-                bytesDownloaded = 0L,
-                state = state
-            )
+        _activeDownload.update { existing ->
+            if (existing?.itemId == queued.itemId) {
+                existing.copy(state = state, bytesPerSecond = 0L)
+            } else {
+                MediaDownloadProgress(
+                    itemId = queued.itemId,
+                    itemName = queued.itemName,
+                    seriesId = queued.seriesId,
+                    seriesName = queued.seriesName,
+                    posterUrl = queued.posterUrl,
+                    quality = queued.quality,
+                    totalBytes = 0L,
+                    bytesDownloaded = 0L,
+                    state = state
+                )
+            }
         }
     }
 

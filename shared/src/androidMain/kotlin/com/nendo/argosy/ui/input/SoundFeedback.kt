@@ -5,8 +5,11 @@ import android.media.AudioAttributes
 import android.media.SoundPool
 import android.os.SystemClock
 import android.util.Log
+import com.nendo.argosy.shared.R
+import com.nendo.argosy.core.input.AppEventFeedback
 import com.nendo.argosy.core.input.SoundConfig
 import com.nendo.argosy.core.input.SoundType
+import com.nendo.argosy.core.media.SfxCacheCleaner
 import com.nendo.argosy.core.media.SfxTranscoder
 import com.nendo.argosy.data.storage.StorageAttributionRepository
 import com.nendo.argosy.data.storage.StorageCategory
@@ -28,7 +31,7 @@ actual class SoundFeedbackManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val attributionRepository: StorageAttributionRepository,
     private val hapticManager: HapticFeedbackManager
-) {
+) : AppEventFeedback, SfxCacheCleaner {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val initLock = Any()
 
@@ -252,7 +255,7 @@ actual class SoundFeedbackManager @Inject constructor(
      * Plays the feedback for an app event: the event's haptic cue ([hapticCue]) and its sound.
      * Use [playSound] where the caller plays its own haptic cue or previews a sound.
      */
-    actual fun play(type: SoundType) {
+    actual override fun play(type: SoundType) {
         type.hapticCue?.let(hapticManager::vibrate)
         playSound(type)
     }
@@ -297,8 +300,7 @@ actual class SoundFeedbackManager @Inject constructor(
         releaseSoundPool()
     }
 
-    /** Deletes transcoded SFX WAVs; loaded samples stay in memory and re-transcode on next load. */
-    suspend actual fun clearSfxCache() = withContext(Dispatchers.IO) {
+    actual override suspend fun clearSfxCache() = withContext(Dispatchers.IO) {
         val dir = File(context.cacheDir, "sfx")
         if (dir.exists()) dir.deleteRecursively()
         attributionRepository.markDirty(StorageCategory.SFX_CACHE)

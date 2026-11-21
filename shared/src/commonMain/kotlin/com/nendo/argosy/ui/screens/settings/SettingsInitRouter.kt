@@ -39,6 +39,7 @@ import com.nendo.argosy.data.remote.romm.ConnectionState
 import com.nendo.argosy.libretro.LibretroCoreRegistry
 import com.nendo.argosy.core.input.DetectedLayout
 import com.nendo.argosy.ui.screens.settings.delegates.StorageSettingsDelegate
+import com.nendo.argosy.ui.screens.settings.sections.steamMaxFocusIndex
 import com.nendo.argosy.util.AppPaths
 import com.nendo.argosy.res.ArgosyR as R
 import kotlinx.coroutines.delay
@@ -174,7 +175,7 @@ internal fun routeObserveDelegateStates(vm: SettingsViewModel) {
                             .createStoragePlatformGamesLayoutInfo(updated)
                     )
                 val clampedFocus = state.focusedIndex.coerceAtMost(maxIndex).coerceAtLeast(0)
-                val focusedBuckets = storagePlatformGames.games.getOrNull(clampedFocus)?.buckets?.size ?: 0
+                val focusedBuckets = storagePlatformGames.visibleGames.getOrNull(clampedFocus)?.buckets?.size ?: 0
                 val clampedCategory = storagePlatformGames.highlightedCategoryIndex
                     .coerceAtMost((focusedBuckets - 1).coerceAtLeast(0))
                     .coerceAtLeast(0)
@@ -212,7 +213,7 @@ internal fun routeObserveDelegateStates(vm: SettingsViewModel) {
     }.launchIn(vm.viewModelScope)
 
     vm.steamDelegate.state.onEach { steam ->
-        vm._uiState.update { it.copy(steam = steam) }
+        routeUpdateSteamState(vm, steam)
     }.launchIn(vm.viewModelScope)
 
     vm.jellyfinDelegate.state.onEach { jellyfin ->
@@ -236,6 +237,17 @@ internal fun routeObserveDelegateStates(vm: SettingsViewModel) {
     }.launchIn(vm.viewModelScope)
 }
 
+internal fun routeUpdateSteamState(vm: SettingsViewModel, steam: SteamSettingsState) {
+    vm._uiState.update { state ->
+        state.copy(
+            steam = steam,
+            focusedIndex = if (state.currentSection == SettingsSection.STEAM_SETTINGS) {
+                state.focusedIndex.coerceIn(0, steamMaxFocusIndex(steam))
+            } else state.focusedIndex
+        )
+    }
+}
+
 internal fun routeObserveDelegateEvents(vm: SettingsViewModel) {
     merge(
         vm.syncDelegate.requestStoragePermissionEvent,
@@ -247,10 +259,6 @@ internal fun routeObserveDelegateEvents(vm: SettingsViewModel) {
 
     vm.syncDelegate.requestNotificationPermissionEvent.onEach {
         vm._requestNotificationPermissionEvent.emit(Unit)
-    }.launchIn(vm.viewModelScope)
-
-    vm.syncDelegate.requestMediaPermissionEvent.onEach {
-        vm._requestMediaPermissionEvent.emit(Unit)
     }.launchIn(vm.viewModelScope)
 
     vm.emulatorDelegate.openUrlEvent.onEach { url ->
@@ -579,7 +587,7 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
 
         val downloadedSize = vm.gameRepository.getDownloadedGamesSize()
         val downloadedCount = vm.gameRepository.getDownloadedGamesCount()
-        val adoptedCount = vm.gameRepository.getAdoptedGamesCount()
+        val localOnlyCount = vm.gameRepository.getLocalOnlyGamesCount()
         val availableSpace = vm.gameRepository.getAvailableStorageBytes()
         val box3dCapableGames = vm.gameRepository.countBox3dCapableGames()
         val libraryRegionOptions = vm.gameRepository.getDistinctRegions()
@@ -610,6 +618,7 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
             bodyFontScale = prefs.bodyFontScale,
             gridDensity = prefs.gridDensity,
             libraryLayout = prefs.libraryLayout,
+            libraryListStyle = prefs.libraryListStyle,
             backgroundBlur = prefs.backgroundBlur,
             backgroundSaturation = prefs.backgroundSaturation,
             backgroundOpacity = prefs.backgroundOpacity,
@@ -641,6 +650,8 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
                     com.nendo.argosy.platform.DisplayProfileDetection.inGameMode()
                 )
             ),
+            screenOrientation = prefs.screenOrientation,
+            quickPanelInEmulators = prefs.quickPanelInEmulators,
             lockScreenArt = prefs.lockScreenArt,
             homeAppAvailable = prefs.homeAppAvailable,
             isDefaultHome = vm.displayDelegate.isDefaultHome(),
@@ -696,11 +707,18 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
             hasScreenCapturePermission = vm.displayDelegate.hasScreenCapturePermission(),
             hasSecondaryDisplay = vm.displayAffinityHelper.hasSecondaryDisplay,
             hasPhysicalSecondaryDisplay = vm.displayAffinityHelper.hasPhysicalSecondaryDisplay,
+            lidSleepSupported = vm.lidSleepGuard.isSupported,
+            lidSleepEnabled = prefs.lidSleepEnabled,
             dualScreenEnabled = prefs.dualScreenEnabled,
+            dualScreenMatchSize = vm.libretroSettingsRepo.getBuiltinEmulatorSettings().first().dualScreenMatchSize,
+            dualScreenMatchSizeAvailable = vm.displayAffinityHelper.hasPhysicalSecondaryDisplay &&
+                com.nendo.argosy.libretro.KnownPanels.forModel().isNotEmpty(),
             displayRoleOverride = prefs.displayRoleOverride,
             gamesLaunchTarget = prefs.gamesDisplayTarget,
             appsLaunchTarget = prefs.appsDisplayTarget,
             installedOnlyHome = prefs.installedOnlyHome,
+            recentNewGamesLimit = prefs.recentNewGamesLimit,
+            newBadgePlacement = prefs.newBadgePlacement,
             showStatusClock = prefs.showStatusClock,
             showStatusBattery = prefs.showStatusBattery,
             showStatusNetwork = prefs.showStatusNetwork
@@ -737,7 +755,11 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
             openQuickPanelKey = prefs.openQuickPanelKey,
             navRingRoutes = com.nendo.argosy.ui.navigation.NavRing.resolve(prefs.navRingRoutes),
             quickNavigation = prefs.quickNavigation,
-            navBarAutoHide = prefs.navBarAutoHide
+            navBarAutoHide = prefs.navBarAutoHide,
+            ignoreControllerTouchpad = prefs.ignoreControllerTouchpad,
+            systemHotkeysEnabled = prefs.systemHotkeysEnabled,
+            systemHomeCombo = prefs.systemHomeCombo,
+            systemBackCombo = prefs.systemBackCombo
         ))
         vm.controlsDelegate.refreshUsageStatsPermission()
 
@@ -767,12 +789,16 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
             .getOrNull(vm._uiState.value.platformDetail.platformIndex)?.platform?.id
         val archOverride = vm.libretroSettingsRepo.getArchitectureOverride().first()
         val builtinSettings = vm.libretroSettingsRepo.getBuiltinEmulatorSettings().first()
+        val externalGamesStayOpen = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            vm.keepAlivePolicy.isSupported
+        }
         vm.emulatorDelegate.updateState(EmulatorState(
             platforms = filteredPlatformConfigs,
             installedEmulators = installedEmulators,
             platformSubFocusIndex = currentEmulatorState.platformSubFocusIndex,
             builtinLibretroEnabled = prefs.builtinLibretroEnabled,
             closeEmulatorOnSessionEnd = prefs.closeEmulatorOnSessionEnd,
+            externalGamesStayOpen = externalGamesStayOpen,
             architectureDisplay = architectureAbiToDisplay(archOverride),
             ingameMenuTwoColumn = builtinSettings.ingameMenuTwoColumn,
             hudEnabled = builtinSettings.hudEnabled,
@@ -849,7 +875,7 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
             romStoragePath = prefs.romStoragePath ?: "",
             downloadedGamesSize = downloadedSize,
             downloadedGamesCount = downloadedCount,
-            adoptedGamesCount = adoptedCount,
+            localOnlyGamesCount = localOnlyCount,
             maxConcurrentDownloads = prefs.maxConcurrentDownloads,
             allowRemoteInstalls = prefs.allowRemoteInstalls,
             autoStartDownloads = prefs.autoStartDownloads,
@@ -1001,11 +1027,16 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
                 builtinControls = BuiltinControlsState(
                     controllerOrderCount = it.builtinControls.controllerOrderCount,
                     rumbleEnabled = refreshSettings.rumbleEnabled,
+                    motionEnabled = refreshSettings.motionEnabled,
+                    gyroAimInvertX = refreshSettings.gyroAimInvertX,
+                    gyroAimInvertY = refreshSettings.gyroAimInvertY,
+                    gyroAimSensitivity = refreshSettings.gyroAimSensitivity,
                     limitHotkeysToPlayer1 = refreshSettings.limitHotkeysToPlayer1,
                     speedrunStartOnReset = refreshSettings.speedrunStartOnReset,
                     speedrunPanelSide = refreshSettings.speedrunPanelSide,
                     speedrunPanelWidthPercent = refreshSettings.speedrunPanelWidthPercent,
                     fastForwardMode = refreshSettings.fastForwardMode,
+                    selectAsBack = refreshSettings.selectAsBack,
                     fastForwardPreservePitch = refreshSettings.fastForwardPreservePitch,
                     analogAsDpad = refreshSettings.analogAsDpad,
                     dpadAsAnalog = refreshSettings.dpadAsAnalog,

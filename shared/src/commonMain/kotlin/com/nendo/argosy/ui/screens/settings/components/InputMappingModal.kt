@@ -30,6 +30,7 @@ import com.nendo.argosy.platform.PlatformMotionEvent as MotionEvent
 import com.nendo.argosy.platform.actionMasked
 import com.nendo.argosy.platform.getAxisValue
 import com.nendo.argosy.core.input.AndroidMotionAxes
+import com.nendo.argosy.platform.PlatformSystemClock as SystemClock
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -122,8 +123,11 @@ private sealed class InputMappingState {
         val platformIndex: Int,
         val targetRetroButton: Int,
         val currentMapping: Map<InputSource, Int>,
-        val replaceMode: Boolean = true
-    ) : InputMappingState()
+        val replaceMode: Boolean = true,
+        val startedAt: Long = SystemClock.uptimeMillis()
+    ) : InputMappingState() {
+        fun pressedAfterStart(event: KeyEvent): Boolean = event.downTime > startedAt
+    }
 }
 
 /**
@@ -372,6 +376,7 @@ fun InputMappingModal(
                                 leaveRecording(currentState, currentState.currentMapping)
                             }
                         }
+                        !currentState.pressedAfterStart(event) -> {}
                         isBackKey -> {
                             if (event.action == AndroidKeyCodes.ACTION_DOWN) {
                                 cancelHoldActive = true

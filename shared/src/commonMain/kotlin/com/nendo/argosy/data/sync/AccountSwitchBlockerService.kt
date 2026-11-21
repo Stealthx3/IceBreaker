@@ -33,7 +33,6 @@ import com.nendo.argosy.data.netplay.NetplayJoinService
 import com.nendo.argosy.data.netplay.NetplayJoinState
 import com.nendo.argosy.data.preferences.AccountSwitchMarkerStore
 import com.nendo.argosy.data.preferences.SessionStateStore
-import com.nendo.argosy.data.steam.SteamContentManager
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.util.PermissionHelper
 import dagger.Lazy
@@ -64,7 +63,6 @@ class AccountSwitchBlockerService @Inject constructor(
     private val markerStore: AccountSwitchMarkerStore,
     private val downloadManager: Lazy<DownloadManager>,
     private val emulatorDownloadManager: Lazy<EmulatorDownloadManager>,
-    private val steamContentManager: Lazy<SteamContentManager>,
     private val mediaDownloadManager: Lazy<MediaDownloadManager>,
     private val platformSyncQueue: Lazy<PlatformSyncQueue>,
     private val netplayJoinService: Lazy<NetplayJoinService>,
@@ -85,9 +83,6 @@ class AccountSwitchBlockerService @Inject constructor(
         }
         if (emulatorDownloadManager.get().hasActiveDownload()) {
             return@withContext AccountSwitchBlocker.EmulatorDownload
-        }
-        if (steamContentManager.get().hasBlockingDownloadState()) {
-            return@withContext AccountSwitchBlocker.SteamDownload
         }
         if (mediaDownloadManager.get().hasBlockingDownloadState()) {
             return@withContext AccountSwitchBlocker.MediaDownload

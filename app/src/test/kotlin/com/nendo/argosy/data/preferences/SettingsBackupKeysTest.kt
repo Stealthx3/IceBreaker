@@ -6,12 +6,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Holds the settings backup to the classification documented on [SettingsBackupKeys].
- *
- * The excluded names live here rather than beside the allowlist so the production file can keep
- * describing exclusion by reason instead of by list. This is the audit: every DataStore key the
- * app declares is either exported or recorded below under the group that keeps it out, and a key
- * added later belongs to neither until somebody decides which.
+ * Every declared DataStore key is either in [SettingsBackupKeys.EXPORTED] or recorded below under
+ * the group that keeps it out of a backup.
  */
 class SettingsBackupKeysTest {
 
@@ -37,14 +33,14 @@ class SettingsBackupKeysTest {
     )
 
     private val syncWatermarksAndResume = setOf(
-        "last_romm_sync", "last_romm_full_sync", "last_favorites_sync", "last_favorites_check", "last_negotiate_at",
+        "last_romm_sync", "romm_changes_watermark", "last_romm_full_sync","last_favorites_sync", "last_favorites_check", "last_negotiate_at",
         "last_state_validation", "sync_resume_completed", "sync_resume_generation",
         "social_last_play_session_sync", "emulator_update_last_check",
         "romm_play_session_last_upload", "romm_play_session_last_pull", "romm_play_session_full_pull"
     )
 
     private val oneShotAndVersionMarkers = setOf(
-        "builtin_migration_v2", "builtin_ps2_standalone_pin_done", "first_run_complete", "save_sync_local_rekey_done",
+        "builtin_migration_v2", "builtin_ps2_standalone_pin_done", "builtin_priority_pin_done", "first_run_complete", "save_sync_local_rekey_done",
         "save_path_cache_purged", "per_account_prefs_adopted_by", "last_seen_version",
         "last_integrity_check_time", "romm_play_session_backfill_done",
         "sibling_split_repair_finished", "sibling_pick_seeded_owners", "sibling_full_pass_done",
@@ -60,7 +56,7 @@ class SettingsBackupKeysTest {
     )
 
     private val saveAndStateSafetyGates = setOf(
-        "save_sync_enabled", "save_watcher_enabled", "state_cache_enabled", "secure_saves",
+        "save_sync_enabled", "state_cache_enabled", "secure_saves",
         "weekly_integrity_check_enabled", "sync_filter_delete_orphans"
     )
 
@@ -78,10 +74,11 @@ class SettingsBackupKeysTest {
         "ambient_led_custom_color", "ambient_led_custom_color_hue", "ambient_led_enabled",
         "ambient_led_screen_enabled", "ambient_led_transition_ms", "display_role_override",
         "dual_screen_enabled", "dual_screen_input_focus", "screen_dimmer_enabled",
-        "screen_dimmer_level", "screen_dimmer_timeout_minutes", "ui_scale",
+        "screen_dimmer_level", "screen_dimmer_timeout_minutes", "lid_sleep_enabled", "ui_scale",
         "builtin_architecture_override", "builtin_gpu_driver", "grip_auto_controllers",
-        "screen_layouts", "lock_screen_art_applied", "live_wallpaper_offered", "home_app_available",
-        "games_display_target", "apps_display_target"
+        "screen_layouts", "screen_layouts_unreadable", "lock_screen_art_applied", "live_wallpaper_offered", "home_app_available",
+        "games_display_target", "apps_display_target", "performance_saved_mode",
+        "performance_root_granted", "shizuku_access_enabled", "privileged_access_prompt_answered"
     )
 
     private val perDeviceScreenChoices = setOf(
@@ -102,11 +99,13 @@ class SettingsBackupKeysTest {
         "file_logging_enabled", "file_log_level", "save_debug_logging_enabled"
     )
 
+    private val installPermissions = setOf("allow_remote_installs")
+
     private val excluded: Set<String> =
         credentialsAndIdentity + presenceSharingAndServiceAccounts + syncWatermarksAndResume +
             oneShotAndVersionMarkers + liveSessionState + saveAndStateSafetyGates +
             filesystemLocations + hardwareAndUnit + perDeviceScreenChoices + localRowIdsAndSets +
-            derivedAndGenerated + diagnostics
+            derivedAndGenerated + diagnostics + installPermissions
 
     private val credentialShapes = listOf(
         "token", "credential", "password", "api_key", "username", "user_name", "user_id", "device_id",

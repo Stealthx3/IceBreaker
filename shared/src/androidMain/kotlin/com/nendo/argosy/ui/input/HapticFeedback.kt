@@ -14,6 +14,20 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
+enum class HapticPattern {
+    FOCUS_CHANGE,
+    SELECTION,
+    BACK,
+    OPEN,
+    TOGGLE_ON,
+    TOGGLE_OFF,
+    BOUNDARY_HIT,
+    DOWNLOAD_START,
+    DOWNLOAD_COMPLETE,
+    ERROR,
+    STRENGTH_PREVIEW
+}
+
 @Singleton
 actual class HapticFeedbackManager @Inject constructor(
     @ApplicationContext private val context: Context
@@ -94,7 +108,7 @@ actual class HapticFeedbackManager @Inject constructor(
             HapticPattern.FOCUS_CHANGE, HapticPattern.BACK, HapticPattern.TOGGLE_OFF -> VibrationEffect.EFFECT_TICK
             HapticPattern.SELECTION, HapticPattern.TOGGLE_ON, HapticPattern.STRENGTH_PREVIEW ->
                 VibrationEffect.EFFECT_CLICK
-            HapticPattern.BOUNDARY_HIT, HapticPattern.LAUNCH_GAME -> VibrationEffect.EFFECT_HEAVY_CLICK
+            HapticPattern.BOUNDARY_HIT -> VibrationEffect.EFFECT_HEAVY_CLICK
             HapticPattern.OPEN, HapticPattern.DOWNLOAD_START, HapticPattern.DOWNLOAD_COMPLETE,
             HapticPattern.ERROR -> VibrationEffect.EFFECT_DOUBLE_CLICK
         }

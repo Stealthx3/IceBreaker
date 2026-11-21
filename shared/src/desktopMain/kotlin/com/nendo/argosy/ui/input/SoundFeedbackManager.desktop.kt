@@ -25,7 +25,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-actual class SoundFeedbackManager @Inject constructor() {
+actual class SoundFeedbackManager @Inject constructor() : com.nendo.argosy.core.input.AppEventFeedback, com.nendo.argosy.core.media.SfxCacheCleaner {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val loadLock = Mutex()
     private val players = (Executors.newFixedThreadPool(MAX_STREAMS) { runnable ->
@@ -72,7 +72,7 @@ actual class SoundFeedbackManager @Inject constructor() {
         refreshCustomSounds()
     }
 
-    actual fun play(type: SoundType) {
+    actual override fun play(type: SoundType) {
         playSound(type)
     }
 
@@ -99,7 +99,7 @@ actual class SoundFeedbackManager @Inject constructor() {
         if (clip == null) preload() else submit(clip, preset.name)
     }
 
-    actual suspend fun clearSfxCache() = withContext(Dispatchers.IO) {
+    actual override suspend fun clearSfxCache() = withContext(Dispatchers.IO) {
         cacheDir.deleteRecursively()
         Unit
     }

@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
@@ -21,7 +22,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import com.nendo.argosy.ui.theme.generated.MotionTokens
 
 fun Modifier.clickableNoFocus(onClick: () -> Unit): Modifier = composed {
-    clickable(
+    focusProperties { canFocus = false }.clickable(
         interactionSource = remember { MutableInteractionSource() },
         indication = LocalHoverHighlight.current,
         onClick = onClick
@@ -29,7 +30,7 @@ fun Modifier.clickableNoFocus(onClick: () -> Unit): Modifier = composed {
 }
 
 fun Modifier.clickableNoFocus(enabled: Boolean, onClick: () -> Unit): Modifier = composed {
-    clickable(
+    (if (enabled) focusProperties { canFocus = false } else Modifier).clickable(
         enabled = enabled,
         interactionSource = remember { MutableInteractionSource() },
         indication = LocalHoverHighlight.current,
@@ -60,7 +61,7 @@ fun Modifier.clickableSurfaceNoFocus(enabled: Boolean, onClick: () -> Unit): Mod
 
 @OptIn(ExperimentalFoundationApi::class)
 fun Modifier.clickableSurfaceNoFocus(onClick: () -> Unit, onLongClick: () -> Unit): Modifier = composed {
-    combinedClickable(
+    focusProperties { canFocus = false }.combinedClickable(
         interactionSource = remember { MutableInteractionSource() },
         indication = null,
         onClick = onClick,
@@ -84,7 +85,7 @@ fun Modifier.clickableNoFocus(
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ): Modifier = composed {
-    combinedClickable(
+    focusProperties { canFocus = false }.combinedClickable(
         interactionSource = interactionSource,
         indication = LocalHoverHighlight.current,
         onClick = onClick,

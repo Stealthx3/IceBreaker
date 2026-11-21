@@ -42,8 +42,10 @@ import com.nendo.argosy.platform.PlatformBuild as Build
 import com.nendo.argosy.platform.PlatformSettings as Settings
 import com.nendo.argosy.platform.PlatformContextCompat as ContextCompat
 import com.nendo.argosy.platform.displayId
+import com.nendo.argosy.data.access.PrivilegedAccess
 import com.nendo.argosy.data.wallpaper.LockScreenScenes
 import com.nendo.argosy.hardware.FanController
+import com.nendo.argosy.hardware.FocusAccessibilityService
 import com.nendo.argosy.hardware.LEDController
 import com.nendo.argosy.hardware.ScreenCaptureManager
 import com.nendo.argosy.ui.screens.settings.PermissionsState
@@ -67,7 +69,8 @@ class PermissionsSettingsDelegate @Inject constructor(
     private val ledController: LEDController,
     private val fanController: FanController,
     private val displayPreferences: DisplayPreferencesRepository,
-    private val sandboxPermissions: SandboxPermissions
+    private val sandboxPermissions: SandboxPermissions,
+    private val privilegedAccess: PrivilegedAccess
 ) {
     private val _state = MutableStateFlow(PermissionsState(sandboxSupported = sandboxPermissions.isSupported))
     private val sandboxScope = SafeCoroutineScope(Dispatchers.IO, "PermissionsSettingsDelegate")
@@ -135,6 +138,7 @@ class PermissionsSettingsDelegate @Inject constructor(
         val hasScreenCapture = screenCaptureManager.hasPermission.value
         val isLedAvailable = ledController.isAvailable
         val hasDisplayOverlay = Settings.canDrawOverlays(application)
+        val hasAccessibilityService = FocusAccessibilityService.isEnabled(application)
 
         _state.update {
             it.copy(
@@ -146,11 +150,22 @@ class PermissionsSettingsDelegate @Inject constructor(
                 hasScreenCapture = hasScreenCapture,
                 isScreenCaptureRelevant = isLedAvailable,
                 hasDisplayOverlay = hasDisplayOverlay,
+                hasAccessibilityService = hasAccessibilityService,
                 hasLiveWallpaper = LockScreenScenes.isLiveActive(application),
                 isLiveWallpaperRelevant = LockScreenScenes.canOffer(application, lockScreenArt)
             )
         }
     }
+
+    fun observePrivilegedAccess(scope: CoroutineScope) {
+        scope.launch {
+            privilegedAccess.state.collect { access ->
+                _state.update { it.copy(privilegedRoute = access.route, privilegedReach = access.reach) }
+            }
+        }
+    }
+
+    fun enablePrivilegedAccess() = privilegedAccess.enableOffered()
 
     fun openLiveWallpaperPicker() {
         application.startActivity(LockScreenScenes.pickerIntent(application).addFlags(PlatformIntent.FLAG_ACTIVITY_NEW_TASK))
@@ -191,6 +206,13 @@ class PermissionsSettingsDelegate @Inject constructor(
     fun openDisplayOverlaySettings() {
         val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
             data = PlatformUris.parse("package:${application.packageName}")
+            flags = PlatformIntent.FLAG_ACTIVITY_NEW_TASK
+        }
+        application.startActivity(intent)
+    }
+
+    fun openAccessibilitySettings() {
+        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
             flags = PlatformIntent.FLAG_ACTIVITY_NEW_TASK
         }
         application.startActivity(intent)

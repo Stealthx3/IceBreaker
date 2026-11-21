@@ -37,6 +37,7 @@ import com.nendo.argosy.util.AppPaths
 import com.nendo.argosy.data.emulator.SavePathConfig
 import com.nendo.argosy.data.emulator.SavePathRegistry
 import com.nendo.argosy.data.emulator.SwitchProfileParser
+import com.nendo.argosy.data.emulator.savepath.FlycastStandaloneConfig
 import com.nendo.argosy.data.emulator.savepath.PpssppMemoryStick
 import com.nendo.argosy.data.local.dao.EmulatorConfigDao
 import com.nendo.argosy.data.local.dao.GameDao
@@ -156,13 +157,17 @@ class SigilSaveHandler @Inject constructor(
             "ps2" to listOf("nethersx2", "aethersx2", "pcsx2", "armsx2_refresh", "armsx2")
                 .associateWith { "pcsx2_standalone" },
             "psp" to mapOf("ppsspp" to "ppsspp_standalone", "ppsspp_gold" to "ppsspp_standalone"),
-            "vita" to mapOf("vita3k" to "vita3k", "vita3k-zx" to "vita3k"),
+            "vita" to mapOf("vita3k" to "vita3k", "vita3k-zx" to "vita3k", "vita3k-plus" to "vita3k"),
             "ps3" to mapOf("aps3e" to "aps3e", "armsx3" to "armsx3", "armsx3_play" to "armsx3"),
             "switch" to listOf(
                 "yuzu", "eden", "citron", "sudachi", "lemon", "skyline", "strato", "ryujinx", "kenjinx"
             ).associateWith { it } + ("eden_duo" to "eden"),
             "wiiu" to mapOf("cemu" to "cemu", "cemu_dualscreen" to "cemu"),
-            "3ds" to mapOf("citra" to "citra", "azahar" to "azahar", "lime3ds" to "lime3ds")
+            "3ds" to mapOf(
+                "citra" to "citra", "citra_mmj" to "citra", "borked3ds" to "citra",
+                "azahar" to "azahar", "lime3ds" to "lime3ds"
+            ),
+            "dreamcast" to mapOf("flycast" to FLYCAST_STANDALONE_LAYOUT)
         )
 
         private val ROOT_ANCHORS: Map<String, List<String>> = mapOf(
@@ -197,11 +202,12 @@ class SigilSaveHandler @Inject constructor(
             "gb" to GB_CORES,
             "gbc" to GB_CORES,
             "n64" to setOf("mupen64plus_next", "parallel_n64"),
-            "wii" to setOf("dolphin")
+            "wii" to setOf("dolphin"),
+            "psp" to setOf("ppsspp"),
+            "3ds" to setOf("citra")
         )
 
         private val BUILTIN_LIBRETRO_LAYOUTS: Map<String, Set<String>> = mapOf(
-            "psp" to setOf("ppsspp"),
             "psx" to setOf("mednafen_psx_hw", "pcsx_rearmed"),
             "3ds" to setOf("azahar"),
             "gc" to setOf("dolphin"),
@@ -210,8 +216,7 @@ class SigilSaveHandler @Inject constructor(
 
         const val GENERIC_LIBRETRO_LAYOUT = "libretro"
 
-        private const val AZAHAR_LAYOUT = "azahar"
-        private const val AZAHAR_USER_DIR = "Azahar"
+        private val LIBRETRO_USER_DIRS: Map<String, String> = mapOf("azahar" to "Azahar", "citra" to "Citra")
 
         private val LIBRETRO_LAYOUT_ALIASES: Map<String, String> = mapOf(
             "mupen64plus_next_gles3" to "mupen64plus_next",
@@ -230,6 +235,7 @@ class SigilSaveHandler @Inject constructor(
         private const val FLYCAST_PER_CONTENT_VMUS = "reicast_per_content_vmus"
         private val FLYCAST_PER_GAME_VALUES = setOf("VMU A1", "All VMUs")
         private const val FLYCAST_SHARED_DIR = "dc"
+        private const val FLYCAST_STANDALONE_LAYOUT = "flycast_standalone"
 
         private const val PCSX2_SLOT1_OPTION = "Slot1_Filename"
 
@@ -440,7 +446,7 @@ class SigilSaveHandler @Inject constructor(
     private suspend fun locate(route: SigilRoute, gameId: Long): SigilSaveLocation? {
         if (!fal.isDirectory(route.root)) return null
         val game = gameDao.getById(gameId) ?: return null
-        fal.prepareSaveAccess(route.root)
+        fal.prepareSaveAccess(*accessPaths(route))
         return saveLocator.locate(route, identity(game, titleIdCandidates(game)), contentName(game))
     }
 
@@ -490,13 +496,29 @@ class SigilSaveHandler @Inject constructor(
             ?: emulatorPackage?.let { SavePathRegistry.getConfigForPlatformByPackage(it, game.platformSlug) }
             ?: return@withContext null
         val layout = layoutFor(config.emulatorId, game.platformSlug) ?: return@withContext null
-        val root = rootFor(game, config, layout, emulatorPackage) ?: return@withContext null
+        val found = rootFor(game, config, layout, emulatorPackage) ?: return@withContext null
+        if (layout == FLYCAST_STANDALONE_LAYOUT) return@withContext flycastStandaloneRoute(found, emulatorPackage)
         SigilRoute(
             layout = layout,
-            root = root,
+            root = found,
             emulatorPackage = emulatorPackage,
-            profile = profileFor(layout, emulatorPackage, root),
+            profile = profileFor(layout, emulatorPackage, found),
             options = optionsFor(layout, game.id, config.emulatorId)
+        )
+    }
+
+    private fun flycastStandaloneRoute(dataDir: String, emulatorPackage: String?): SigilRoute? {
+        val settings = FlycastStandaloneConfig.read(dataDir, fal)
+        val vmuDir = settings.vmuDir ?: run {
+            Logger.warn(TAG, "[SaveSync] SIGIL | flycast VMU folder has no file path, not routing")
+            return null
+        }
+        return SigilRoute(
+            layout = FLYCAST_STANDALONE_LAYOUT,
+            root = vmuDir,
+            emulatorPackage = emulatorPackage,
+            profile = null,
+            options = settings.sigilOptions
         )
     }
 
@@ -512,7 +534,7 @@ class SigilSaveHandler @Inject constructor(
         } else {
             saveUnitResolver.optionsFor(core, game.id.takeIf { game.perGameSettingsEnabled })
         }
-        val root = if (retroArch) retroArchRoot(game, emulatorId, core) else builtinRoot(game, layout, options)
+        val root = if (retroArch) retroArchRoot(game, emulatorId, core, layout) else builtinRoot(game, layout, options)
         if (root == null) {
             Logger.warn(TAG, "[SaveSync] SIGIL | no root for layout=$layout emulator=$emulatorId")
             return null
@@ -532,18 +554,20 @@ class SigilSaveHandler @Inject constructor(
             options[FLYCAST_PER_CONTENT_VMUS]?.let { it !in FLYCAST_PER_GAME_VALUES } == true
         return when {
             sharedVmus -> File(AppPaths.libretroSystemDir(context.filesDir), FLYCAST_SHARED_DIR).absolutePath
-            layout == AZAHAR_LAYOUT -> File(builtinSaveBase.forGame(game), AZAHAR_USER_DIR).absolutePath
             layout == PCSX2_LAYOUT -> pcsx2MemcardRoot(AppPaths.libretroSystemDir(context.filesDir))
-            else -> builtinSaveBase.forGame(game)
+            else -> withUserDir(builtinSaveBase.forGame(game), layout)
         }
     }
 
-    private suspend fun retroArchRoot(game: GameEntity, emulatorId: String, core: String): String? {
+    private suspend fun retroArchRoot(game: GameEntity, emulatorId: String, core: String, layout: String): String? {
         val dirs = retroArchPathResolver.resolveSaveDirectories(
             RetroArchPathResolver.Request(emulatorId = emulatorId, coreName = core, romPath = game.localPath)
-        )
+        ).map { withUserDir(it, layout) }
         return dirs.firstOrNull { fal.isDirectory(it) } ?: dirs.firstOrNull()
     }
+
+    private fun withUserDir(saveDir: String, layout: String): String =
+        LIBRETRO_USER_DIRS[layout]?.let { File(saveDir, it).absolutePath } ?: saveDir
 
     private suspend fun optionsFor(layout: String, gameId: Long, configEmulatorId: String): Map<String, String> {
         if (layout != PCSX2_STANDALONE_LAYOUT) return emptyMap()
@@ -563,12 +587,16 @@ class SigilSaveHandler @Inject constructor(
             ?: PpssppMemoryStick.liveSaveData(config, registered, fal)
             ?: emulatorSaveConfigRepository.resolveEvaluatedSavePath(config.emulatorId)
         val candidates = listOfNotNull(chosen) + registered
-        val roots = candidates.mapNotNull { rootFor(it, layout) }.distinct()
+        val roots = candidates.mapNotNull {
+            if (layout == FLYCAST_STANDALONE_LAYOUT) it.trimEnd('/') else rootFor(it, layout)
+        }.distinct()
         if (roots.isEmpty()) {
             Logger.warn(TAG, "[SaveSync] SIGIL | no root for layout=$layout in ${candidates.firstOrNull()}")
         }
         return roots.firstOrNull { fal.isDirectory(it) } ?: roots.firstOrNull()
     }
+
+    private fun accessPaths(route: SigilRoute): Array<String> = saveLocator.accessPaths(route).toTypedArray()
 
     private fun profileFor(layout: String, pkg: String?, root: String): String? =
         if (layout in PROFILE_FROM_EMULATOR_LAYOUTS && pkg != null) {
@@ -592,7 +620,7 @@ class SigilSaveHandler @Inject constructor(
 
     private suspend fun collect(route: SigilRoute, game: GameEntity, claimNewSaves: Boolean): SigilCollect {
         if (!fal.isDirectory(route.root)) return SigilCollect.Absent
-        fal.prepareSaveAccess(route.root)
+        fal.prepareSaveAccess(*accessPaths(route))
         val ids = titleIdCandidates(game)
         val stateKey = stateKey(route, game)
         val stored = loadState(stateKey)
@@ -658,7 +686,7 @@ class SigilSaveHandler @Inject constructor(
         if (route.layout in CLOSED_EMULATOR_LAYOUTS && !emulatorIsClosed(route.emulatorPackage)) {
             return@withContext SigilRestore.Refused("the emulator must be closed before its saves are restored")
         }
-        fal.prepareSaveAccess(route.root)
+        fal.prepareSaveAccess(*accessPaths(route))
         try {
             restore(route, game, unit)
         } catch (e: SigilException) {
@@ -669,7 +697,7 @@ class SigilSaveHandler @Inject constructor(
     suspend fun probe(route: SigilRoute, gameId: Long): SigilProbe = withContext(Dispatchers.IO) {
         val game = gameDao.getById(gameId) ?: return@withContext SigilProbe.Absent
         if (!fal.isDirectory(route.root)) return@withContext SigilProbe.Absent
-        fal.prepareSaveAccess(route.root)
+        fal.prepareSaveAccess(*accessPaths(route))
         val ids = titleIdCandidates(game)
         val anchor = committedState(loadState(stateKey(route, game)))
         try {
@@ -777,7 +805,7 @@ class SigilSaveHandler @Inject constructor(
             profile = route.profile,
             fileAccess = fileAccess
         )
-        if (!fal.commitSaveAccess(route.root)) {
+        if (!fal.commitSaveAccess(*accessPaths(route))) {
             return SigilRestore.Refused("the restored files did not reach ${route.root}")
         }
         sigilSyncStateDao.upsert(row(stateKey, result.state, result.unowned))
@@ -850,6 +878,17 @@ class SigilSaveHandler @Inject constructor(
         file.writeBytes(collected.data)
         return PreparedSave(file, isTemporary = true, originalPaths = listOf(localPath), sigilState = collected.pending)
     }
+
+    /**
+     * The game's own save files under its route, never a container other games share and never
+     * the root itself. Empty when the game owns nothing there or Sigil cannot list the root.
+     */
+    override suspend fun sourcePathsFor(localPath: String, context: SaveContext): List<String> =
+        withContext(Dispatchers.IO) {
+            val route = route(context.gameId, context.emulatorId) ?: return@withContext emptyList()
+            val location = locate(route, context.gameId) ?: return@withContext emptyList()
+            location.own.map { File(route.root, it).path }
+        }
 
     override suspend fun extractDownload(tempFile: File, context: SaveContext): ExtractResult =
         when (val restored = restore(context.gameId, tempFile, context.emulatorId)) {

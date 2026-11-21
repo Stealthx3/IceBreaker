@@ -32,15 +32,12 @@
     <string name="ui_save_channel_tab_states">即時存檔</string>
     <string name="ui_save_channel_states_empty">沒有可用的即時存檔位</string>
     <string name="ui_save_channel_states_heading_named">%1$s中的即時存檔</string>
-    <string name="ui_save_channel_states_heading_default">預設存檔槽中的即時存檔</string>
     <string name="ui_save_channel_slot_new">新增存檔槽</string>
     <string name="ui_save_channel_slot_legacy_tag">[舊版]</string>
     <string name="ui_save_channel_history_active_point">目前使用的還原點</string>
     <string name="ui_save_channel_history_latest">最新</string>
     <string name="ui_save_channel_history_tag_synced">[已同步]</string>
     <string name="ui_save_channel_history_tag_local">[本機]</string>
-    <string name="ui_save_channel_active_default">最新</string>
-    <string name="ui_save_channel_slot_autosave">自動存檔</string>
     <string name="ui_save_channel_slot_archived">已封存</string>
 
     <string name="ui_save_channel_footer_migrate">轉換</string>
@@ -102,6 +99,19 @@
     <string name="ui_save_channel_delete_slot_cancel">取消</string>
     <string name="ui_save_channel_delete_slot_message">要刪除「%1$s」嗎？</string>
     <string name="ui_save_channel_delete_slot_note">此操作會將它從伺服器與本機儲存空間中移除，且無法復原。</string>
+    <string name="ui_save_channel_footer_delete_archived">全部刪除</string>
+    <string name="ui_save_channel_footer_delete_version">刪除</string>
+    <string name="ui_save_channel_delete_version_title">刪除存檔</string>
+    <string name="ui_save_channel_delete_version_message">刪除 %1$s 的存檔？</string>
+    <string name="ui_save_channel_delete_archived_title">刪除已封存的存檔</string>
+    <plurals name="ui_save_channel_delete_archived_message">
+        <item quantity="other">刪除 %1$d 個已封存的存檔？</item>
+    </plurals>
+    <string name="ui_save_channel_delete_local_note">這會移除此裝置上的副本，伺服器上的副本會保留。此操作無法復原。</string>
+    <string name="ui_save_channel_delete_only_copy_note">唯一的副本在此裝置上，刪除後將永久遺失。</string>
+    <plurals name="ui_save_channel_notice_versions_deleted">
+        <item quantity="other">已刪除 %1$d 個存檔</item>
+    </plurals>
 
     <string name="ui_save_channel_version_mismatch_title">核心版本不符</string>
     <string name="ui_save_channel_version_mismatch_confirm">仍要載入</string>
@@ -177,6 +187,12 @@
     <!-- Shared modals and controls (ui/components, ui/primitives) -->
 
     <string name="ui_confirm_modal_cancel">取消</string>
+    <string name="ui_pushed_apk_title">安裝%1$s？</string>
+    <string name="ui_pushed_apk_message">%1$s 將此應用程式傳送到了本裝置。\n\n套件：%2$s\n簽署：%3$s</string>
+    <string name="ui_pushed_apk_unknown_server">你的 RomM 伺服器</string>
+    <string name="ui_pushed_apk_unknown_signer">未知</string>
+    <string name="ui_pushed_apk_install">安裝</string>
+    <string name="ui_pushed_apk_not_now">暫不</string>
 
     <string name="ui_modal_search_placeholder">搜尋...</string>
 
@@ -203,7 +219,6 @@
     <string name="ui_changelog_action_relogin_romm">重新登入RomM</string>
     <string name="ui_changelog_action_resync_library">重新同步遊戲庫</string>
     <string name="ui_changelog_action_clear_cache">清除快取</string>
-    <string name="ui_changelog_action_set_steam_path">設定Steam安裝路徑</string>
 
     <string name="ui_background_conflict_title">存檔同步衝突</string>
     <string name="ui_background_conflict_default_slot">預設存檔</string>
@@ -284,7 +299,6 @@
     <string name="ui_add_to_collection_create">建立新合輯</string>
     <string name="ui_add_to_collection_member">已加入合輯</string>
 
-    <string name="ui_steam_location_download">透過Argosy下載</string>
     <string name="ui_steam_location_mark_installed">標記為已安裝</string>
     <string name="ui_steam_location_managed_by">由%1$s管理</string>
 
@@ -471,6 +485,7 @@
     <!-- Storage meter, preference rows, home layout rows (ui/components) -->
 
     <string name="ui_volume_meter_other">其他應用程式與檔案</string>
+    <string name="ui_volume_meter_unknown_location">%1$s 的遊戲位於未知位置</string>
     <string name="ui_volume_meter_free">剩餘%1$s</string>
 
     <string name="ui_cycle_preference_reset_to_global">重設為全域設定</string>
@@ -552,12 +567,18 @@
     <string name="ui_close_app_confirm_title">關閉 Argosy？</string>
     <string name="ui_close_app_confirm_message">Argosy 將停止並關閉視窗。進行中的同步會在下次開啟時完成。</string>
     <string name="ui_quick_settings_device_access_allow">允許</string>
+    <string name="ui_quick_settings_root_access_notice">Argosy 需要 root 權限才能變更這些設定。出現提示時，請在 root 管理器中允許。</string>
+    <string name="ui_quick_settings_root_access_request">請求</string>
     <string name="ui_quick_settings_theme">主題</string>
     <string name="ui_quick_settings_accent">強調色</string>
     <string name="ui_quick_settings_accent_default">預設</string>
     <string name="ui_quick_settings_theme_light">淺色</string>
     <string name="ui_quick_settings_theme_dark">深色</string>
     <string name="ui_quick_settings_theme_system">自動</string>
+    <string name="ui_quick_settings_orientation">方向</string>
+    <string name="ui_quick_settings_orientation_auto">自動</string>
+    <string name="ui_quick_settings_orientation_landscape">橫向</string>
+    <string name="ui_quick_settings_orientation_portrait">直向</string>
     <string name="ui_quick_settings_haptics">震動回饋</string>
     <string name="ui_quick_settings_ui_sounds">介面音效</string>
     <string name="ui_quick_settings_swap_ab">交換 A/B</string>
@@ -579,6 +600,8 @@
     <string name="ui_quick_settings_group_performance">效能</string>
     <string name="ui_quick_settings_group_fan">風扇</string>
     <string name="ui_quick_settings_group_overlay">疊加層</string>
+    <string name="ui_quick_settings_stats_fan">風扇</string>
+    <string name="ui_quick_settings_stats_battery">電池</string>
     <string name="ui_quick_settings_music_nothing_playing">未在播放</string>
     <string name="ui_quick_settings_music_source_launcher">啟動器音樂</string>
     <string name="ui_quick_settings_music_track_position">第 %1$d 首，共 %2$d 首</string>
@@ -629,6 +652,7 @@
     <string name="ui_quick_friends_appear_online">顯示為上線</string>
     <string name="ui_drawer_friend_hosting">正在主持%1$s</string>
     <string name="ui_drawer_friend_playing">正在遊玩%1$s</string>
+    <string name="ui_drawer_friend_playing_online">正在連線遊玩%1$s</string>
     <string name="ui_drawer_friend_in_game">遊戲中</string>
     <string name="ui_drawer_friend_favorite">最愛</string>
     <string name="ui_drawer_account_none">尚未登入帳號</string>
@@ -650,7 +674,6 @@
 
     <string name="ui_sync_overlay_unknown_game">遊戲</string>
     <string name="ui_sync_overlay_slot_prefix">存檔槽：</string>
-    <string name="ui_sync_overlay_slot_default">最新</string>
     <string name="ui_sync_overlay_blocked_grant">授予權限</string>
     <string name="ui_sync_overlay_blocked_configure_path">設定存檔路徑</string>
     <string name="ui_sync_overlay_blocked_disable">停用同步</string>
@@ -664,18 +687,27 @@
     <string name="ui_sync_overlay_hardcore_downgrade_subtitle">使用伺服器存檔，並失去硬核模式資格</string>
     <string name="ui_sync_overlay_hardcore_skip">略過同步</string>
     <string name="ui_sync_overlay_hardcore_skip_subtitle">不同步直接啟動遊戲</string>
-    <string name="ui_launch_overlay_step_finishing_previous">正在完成上一次啟動</string>
-    <string name="ui_launch_overlay_step_downloading_core">正在下載核心</string>
-    <string name="ui_launch_overlay_step_preparing_system_files">正在準備系統檔案</string>
-    <string name="ui_launch_overlay_step_preparing_ui">正在準備介面</string>
-    <string name="ui_launch_overlay_step_launching">正在啟動</string>
     <string name="ui_launch_overlay_cancel">取消</string>
     <string name="ui_launch_overlay_cancel_option">取消啟動</string>
     <string name="ui_launch_overlay_cancel_option_subtitle">返回且不啟動遊戲</string>
+    <string name="ui_launch_overlay_wait_previous">仍在完成上一次啟動</string>
+    <string name="ui_launch_overlay_wait_recap">仍在載入上次遊玩紀錄</string>
+    <string name="ui_launch_overlay_wait_save">仍在同步存檔</string>
+    <string name="ui_launch_overlay_wait_core">仍在下載模擬器核心</string>
+    <string name="ui_launch_overlay_wait_core_sized">仍在下載模擬器核心 &#183; %1$s</string>
+    <string name="ui_launch_overlay_wait_prepare">仍在準備模擬器</string>
+    <string name="ui_launch_overlay_failed_connect">RomM 沒有回應。將使用此裝置上的存檔啟動。</string>
+    <string name="ui_launch_overlay_failed_timeout">RomM 回應逾時。將使用此裝置上的存檔啟動。</string>
+    <string name="ui_launch_overlay_failed_download">無法下載存檔。將使用此裝置上的存檔啟動。</string>
+    <string name="ui_launch_overlay_failed_write">無法寫入存檔。將使用此裝置上的存檔啟動。</string>
+    <string name="ui_launch_overlay_percent">%1$d%%</string>
+    <plurals name="ui_launch_overlay_percent_eta">
+        <item quantity="other">%1$d%% &#183; 約剩 %2$d 秒</item>
+    </plurals>
+    <string name="ui_launch_overlay_hint_cancel">取消</string>
     <string name="ui_launch_overlay_launcher_choice_title">選擇啟動程式</string>
     <string name="ui_launch_overlay_launcher_choice_message">%1$s已安裝在多個啟動程式中。在遊戲頁面透過「變更啟動程式」固定一個，即可不再詢問。</string>
     <string name="ui_launch_overlay_launcher_choice_option_subtitle">在%1$s中啟動遊戲</string>
-    <string name="ui_launch_overlay_step_loading_recap">正在載入上次遊玩紀錄</string>
     <string name="ui_launch_recap_meta">上次遊玩 &#183; %1$s</string>
     <string name="ui_launch_recap_meta_duration">上次遊玩 &#183; %1$s &#183; %2$s</string>
     <plurals name="ui_launch_recap_meta_unlocked">
@@ -742,17 +774,6 @@
     <string name="ui_sync_overlay_snapshot_conflict_branch_subtitle">將本裝置的存檔移到新頻道</string>
     <string name="ui_sync_overlay_snapshot_conflict_revert">還原</string>
     <string name="ui_sync_overlay_snapshot_conflict_revert_subtitle">回到本裝置上次同步的存檔（會建立備份）</string>
-    <string name="ui_sync_overlay_post_session_title">存檔衝突</string>
-    <string name="ui_sync_overlay_post_session_subject">「%1$s」—%2$s</string>
-    <string name="ui_sync_overlay_post_session_default_slot">預設存檔</string>
-    <string name="ui_sync_overlay_post_session_message">伺服器上有較新的存檔，上傳後，本機存檔將成為最新存檔，伺服器上的副本會保留。</string>
-    <string name="ui_sync_overlay_post_session_local">本機</string>
-    <string name="ui_sync_overlay_post_session_server">伺服器</string>
-    <string name="ui_sync_overlay_post_session_server_named">伺服器（%1$s）</string>
-    <string name="ui_sync_overlay_post_session_skip">略過同步</string>
-    <string name="ui_sync_overlay_post_session_skip_subtitle">保留本機存檔，不上傳</string>
-    <string name="ui_sync_overlay_post_session_overwrite">上傳本機存檔</string>
-    <string name="ui_sync_overlay_post_session_overwrite_subtitle">本機存檔將成為最新存檔，伺服器上的副本會保留。</string>
     <string name="ui_sync_overlay_legacy_status">同步中...</string>
 
     <!-- Quick menu (ui/quickmenu) -->
@@ -938,7 +959,6 @@
     <string name="media_library_viewmodel_refresh_label">重新整理中</string>
 
     <string name="gamedetail_action_buttons_play">開始遊戲</string>
-    <string name="gamedetail_action_buttons_autosave">自動存檔</string>
     <string name="gamedetail_action_buttons_download">下載</string>
     <string name="gamedetail_action_buttons_install">安裝</string>
     <string name="gamedetail_action_buttons_queued">排隊中...</string>
@@ -955,6 +975,42 @@
     <string name="home_grid_local_video_row_title">選擇此裝置上的影片</string>
     <string name="home_grid_local_video_row_subtitle">直接從您的儲存空間播放</string>
     <string name="ui_quick_settings_swap_displays">交換顯示器</string>
+    <string name="ui_quick_settings_page_connections">連線</string>
+    <string name="ui_quick_connections_unsupported">此裝置不允許直接控制 Wi-Fi 和藍牙</string>
+    <string name="ui_quick_connections_tab_wifi">Wi-Fi</string>
+    <string name="ui_quick_connections_tab_bluetooth">藍牙</string>
+    <string name="ui_quick_connections_wifi_off">Wi-Fi 已關閉</string>
+    <string name="ui_quick_connections_bluetooth_off">藍牙已關閉</string>
+    <string name="ui_quick_connections_nearby">附近的網路</string>
+    <string name="ui_quick_connections_saved">已儲存的網路</string>
+    <string name="ui_quick_connections_paired">已配對的裝置</string>
+    <string name="ui_quick_connections_scanning">正在搜尋網路</string>
+    <string name="ui_quick_connections_no_networks">找不到網路</string>
+    <string name="ui_quick_connections_no_paired">沒有已配對的裝置</string>
+    <string name="ui_quick_connections_row_joining">正在連線</string>
+    <string name="ui_quick_connections_row_failed">連線失敗</string>
+    <string name="ui_quick_connections_secured">已加密</string>
+    <string name="ui_quick_connections_forget">忘記</string>
+    <string name="ui_quick_connections_bluetooth_permission">Argosy 需要權限才能顯示已配對的裝置。</string>
+    <string name="ui_quick_connections_bluetooth_permission_allow">允許</string>
+    <string name="ui_quick_connections_device_connected">已連線</string>
+    <string name="ui_quick_connections_device_not_connected">未連線</string>
+    <string name="ui_quick_connections_battery">%1$d%%</string>
+    <string name="ui_quick_connections_band_2_4">2.4 GHz</string>
+    <string name="ui_quick_connections_band_5">5 GHz</string>
+    <string name="ui_quick_connections_band_6">6 GHz</string>
+    <string name="ui_quick_connections_join_title">加入 %1$s</string>
+    <string name="ui_quick_connections_join_password">密碼</string>
+    <string name="ui_quick_connections_join_confirm">加入</string>
+    <string name="ui_quick_connections_join_busy">正在加入</string>
+    <string name="ui_quick_connections_join_cancel">取消</string>
+    <string name="ui_quick_connections_join_failed">裝置無法加入此網路。</string>
+    <string name="ui_quick_settings_wifi">Wi-Fi</string>
+    <string name="ui_quick_settings_bluetooth">藍牙</string>
+    <string name="ui_quick_settings_radio_on">開啟</string>
+    <string name="ui_quick_settings_radio_off">關閉</string>
+    <string name="ui_quick_settings_wifi_connected">已連線</string>
+    <string name="ui_quick_settings_wifi_not_connected">未連線</string>
     <string name="ui_sibling_choice_title_download">選擇要下載的版本</string>
     <string name="ui_sibling_choice_title_active">目前版本</string>
     <string name="ui_sibling_choice_automatic">自動</string>
@@ -988,4 +1044,14 @@
     <string name="gamelist_row_genre_board_game">桌遊</string>
     <string name="gamelist_row_genre_quiz">問答</string>
     <string name="gamelist_row_genre_sim">模擬</string>
+    <string name="common_game_confirm_hide_title">隱藏%1$s？</string>
+    <string name="common_game_confirm_hide_message">在遊戲庫中將來源篩選為隱藏，即可再次顯示隱藏的遊戲。</string>
+    <string name="common_game_confirm_hide_confirm">隱藏</string>
+    <string name="ui_launch_overlay_running_busy_title">%1$s正在執行</string>
+    <string name="ui_launch_overlay_running_busy_message_game">%1$s仍在背景執行%2$s。</string>
+    <string name="ui_launch_overlay_running_busy_message">%1$s仍在背景開啟。</string>
+    <string name="ui_launch_overlay_running_open_title">%1$s仍處於開啟狀態</string>
+    <string name="ui_launch_overlay_running_open_message">啟動其他遊戲會將其關閉。</string>
+    <string name="ui_launch_overlay_running_close_label">關閉並啟動</string>
+    <string name="ui_launch_overlay_running_close_subtitle">執行中遊戲未儲存的進度將會遺失</string>
 </resources>

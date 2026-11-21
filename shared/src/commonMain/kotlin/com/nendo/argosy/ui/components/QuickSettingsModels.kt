@@ -6,9 +6,11 @@ import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.nendo.argosy.res.ArgosyR as R
 import com.nendo.argosy.data.preferences.ControlsPreferences
+import com.nendo.argosy.data.preferences.ScreenOrientationMode
 import com.nendo.argosy.data.preferences.ThemeMode
 import com.nendo.argosy.hardware.FanController
 import com.nendo.argosy.hardware.PerformanceMode
@@ -39,6 +41,13 @@ val PerformanceMode.labelRes: Int
 val QUICK_THEME_ORDER: List<ThemeMode> = listOf(ThemeMode.LIGHT, ThemeMode.DARK, ThemeMode.SYSTEM)
 
 @StringRes
+fun ScreenOrientationMode.quickLabelRes(): Int = when (this) {
+    ScreenOrientationMode.AUTO -> R.string.ui_quick_settings_orientation_auto
+    ScreenOrientationMode.LANDSCAPE -> R.string.ui_quick_settings_orientation_landscape
+    ScreenOrientationMode.PORTRAIT -> R.string.ui_quick_settings_orientation_portrait
+}
+
+@StringRes
 fun ThemeMode.quickLabelRes(): Int = when (this) {
     ThemeMode.LIGHT -> R.string.ui_quick_settings_theme_light
     ThemeMode.DARK -> R.string.ui_quick_settings_theme_dark
@@ -47,6 +56,7 @@ fun ThemeMode.quickLabelRes(): Int = when (this) {
 
 data class QuickSettingsState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val screenOrientation: ScreenOrientationMode = ScreenOrientationMode.AUTO,
     val soundEnabled: Boolean = false,
     val hapticEnabled: Boolean = true,
     val vibrationStrength: Float = ControlsPreferences.DEFAULT_HAPTIC_STRENGTH,
@@ -63,6 +73,7 @@ data class QuickSettingsState(
     val refreshRateHz: Int? = null,
     val deviceSettingsSupported: Boolean = false,
     val deviceSettingsEnabled: Boolean = false,
+    val deviceAccessNeedsRoot: Boolean = false,
     val systemVolume: Float = 1f,
     val screenBrightness: Float = 0.5f,
     val screenBrightnessAvailable: Boolean = true,
@@ -72,7 +83,8 @@ data class QuickSettingsState(
     val hudEnabled: Boolean = false,
     val isSocialLinked: Boolean = false,
     val isSocialConnected: Boolean = false,
-    val quayPassEnabled: Boolean = false
+    val quayPassEnabled: Boolean = false,
+    val hardwareStats: HardwareStatsUi? = null
 ) {
     val deviceControlsLocked: Boolean get() = deviceSettingsSupported && !deviceSettingsEnabled
 }
@@ -81,6 +93,7 @@ enum class QuickSettingsPage(val icon: ImageVector, @StringRes val titleRes: Int
     FRIENDS(Icons.Default.Group, R.string.ui_quick_settings_page_friends),
     QUICK(Icons.Default.Tune, R.string.ui_quick_settings_title),
     PERFORMANCE(Icons.Default.Speed, R.string.ui_quick_settings_page_performance),
+    CONNECTIONS(Icons.Default.Wifi, R.string.ui_quick_settings_page_connections),
     MUSIC(Icons.Default.MusicNote, R.string.ui_quick_settings_page_music)
 }
 
@@ -124,6 +137,9 @@ sealed class QuickSettingsItem(
         "swapDisplays", QuickSettingsPage.QUICK, QuickSettingsGroup.DISPLAY,
         visibleWhen = { it.isDualScreenActive }
     )
+    data object ScreenOrientation : QuickSettingsItem(
+        "screenOrientation", QuickSettingsPage.QUICK, QuickSettingsGroup.DISPLAY
+    )
     data object SystemVolume : QuickSettingsItem("systemVolume", QuickSettingsPage.QUICK, QuickSettingsGroup.SOUND)
     data object UISounds : QuickSettingsItem("uiSounds", QuickSettingsPage.QUICK, QuickSettingsGroup.SOUND)
     data object Haptic : QuickSettingsItem("haptic", QuickSettingsPage.QUICK, QuickSettingsGroup.CONTROLS)
@@ -131,9 +147,20 @@ sealed class QuickSettingsItem(
     data object SwapXY : QuickSettingsItem("swapXY", QuickSettingsPage.QUICK, QuickSettingsGroup.CONTROLS)
     data object SwapStartSelect : QuickSettingsItem("swapStartSelect", QuickSettingsPage.QUICK, QuickSettingsGroup.CONTROLS)
 
+    data object HardwareStats : QuickSettingsItem(
+        "hardwareStats", QuickSettingsPage.PERFORMANCE,
+        visibleWhen = { it.hardwareStats != null }
+    ) {
+        override fun isFocusable(state: QuickSettingsState): Boolean = false
+    }
+
     data object DeviceAccess : QuickSettingsItem(
         "deviceAccess", QuickSettingsPage.PERFORMANCE,
-        visibleWhen = { it.deviceControlsLocked }
+        visibleWhen = { it.deviceControlsLocked && !it.deviceAccessNeedsRoot }
+    )
+    data object RootAccess : QuickSettingsItem(
+        "rootAccess", QuickSettingsPage.PERFORMANCE,
+        visibleWhen = { it.deviceControlsLocked && it.deviceAccessNeedsRoot }
     )
     data object Performance : QuickSettingsItem(
         "performance", QuickSettingsPage.PERFORMANCE, QuickSettingsGroup.PERFORMANCE,
@@ -165,6 +192,8 @@ sealed class QuickSettingsItem(
         visibleWhen = { it.isSocialLinked || it.isSocialConnected }
     )
 
+    data object ConnectionsPage : QuickSettingsItem("connectionsPage", QuickSettingsPage.CONNECTIONS)
+
     data object MusicPlayer : QuickSettingsItem("musicPlayer", QuickSettingsPage.MUSIC)
 
     companion object {
@@ -178,13 +207,16 @@ sealed class QuickSettingsItem(
         val ALL: List<QuickSettingsItem>
             get() = listOf(
                 FriendsPage,
-                DisplayHeader, Theme, Accent, ScreenBrightness, SecondScreenBrightness, SwapDisplays,
+                DisplayHeader, Theme, Accent, ScreenBrightness, SecondScreenBrightness, SwapDisplays, ScreenOrientation,
                 SoundHeader, SystemVolume, UISounds,
                 ControlsHeader, Haptic, SwapAB, SwapXY, SwapStartSelect,
+                HardwareStats,
                 DeviceAccess,
+                RootAccess,
                 PerformanceHeader, Performance, Refresh,
                 FanHeader, Fan, FanSpeed,
                 OverlayHeader, HudOverlay,
+                ConnectionsPage,
                 MusicPlayer
             )
     }

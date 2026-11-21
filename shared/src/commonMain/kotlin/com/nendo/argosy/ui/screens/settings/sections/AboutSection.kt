@@ -30,7 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.clickable
+import com.nendo.argosy.ui.util.clickableNoFocus
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.nendo.argosy.platform.LocalPlatformContext as LocalContext
@@ -504,10 +504,10 @@ private fun VersionInfoRow(
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs),
             modifier = Modifier
-                .clickable(onClick = onLicensesClick)
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .clickableNoFocus(onClick = onLicensesClick)
+                .padding(horizontal = Dimens.spacingSm, vertical = Dimens.spacingXs)
         ) {
             Text(
                 text = stringResource(R.string.settings_about_licenses_label),
@@ -518,7 +518,7 @@ private fun VersionInfoRow(
                 imageVector = Icons.Outlined.Article,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(Dimens.iconSm)
             )
         }
     }

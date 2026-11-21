@@ -3,6 +3,10 @@ package com.nendo.argosy.ui.components
 import androidx.compose.runtime.collectAsState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -31,7 +35,10 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.SettingsBrightness
+import androidx.compose.material.icons.filled.StayCurrentLandscape
+import androidx.compose.material.icons.filled.StayCurrentPortrait
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -62,6 +69,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import com.nendo.argosy.res.ArgosyR as R
+import com.nendo.argosy.data.preferences.ScreenOrientationMode
 import com.nendo.argosy.data.preferences.ThemeMode
 import com.nendo.argosy.hardware.FanController
 import com.nendo.argosy.ui.primitives.FocusIndicators
@@ -88,10 +96,11 @@ fun QuickSettingsPanel(
     page: QuickSettingsPage,
     focusedIndex: Int,
     controller: QuickSettingsController,
-    onOpenDeviceAccess: () -> Unit,
+    onOpenDeviceAccess: (() -> Unit)?,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     friendsPage: @Composable () -> Unit = {},
+    connectionsPage: @Composable () -> Unit = {},
     musicPage: @Composable () -> Unit = {},
     footerHints: List<Pair<InputButton, String>> = emptyList(),
     onHintClick: ((InputButton) -> Unit)? = null
@@ -101,16 +110,21 @@ fun QuickSettingsPanel(
     val pages = remember(state) { quickSettingsVisiblePages(state) }
     val activePage = remember(page, state) { quickSettingsEffectivePage(page, state) }
 
+    val phase = if (reduced) 0 else Motion.durationSlide
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.CenterEnd
     ) {
-        if (isVisible) {
-            val scrim = if (theme.isDark) {
-                Color.Black.copy(alpha = ComponentDefaults.Launcher.overlayDarkAlpha)
-            } else {
-                Color.White.copy(alpha = ComponentDefaults.Launcher.overlayLightAlpha)
-            }
+        val scrim = if (theme.isDark) {
+            Color.Black.copy(alpha = ComponentDefaults.Launcher.overlayDarkAlpha)
+        } else {
+            Color.White.copy(alpha = ComponentDefaults.Launcher.overlayLightAlpha)
+        }
+        AnimatedVisibility(
+            visible = isVisible,
+            enter = fadeIn(tween(phase)),
+            exit = fadeOut(tween(phase, delayMillis = phase))
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -126,24 +140,34 @@ fun QuickSettingsPanel(
         )
         AnimatedVisibility(
             visible = isVisible,
-            enter = slideInHorizontally(initialOffsetX = { it }),
-            exit = slideOutHorizontally(targetOffsetX = { it })
+            enter = slideInHorizontally(tween(phase, easing = Motion.argosyEase)) { it },
+            exit = slideOutHorizontally(tween(phase, delayMillis = phase, easing = Motion.argosyEase)) { it }
         ) {
             Row(
                 modifier = Modifier
-                    .width(panelWidth)
                     .fillMaxHeight()
                     .background(theme.surfaceBase)
             ) {
                 Column(
                     modifier = Modifier
-                        .weight(1f)
+                        .animateEnterExit(
+                            enter = expandHorizontally(
+                                animationSpec = tween(phase, delayMillis = phase, easing = Motion.argosyEase),
+                                expandFrom = Alignment.End
+                            ),
+                            exit = shrinkHorizontally(
+                                animationSpec = tween(phase, easing = Motion.argosyEase),
+                                shrinkTowards = Alignment.End
+                            )
+                        )
+                        .width(panelWidth - Dimens.quickPanelRailWidth)
                         .fillMaxHeight()
                 ) {
                     QuickPanelHeader(title = stringResource(activePage.titleRes))
                     Box(modifier = Modifier.weight(1f)) {
                         when (activePage) {
                             QuickSettingsPage.FRIENDS -> friendsPage()
+                            QuickSettingsPage.CONNECTIONS -> connectionsPage()
                             QuickSettingsPage.MUSIC -> musicPage()
                             else -> QuickSettingsList(
                                 page = activePage,
@@ -172,8 +196,8 @@ private fun quickPanelWidthFor(page: QuickSettingsPage): Dp {
     val cap = LocalConfiguration.current.screenWidthDp.dp * WIDE_PAGE_MAX_SCREEN_FRACTION
     val width = when (page) {
         QuickSettingsPage.MUSIC -> Dimens.quickPanelWidthMedia
-        QuickSettingsPage.FRIENDS, QuickSettingsPage.QUICK, QuickSettingsPage.PERFORMANCE ->
-            Dimens.quickPanelWidthWide
+        QuickSettingsPage.FRIENDS, QuickSettingsPage.QUICK, QuickSettingsPage.PERFORMANCE,
+        QuickSettingsPage.CONNECTIONS -> Dimens.quickPanelWidthWide
     }
     return min(width, cap)
 }
@@ -289,7 +313,7 @@ private fun QuickSettingsList(
     state: QuickSettingsState,
     focusedIndex: Int,
     controller: QuickSettingsController,
-    onOpenDeviceAccess: () -> Unit
+    onOpenDeviceAccess: (() -> Unit)?
 ) {
     val visibleItems = remember(page, state) { quickSettingsVisibleItems(page, state) }
     val focusable = remember(page, state) { quickSettingsFocusableItems(page, state) }
@@ -326,7 +350,7 @@ private fun QuickSettingsItemRow(
     state: QuickSettingsState,
     isFocused: Boolean,
     controller: QuickSettingsController,
-    onOpenDeviceAccess: () -> Unit
+    onOpenDeviceAccess: (() -> Unit)?
 ) {
     val focus = { controller.focusItem(item) }
     val enabled = !item.isLocked(state)
@@ -390,6 +414,21 @@ private fun QuickSettingsItemRow(
             onToggle = { controller.swapDisplays() }
         )
 
+        QuickSettingsItem.ScreenOrientation -> QuickSegmentedRow(
+            icon = when (state.screenOrientation) {
+                ScreenOrientationMode.AUTO -> Icons.Default.ScreenRotation
+                ScreenOrientationMode.LANDSCAPE -> Icons.Default.StayCurrentLandscape
+                ScreenOrientationMode.PORTRAIT -> Icons.Default.StayCurrentPortrait
+            },
+            label = stringResource(R.string.ui_quick_settings_orientation),
+            options = ScreenOrientationMode.entries.map { stringResource(it.quickLabelRes()) },
+            selectedIndex = ScreenOrientationMode.entries.indexOf(state.screenOrientation),
+            isFocused = isFocused,
+            onFocus = focus,
+            onSelect = { controller.setScreenOrientation(ScreenOrientationMode.entries[it]) },
+            inline = false
+        )
+
         QuickSettingsItem.SystemVolume -> QuickSliderRow(
             icon = if (state.systemVolume > 0f) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
             label = stringResource(R.string.ui_quick_settings_volume),
@@ -448,13 +487,26 @@ private fun QuickSettingsItemRow(
             onToggle = controller::setSwapStartSelect
         )
 
+        QuickSettingsItem.HardwareStats -> state.hardwareStats?.let { HardwareStatsBlock(it) }
+
         QuickSettingsItem.DeviceAccess -> QuickNoticeRow(
             message = stringResource(R.string.ui_quick_settings_device_access_notice),
             actionLabel = stringResource(R.string.ui_quick_settings_device_access_allow),
             isFocused = isFocused,
             onAction = {
                 focus()
-                onOpenDeviceAccess()
+                onOpenDeviceAccess?.invoke()
+            },
+            enabled = onOpenDeviceAccess != null
+        )
+
+        QuickSettingsItem.RootAccess -> QuickNoticeRow(
+            message = stringResource(R.string.ui_quick_settings_root_access_notice),
+            actionLabel = stringResource(R.string.ui_quick_settings_root_access_request),
+            isFocused = isFocused,
+            onAction = {
+                focus()
+                controller.requestRootAccess()
             }
         )
 
@@ -524,7 +576,7 @@ private fun QuickSettingsItemRow(
             description = stringResource(R.string.ui_quick_settings_hud_description)
         )
 
-        QuickSettingsItem.FriendsPage, QuickSettingsItem.MusicPlayer -> Unit
+        QuickSettingsItem.FriendsPage, QuickSettingsItem.ConnectionsPage, QuickSettingsItem.MusicPlayer -> Unit
     }
 }
 

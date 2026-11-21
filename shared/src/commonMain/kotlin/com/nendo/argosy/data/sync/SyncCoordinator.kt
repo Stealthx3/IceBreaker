@@ -47,7 +47,6 @@ import com.nendo.argosy.data.preferences.SyncPreferencesRepository
 import com.nendo.argosy.data.repository.SaveCacheManager
 import com.nendo.argosy.data.repository.SaveSyncRepository
 import com.nendo.argosy.data.repository.SaveSyncResult
-import com.nendo.argosy.data.repository.ScreenshotUploader
 import com.nendo.argosy.data.repository.StateCacheManager
 import com.nendo.argosy.data.sync.strategy.LocalSaveState
 import com.nendo.argosy.data.sync.strategy.ReconcilePlan
@@ -68,7 +67,6 @@ import javax.inject.Singleton
 
 @Singleton
 class SyncCoordinator @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val pendingSyncQueueDao: PendingSyncQueueDao,
     private val saveCacheDao: SaveCacheDao,
     private val saveSyncDao: com.nendo.argosy.data.local.dao.SaveSyncDao,
@@ -87,7 +85,7 @@ class SyncCoordinator @Inject constructor(
     private val pendingConflictDao: PendingConflictDao,
     private val reconcileEffectApplier: ReconcileEffectApplier,
     private val saveRecoveryGate: SaveRecoveryGate,
-    private val screenshotUploader: ScreenshotUploader,
+    private val screenshotUploads: ScreenshotUploadQueue,
     private val rommApiProvider: RomMApiProvider,
     private val accountSwitchMarkerStore: com.nendo.argosy.data.preferences.AccountSwitchMarkerStore,
     private val syncStatesOnSessionEndUseCase:
@@ -102,10 +100,7 @@ class SyncCoordinator @Inject constructor(
         private const val RECONNECT_RECONCILE_COOLDOWN_MS = 2 * 60_000L
         private const val QUEUE_ITEM_SPACING_MS = 750L
         private const val ORPHAN_RECOVERY_TIMEOUT_MS = 10_000L
-        private const val PENDING_SCREENSHOTS_DIR = "pending_screenshots"
     }
-
-    private var screenshotSweepDone = false
 
     private val mutex = Mutex()
 
@@ -288,6 +283,7 @@ class SyncCoordinator @Inject constructor(
         try {
             var processed = 0
             var failed = 0
+            val screenshots = ScreenshotTally()
 
             val prefs = syncPreferencesRepository.preferences.first()
             val saveSyncEnabled = prefs.saveSyncEnabled
@@ -299,11 +295,6 @@ class SyncCoordinator @Inject constructor(
             }
 
             if (saveSyncEnabled) {
-                // Rekey runs every cycle, not once: server saves can arrive any
-                // time carrying RomM-side emulator labels (libretro core names like
-                // mGBA, gpSP, prosystem) that don't match the user's local emulator.
-                // UPDATE OR REPLACE makes this idempotent -- a no-op when no rows
-                // need migration. The "once" flag was missing this drift case.
                 val rewritten = saveSyncRepository.get().rekeySaveSyncToLocalEmulators()
                 if (rewritten > 0) {
                     Logger.info(TAG, "processQueue: Save-sync rekey migration complete | rowsRewritten=$rewritten")
@@ -338,20 +329,34 @@ class SyncCoordinator @Inject constructor(
                         break
                     }
 
-                    val result = processItem(item, signedInUserId)
-                    if (result) {
-                        if (item.sessionId != null) {
-                            pendingSyncQueueDao.markCompleted(item.id)
-                        } else {
-                            pendingSyncQueueDao.deleteById(item.id)
+                    when (val outcome = processItem(item, signedInUserId, screenshots)) {
+                        ItemOutcome.Done -> {
+                            if (item.sessionId != null) {
+                                pendingSyncQueueDao.markCompleted(item.id)
+                            } else {
+                                pendingSyncQueueDao.deleteById(item.id)
+                            }
+                            processed++
                         }
-                        processed++
-                    } else {
-                        pendingSyncQueueDao.markFailed(item.id, "Processing failed")
-                        failed++
+                        is ItemOutcome.Failed -> {
+                            Logger.warn(TAG, "processQueue: ${item.syncType} row ${item.id} gameId=${item.gameId} failed | reason=${outcome.reason}")
+                            pendingSyncQueueDao.markFailed(item.id, outcome.reason)
+                            failed++
+                        }
+                        is ItemOutcome.Deferred -> {
+                            Logger.info(TAG, "processQueue: ${item.syncType} row ${item.id} gameId=${item.gameId} stays queued | reason=${outcome.reason}")
+                            pendingSyncQueueDao.recordRetryableFailure(item.id, outcome.reason)
+                            failed++
+                        }
+                        is ItemOutcome.Rejected -> {
+                            Logger.warn(TAG, "processQueue: ${item.syncType} row ${item.id} gameId=${item.gameId} rejected by the server, dropped | reason=${outcome.reason}")
+                            pendingSyncQueueDao.deleteById(item.id)
+                            failed++
+                        }
                     }
                 }
             }
+            screenshotUploads.announce(screenshots.uploaded, screenshots.rejected)
 
             if (saveSyncEnabled) {
                 val dirtySaves = processDirtySaveCaches(signedInUserId)
@@ -364,7 +369,7 @@ class SyncCoordinator @Inject constructor(
                 processed += validated
             }
 
-            cleanupScreenshotArtifacts()
+            screenshotUploads.tidyOnce()
 
             finalizeDrainedSessions()
 
@@ -403,25 +408,45 @@ class SyncCoordinator @Inject constructor(
         }
     }
 
-    private suspend fun processItem(item: PendingSyncQueueEntity, signedInUserId: Long?): Boolean {
+    private sealed interface ItemOutcome {
+        data object Done : ItemOutcome
+        data class Failed(val reason: String) : ItemOutcome
+        data class Deferred(val reason: String) : ItemOutcome
+        data class Rejected(val reason: String) : ItemOutcome
+    }
+
+    private class ScreenshotTally {
+        var uploaded = 0
+        var rejected = 0
+    }
+
+    private fun Boolean.toOutcome(item: PendingSyncQueueEntity): ItemOutcome =
+        if (this) ItemOutcome.Done else ItemOutcome.Failed("${item.syncType} sync failed")
+
+    private suspend fun processItem(
+        item: PendingSyncQueueEntity,
+        signedInUserId: Long?,
+        screenshots: ScreenshotTally
+    ): ItemOutcome {
         pendingSyncQueueDao.markInProgress(item.id)
 
         return try {
             when (item.syncType) {
                 SyncType.SAVE_FILE -> processSaveFile(item, signedInUserId)
                 SyncType.SAVE_STATE -> processSaveState(item, signedInUserId)
-                SyncType.RATING -> processProperty(item, signedInUserId)
-                SyncType.DIFFICULTY -> processProperty(item, signedInUserId)
-                SyncType.COMPLETION -> processProperty(item, signedInUserId)
-                SyncType.STATUS -> processProperty(item, signedInUserId)
-                SyncType.FAVORITE -> processFavorite(item, signedInUserId)
-                SyncType.HIDDEN -> processHidden(item, signedInUserId)
-                SyncType.ACHIEVEMENT -> false
-                SyncType.SCREENSHOT -> processScreenshot(item, signedInUserId)
+                SyncType.RATING -> processProperty(item, signedInUserId).toOutcome(item)
+                SyncType.DIFFICULTY -> processProperty(item, signedInUserId).toOutcome(item)
+                SyncType.COMPLETION -> processProperty(item, signedInUserId).toOutcome(item)
+                SyncType.STATUS -> processProperty(item, signedInUserId).toOutcome(item)
+                SyncType.FAVORITE -> processFavorite(item, signedInUserId).toOutcome(item)
+                SyncType.HIDDEN -> processHidden(item, signedInUserId).toOutcome(item)
+                SyncType.ACHIEVEMENT -> false.toOutcome(item)
+                SyncType.SCREENSHOT -> processScreenshot(item, signedInUserId, screenshots)
             }
         } catch (e: Exception) {
             Logger.error(TAG, "processItem: Exception processing ${item.syncType}", e)
-            false
+            val reason = e.message ?: e.javaClass.simpleName
+            if (item.syncType == SyncType.SCREENSHOT) ItemOutcome.Deferred(reason) else ItemOutcome.Failed(reason)
         }
     }
 
@@ -432,30 +457,31 @@ class SyncCoordinator @Inject constructor(
      * re-resolved for rows with nothing pinned, and never for a row owned by an account other
      * than the signed-in one, because the bytes on that path are then not the owner's.
      */
-    private suspend fun processSaveFile(item: PendingSyncQueueEntity, signedInUserId: Long?): Boolean {
-        val game = gameDao.getById(item.gameId) ?: return false
+    private suspend fun processSaveFile(item: PendingSyncQueueEntity, signedInUserId: Long?): ItemOutcome {
+        val game = gameDao.getById(item.gameId) ?: return ItemOutcome.Failed("Game ${item.gameId} not found")
         if (game.localPath == null) {
             Logger.debug(TAG, "processSaveFile: dropping queue item for non-local game gameId=${item.gameId}")
-            return true
+            return ItemOutcome.Done
         }
         if (!item.targetsRomOf(game)) {
             Logger.warn(
                 TAG,
                 "processSaveFile: queue row rommId=${item.rommId} no longer matches gameId=${item.gameId} rommId=${game.rommId}; keeping the save local and dropping the row"
             )
-            return true
+            return ItemOutcome.Done
         }
-        val payload = payloadCodec.decodeSaveFile(item.payloadJson) ?: return false
+        val payload = payloadCodec.decodeSaveFile(item.payloadJson)
+            ?: return ItemOutcome.Failed("Unreadable save file payload")
         val channel = payload.channelName
         if (channel != null && Regex("""^state_""", RegexOption.IGNORE_CASE).containsMatchIn(channel)) {
             Logger.debug(TAG, "processSaveFile: dropping queue item for state-shaped channel gameId=${item.gameId} channel=$channel")
-            return true
+            return ItemOutcome.Done
         }
 
         val route = routeForOwner(item.ownerUserId, signedInUserId)
         if (route is OwnerRoute.Unavailable) {
             Logger.warn(TAG, "processSaveFile: no client for owner ${route.ownerUserId} on gameId=${item.gameId}; leaving row queued")
-            return false
+            return ItemOutcome.Failed("No client for owner ${route.ownerUserId}")
         }
         val ownerApi = (route as? OwnerRoute.Delegated)?.account
         val pinnedCache = item.cacheId?.let { saveCacheDao.getById(it) }
@@ -465,7 +491,7 @@ class SyncCoordinator @Inject constructor(
                 TAG,
                 "processSaveFile: queue row for gameId=${item.gameId} belongs to user ${item.ownerUserId} but pins no cache row; refusing to upload live-path bytes"
             )
-            return false
+            return ItemOutcome.Failed("Row for user ${item.ownerUserId} pins no cache row")
         }
 
         val namedChannel = SaveSyncApiClient.namedChannelOrNull(channel)
@@ -474,7 +500,7 @@ class SyncCoordinator @Inject constructor(
                 TAG,
                 "processSaveFile: queue row for gameId=${item.gameId} channel=$namedChannel pins no cache row (cacheId=${item.cacheId}); refusing to upload live-path bytes under a named channel"
             )
-            return false
+            return ItemOutcome.Failed("Named channel $namedChannel pins no cache row")
         }
 
         syncQueueManager.addOperation(
@@ -528,7 +554,14 @@ class SyncCoordinator @Inject constructor(
             else -> syncQueueManager.removeOperation(item.gameId)
         }
 
-        return result is SaveSyncResult.Success
+        return when (result) {
+            is SaveSyncResult.Success -> ItemOutcome.Done
+            is SaveSyncResult.Error -> ItemOutcome.Failed(result.message)
+            is SaveSyncResult.Conflict -> ItemOutcome.Failed("Conflict with server save ${result.serverSaveId}")
+            is SaveSyncResult.NeedsHardcoreResolution -> ItemOutcome.Failed("Hardcore save requires resolution")
+            SaveSyncResult.NoSaveFound -> ItemOutcome.Failed("No save found")
+            SaveSyncResult.NotConfigured -> ItemOutcome.Failed("Save sync not configured")
+        }
     }
 
     private suspend fun uploadPinnedCache(
@@ -561,16 +594,18 @@ class SyncCoordinator @Inject constructor(
         )
     }
 
-    private suspend fun processSaveState(item: PendingSyncQueueEntity, signedInUserId: Long?): Boolean {
-        val payload = payloadCodec.decodeSaveState(item.payloadJson) ?: return false
-        val state = stateCacheManager.get().getStateById(payload.stateCacheId) ?: return false
+    private suspend fun processSaveState(item: PendingSyncQueueEntity, signedInUserId: Long?): ItemOutcome {
+        val payload = payloadCodec.decodeSaveState(item.payloadJson)
+            ?: return ItemOutcome.Failed("Unreadable save state payload")
+        val state = stateCacheManager.get().getStateById(payload.stateCacheId)
+            ?: return ItemOutcome.Failed("State cache ${payload.stateCacheId} not found")
         val game = gameDao.getById(item.gameId)
         if (!item.targetsRomOf(game)) {
             Logger.warn(
                 TAG,
                 "processSaveState: queue row rommId=${item.rommId} no longer matches gameId=${item.gameId} rommId=${game?.rommId}; keeping state ${state.id} local and dropping the row"
             )
-            return true
+            return ItemOutcome.Done
         }
         val route = routeForOwner(item.ownerUserId, signedInUserId)
         if (route is OwnerRoute.Unavailable) {
@@ -578,16 +613,22 @@ class SyncCoordinator @Inject constructor(
                 TAG,
                 "processSaveState: no client for owner ${route.ownerUserId} on gameId=${item.gameId}; leaving row queued"
             )
-            return false
+            return ItemOutcome.Failed("No client for owner ${route.ownerUserId}")
         }
         val api = (route as? OwnerRoute.Delegated)?.account?.api
             ?: saveSyncRepository.get().getApi()
-            ?: return false
+            ?: return ItemOutcome.Failed("No RomM client")
         val romBaseName = game?.localPath?.let { java.io.File(it).nameWithoutExtension } ?: state.platformSlug
 
-        val result = stateCacheManager.get().uploadStateToRomM(state, item.rommId, romBaseName, api)
-        return result is StateCacheManager.StateCloudResult.Success ||
-            result is StateCacheManager.StateCloudResult.AlreadySynced
+        return when (val result = stateCacheManager.get().uploadStateToRomM(state, item.rommId, romBaseName, api)) {
+            StateCacheManager.StateCloudResult.Success,
+            StateCacheManager.StateCloudResult.AlreadySynced -> ItemOutcome.Done
+            is StateCacheManager.StateCloudResult.Error -> ItemOutcome.Failed(result.message)
+            is StateCacheManager.StateCloudResult.Conflict ->
+                ItemOutcome.Failed("Conflict with server state | local=${result.localTime}, server=${result.serverTime}")
+            StateCacheManager.StateCloudResult.NoStateFound -> ItemOutcome.Failed("State file not found")
+            StateCacheManager.StateCloudResult.NotConfigured -> ItemOutcome.Failed("State sync not configured")
+        }
     }
 
     private suspend fun validateSaveStates(): Int {
@@ -679,71 +720,28 @@ class SyncCoordinator @Inject constructor(
         return romMRepository.get().syncFavorite(item.rommId, isFavorite)
     }
 
-    private suspend fun processScreenshot(item: PendingSyncQueueEntity, signedInUserId: Long?): Boolean {
+    private suspend fun processScreenshot(
+        item: PendingSyncQueueEntity,
+        signedInUserId: Long?,
+        screenshots: ScreenshotTally
+    ): ItemOutcome {
         if (routeForOwner(item.ownerUserId, signedInUserId) !is OwnerRoute.Live) {
-            Logger.warn(
-                TAG,
-                "processScreenshot: row for gameId=${item.gameId} belongs to user ${item.ownerUserId}; leaving row queued"
-            )
-            return false
+            return ItemOutcome.Deferred("Row belongs to user ${item.ownerUserId}")
         }
-        val payload = payloadCodec.decodeScreenshot(item.payloadJson) ?: return false
-        val file = File(payload.localPath)
-        if (!file.exists()) {
-            Logger.debug(TAG, "processScreenshot: file missing, dropping queue item for gameId=${item.gameId}")
-            return true
-        }
-        val game = gameDao.getById(item.gameId)
-        if (!item.targetsRomOf(game)) {
-            Logger.warn(
-                TAG,
-                "processScreenshot: queue row rommId=${item.rommId} no longer matches gameId=${item.gameId} rommId=${game?.rommId}; dropping the upload copy"
-            )
-            file.delete()
-            return true
-        }
-
-        return when (val result = screenshotUploader.upload(file, item.rommId)) {
-            is ScreenshotUploader.Result.Success -> {
-                file.delete()
-                true
+        return when (val outcome = screenshotUploads.upload(item, gameDao.getById(item.gameId))) {
+            ScreenshotUploadQueue.Outcome.Uploaded -> {
+                screenshots.uploaded++
+                ItemOutcome.Done
             }
-            is ScreenshotUploader.Result.NotSupported -> {
-                file.delete()
-                Logger.debug(TAG, "processScreenshot: server does not support screenshot upload, dropping")
-                true
+            is ScreenshotUploadQueue.Outcome.Dropped -> {
+                Logger.info(TAG, "processScreenshot: dropping row ${item.id} gameId=${item.gameId} | reason=${outcome.reason}")
+                ItemOutcome.Done
             }
-            is ScreenshotUploader.Result.NotConnected -> false
-            is ScreenshotUploader.Result.Error -> {
-                Logger.warn(TAG, "processScreenshot: upload failed for gameId=${item.gameId}: ${result.message}")
-                false
+            is ScreenshotUploadQueue.Outcome.Deferred -> ItemOutcome.Deferred(outcome.reason)
+            is ScreenshotUploadQueue.Outcome.Rejected -> {
+                screenshots.rejected++
+                ItemOutcome.Rejected(outcome.reason)
             }
-        }
-    }
-
-    private suspend fun cleanupScreenshotArtifacts() {
-        val exhausted = pendingSyncQueueDao.getExhaustedBySyncType(SyncType.SCREENSHOT)
-        for (item in exhausted) {
-            payloadCodec.decodeScreenshot(item.payloadJson)?.let { File(it.localPath).delete() }
-            pendingSyncQueueDao.deleteById(item.id)
-        }
-        if (exhausted.isNotEmpty()) {
-            Logger.info(TAG, "cleanupScreenshotArtifacts: removed ${exhausted.size} exhausted screenshot uploads")
-        }
-
-        if (screenshotSweepDone) return
-        screenshotSweepDone = true
-        val dir = File(context.filesDir, PENDING_SCREENSHOTS_DIR)
-        if (!dir.isDirectory) return
-        val referenced = pendingSyncQueueDao.getBySyncType(SyncType.SCREENSHOT)
-            .mapNotNull { payloadCodec.decodeScreenshot(it.payloadJson)?.localPath }
-            .toSet()
-        var swept = 0
-        dir.listFiles()?.forEach { file ->
-            if (file.absolutePath !in referenced && file.delete()) swept++
-        }
-        if (swept > 0) {
-            Logger.info(TAG, "cleanupScreenshotArtifacts: swept $swept orphaned pending screenshots")
         }
     }
 

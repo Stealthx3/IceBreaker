@@ -3,8 +3,12 @@ package com.nendo.argosy.ui.components
 import androidx.compose.foundation.background
 import com.nendo.argosy.ui.util.clickableNoFocus
 import com.nendo.argosy.ui.util.clickableSurfaceNoFocus
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import com.nendo.argosy.ui.primitives.ActionButton
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nendo.argosy.ui.input.ModalPresenceEffect
 import com.nendo.argosy.ui.theme.Dimens
+import com.nendo.argosy.ui.theme.generated.DimensionTokens
 import com.nendo.argosy.ui.theme.LocalLauncherTheme
 import com.nendo.argosy.ui.theme.LocalUiScale
 
@@ -57,7 +62,7 @@ fun Modal(
             .clickableSurfaceNoFocus(onClick = onDismiss ?: {}),
         contentAlignment = Alignment.Center
     ) {
-        val modalWidth = (baseWidth * scale).coerceIn(280.dp, maxWidth * 0.9f)
+        val modalWidth = modalWidth(baseWidth * scale, maxWidth)
         val modalMaxHeight = maxHeight * 0.85f
 
         Column(
@@ -137,7 +142,7 @@ fun CenteredModal(
             .clickableSurfaceNoFocus(onClick = onDismiss ?: {}),
         contentAlignment = Alignment.Center
     ) {
-        val modalWidth = (baseWidth * scale).coerceIn(280.dp, maxWidth * 0.9f)
+        val modalWidth = modalWidth(baseWidth * scale, maxWidth)
 
         Column(
             modifier = modifier
@@ -160,9 +165,40 @@ fun CenteredModal(
             content()
 
             if (footerHints != null) {
-                FooterHints(hints = footerHints, onHintClick = onHintClick)
+                ModalActions(hints = footerHints, onHintClick = onHintClick)
             }
         }
+    }
+}
+
+internal fun modalWidth(scaledWidth: Dp, available: Dp): Dp {
+    val ceiling = available * 0.9f
+    return scaledWidth.coerceIn(minOf(DimensionTokens.Layout.modalWidthMin.dp, ceiling), ceiling)
+}
+
+@Composable
+private fun ModalActions(hints: List<Pair<InputButton, String>>, onHintClick: ((InputButton) -> Unit)?) {
+    val actions = hints.filter { it.first == InputButton.A || it.first == InputButton.B }
+        .sortedBy { if (it.first == InputButton.B) 0 else 1 }
+    val others = hints.filterNot { it.first == InputButton.A || it.first == InputButton.B }
+    if (actions.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(Dimens.spacingMd))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSm, Alignment.CenterHorizontally)
+        ) {
+            actions.forEach { (button, label) ->
+                ActionButton(
+                    label = label,
+                    onClick = { onHintClick?.invoke(button) },
+                    primary = button == InputButton.A,
+                    glyph = button
+                )
+            }
+        }
+    }
+    if (others.isNotEmpty()) {
+        FooterHints(hints = others, onHintClick = onHintClick)
     }
 }
 
@@ -188,7 +224,7 @@ fun NestedModal(
             .clickableSurfaceNoFocus(onClick = onDismiss ?: {}),
         contentAlignment = Alignment.Center
     ) {
-        val modalWidth = (baseWidth * scale).coerceIn(280.dp, maxWidth * 0.9f)
+        val modalWidth = modalWidth(baseWidth * scale, maxWidth)
 
         Column(
             modifier = modifier
@@ -211,7 +247,7 @@ fun NestedModal(
             content()
 
             if (footerHints != null) {
-                FooterHints(hints = footerHints, onHintClick = onHintClick)
+                ModalActions(hints = footerHints, onHintClick = onHintClick)
             }
         }
     }

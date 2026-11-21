@@ -64,16 +64,19 @@ class GameSessionService : Service() {
     @Inject lateinit var saveCacheManager: SaveCacheManager
     @Inject lateinit var gameDao: GameDao
     @Inject lateinit var activeSaveRepository: com.nendo.argosy.data.repository.ActiveSaveRepository
-    @Inject lateinit var screenshotCaptureMonitor: ScreenshotCaptureMonitor
     @Inject lateinit var saveScreenshotCapture: com.nendo.argosy.hardware.SaveScreenshotCapture
     @Inject lateinit var playSessionTracker: dagger.Lazy<PlaySessionTracker>
     @Inject lateinit var activityReporter:
         com.nendo.argosy.data.social.uploader.RomMActivityReporter
     @Inject lateinit var permissionHelper: PermissionHelper
+    @Inject lateinit var pspSavePrefixLearner: com.nendo.argosy.data.sync.PspSavePrefixLearner
+    @Inject lateinit var androidDataAccessor: com.nendo.argosy.data.storage.AndroidDataAccessor
 
     private val serviceScope = SafeCoroutineScope(Dispatchers.IO, "GameSessionService")
     private val handler = Handler(Looper.getMainLooper())
     private val fileObservers = mutableListOf<FileObserver>()
+    @Volatile
+    private var watchGeneration = 0
     private val sessionStateStore by lazy { SessionStateStore(this) }
 
     private var wakeLock: PowerManager.WakeLock? = null
@@ -83,6 +86,7 @@ class GameSessionService : Service() {
 
     private var activityJob: Job? = null
     private var presenceJob: Job? = null
+    private var mirrorRefreshJob: Job? = null
     private var currentGameId: Long = -1
     private var currentEmulatorId: String? = null
     private var currentEmulatorPackage: String? = null
@@ -93,6 +97,8 @@ class GameSessionService : Service() {
     private var sessionStartTime: Long = 0
     private var isOverlayVisible = false
     private var isWaitingForDirectory = false
+    private var watchRoot: File? = null
+    private val sessionWrittenFolders = mutableSetOf<String>()
     private var lastMidGameCacheId: Long = -1
     private val midGameCacheMutex = Mutex()
     private var lastOverlayShownAt: Long = 0L
@@ -166,16 +172,15 @@ class GameSessionService : Service() {
                 startForegroundWithNotification(gameTitle, NotificationState.PLAYING)
                 awaitingForeground.set(false)
 
-                // Reset save state to clean when starting a new session
                 broadcastSaveStateChanged(isDirty = false)
 
                 if (watchPath != null) {
                     stopWatching()
                     removeOverlay()
                     startWatching(watchPath)
+                    startMirrorRefresh(savePath)
                 }
 
-                screenshotCaptureMonitor.start(gameId, emulatorPackage, sessionStartTime)
                 startActivityReporting(gameId)
                 startPresenceWatch(emulatorPackage)
             }
@@ -191,7 +196,6 @@ class GameSessionService : Service() {
         stopActivityReporting()
         activityReporter.clearAsync()
         cleanupPresenceKeepalive()
-        screenshotCaptureMonitor.stop()
         stopWatching()
         removeOverlay()
         releaseWakeLock()
@@ -302,6 +306,7 @@ class GameSessionService : Service() {
 
     private fun startWatching(watchPath: String) {
         val watchDir = File(watchPath)
+        watchRoot = watchDir
 
         if (!watchDir.exists()) {
             Logger.debug(TAG, "Save directory doesn't exist yet, polling: ${watchDir.absolutePath}")
@@ -335,17 +340,25 @@ class GameSessionService : Service() {
     }
 
     private fun startFileObserver(watchDir: File) {
-        val dirsToWatch = mutableListOf(watchDir)
-        watchDir.walkTopDown().maxDepth(3).filter { it.isDirectory }.forEach { dir ->
-            if (dir != watchDir) {
-                if (shouldIgnoreDirectory(dir)) {
-                    Logger.debug(TAG, "Skipping ignored directory: ${dir.name}")
-                } else {
-                    dirsToWatch.add(dir)
+        val generation = watchGeneration
+        serviceScope.launch {
+            val dirsToWatch = mutableListOf(watchDir)
+            watchDir.walkTopDown().maxDepth(3).filter { it.isDirectory }.forEach { dir ->
+                if (dir != watchDir) {
+                    if (shouldIgnoreDirectory(dir)) {
+                        Logger.debug(TAG, "Skipping ignored directory: ${dir.name}")
+                    } else {
+                        dirsToWatch.add(dir)
+                    }
                 }
             }
+            handler.post {
+                if (generation == watchGeneration) installObservers(dirsToWatch)
+            }
         }
+    }
 
+    private fun installObservers(dirsToWatch: List<File>) {
         val elapsedSinceStart = System.currentTimeMillis() - sessionStartTime
         Logger.debug(TAG, "Starting file watcher on ${dirsToWatch.size} directories (session elapsed: ${elapsedSinceStart}ms)")
 
@@ -366,6 +379,7 @@ class GameSessionService : Service() {
 
                     if (event and ALL_EVENTS == MODIFY) {
                         handler.post {
+                            recordWrittenFolder(dir, path)
                             if (!inPlaceWriteSeen) {
                                 inPlaceWriteSeen = true
                                 Logger.debug(TAG, "Save written in place: $path in ${dir.name}")
@@ -378,6 +392,7 @@ class GameSessionService : Service() {
                     }
 
                     handler.post {
+                        recordWrittenFolder(dir, path)
                         Logger.debug(TAG, "Save change detected: $path in ${dir.name} (event=$event)")
                         if (currentGameId != -1L) {
                             com.nendo.argosy.util.SaveDebugLogger.logLiveCacheObserve(
@@ -397,8 +412,29 @@ class GameSessionService : Service() {
         }
     }
 
+    private fun recordWrittenFolder(dir: File, path: String) {
+        val root = watchRoot ?: return
+        val relative = if (dir == root) path else "${dir.relativeTo(root).path}/$path"
+        relative.substringBefore('/').takeIf { it.isNotEmpty() }?.let { sessionWrittenFolders += it }
+    }
+
+    private fun startMirrorRefresh(savePath: String?) {
+        if (savePath == null || !androidDataAccessor.isRestrictedAndroidPath(savePath)) return
+        mirrorRefreshJob = serviceScope.launch {
+            while (isActive) {
+                delay(MIRROR_REFRESH_MS)
+                if (androidDataAccessor.syncMirror(listOf(savePath)) == null) break
+            }
+        }
+    }
+
     private fun stopWatching() {
+        mirrorRefreshJob?.cancel()
+        mirrorRefreshJob = null
+        watchGeneration++
         isWaitingForDirectory = false
+        watchRoot = null
+        sessionWrittenFolders.clear()
         fileObservers.forEach { it.stopWatching() }
         fileObservers.clear()
         handler.removeCallbacksAndMessages(null)
@@ -441,27 +477,37 @@ class GameSessionService : Service() {
         com.nendo.argosy.util.SaveDebugLogger.logLiveCacheFire(gameId = gameId, savePath = savePath)
 
         updateNotification(currentGameTitle, NotificationState.SAVE_DETECTED)
-        if (currentEmulatorPackage != EmulatorRegistry.BUILTIN_PACKAGE) showOverlayBriefly()
+        val isBuiltin = currentEmulatorPackage == EmulatorRegistry.BUILTIN_PACKAGE
+        if (!isBuiltin) showOverlayBriefly()
 
-        // Notify secondary home that save is dirty (being cached)
         broadcastSaveStateChanged(isDirty = true)
+        val writtenFolders = sessionWrittenFolders.toSet()
+        val channelName = currentChannelName
+        val isHardcore = currentIsHardcore
 
         serviceScope.launch {
             midGameCacheMutex.withLock {
                 try {
                     val previousCacheId = lastMidGameCacheId
+                    val cache = suspend {
+                        saveCacheManager.cacheCurrentSave(
+                            gameId = gameId,
+                            emulatorId = emulatorId,
+                            savePath = savePath,
+                            channelName = channelName,
+                            isLocked = false,
+                            isHardcore = isHardcore,
+                            skipDuplicateCheck = false,
+                            needsRemoteSync = true,
+                            claimNewSaves = true
+                        )
+                    }
 
-                    val result = saveCacheManager.cacheCurrentSave(
-                        gameId = gameId,
-                        emulatorId = emulatorId,
-                        savePath = savePath,
-                        channelName = currentChannelName,
-                        isLocked = false,
-                        isHardcore = currentIsHardcore,
-                        skipDuplicateCheck = false,
-                        needsRemoteSync = true,
-                        claimNewSaves = true
-                    )
+                    val first = cache()
+                    val result = if (
+                        first is SaveCacheManager.CacheResult.Failed && isBuiltin &&
+                        pspSavePrefixLearner.adopt(gameId, writtenFolders) != null
+                    ) cache() else first
 
                     if (result is SaveCacheManager.CacheResult.Created && previousCacheId > 0) {
                         saveCacheManager.deleteCachedSave(previousCacheId)
@@ -751,6 +797,7 @@ class GameSessionService : Service() {
         private const val RESET_DELAY_MS = 1700L
         private const val OVERLAY_DEBOUNCE_MS = 30 * 1000L
         private const val POLL_INTERVAL_MS = 2000L
+        private const val MIRROR_REFRESH_MS = 5_000L
         private const val PRESENCE_TICK_MS = 2_000L
         private const val PRESENCE_LOOKBACK_MS = 2 * 60 * 1000L
         private const val PRESENCE_WAKE_GRACE_MS = 3_000L

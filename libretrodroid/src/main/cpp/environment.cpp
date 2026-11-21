@@ -31,6 +31,7 @@
 #include "vfs/vfs.h"
 #include "vulkan/vulkanbackend.h"
 #include "microphone/microphoneinterface.h"
+#include "sensors/coresensors.h"
 
 void Environment::initialize(
     const std::string &requiredSystemDirectory,
@@ -60,6 +61,8 @@ void Environment::deinitialize() {
     useStencil = false;
     bottomLeftOrigin = false;
     screenRotation = 0;
+    coreRotationIndex = 0;
+    manualRotationDegrees = -1;
 
     gameGeometryUpdated = false;
     gameGeometryWidth = 0;
@@ -80,6 +83,7 @@ void Environment::deinitialize() {
     hasMemoryMap = false;
 
     rumbleStates.fill(libretrodroid::RumbleState());
+    libretrodroid::CoreSensors::getInstance().reset();
 }
 
 void Environment::updateVariable(const std::string& key, const std::string& value) {
@@ -91,6 +95,10 @@ void Environment::updateVariable(const std::string& key, const std::string& valu
         variables[key] = current;
         dirtyVariables = true;
     }
+}
+
+void Environment::markVariablesApplied() {
+    dirtyVariables = false;
 }
 
 bool Environment::environment_handle_set_variables(const struct retro_variable* received) {
@@ -357,6 +365,11 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
             ((struct retro_rumble_interface*) data)->set_rumble_state = &callback_set_rumble_state;
             return true;
 
+        case RETRO_ENVIRONMENT_GET_SENSOR_INTERFACE:
+            LOGD("Called RETRO_ENVIRONMENT_GET_SENSOR_INTERFACE");
+            *static_cast<struct retro_sensor_interface*>(data) = libretrodroid::CoreSensors::getInterface();
+            return true;
+
         case RETRO_ENVIRONMENT_GET_LOG_INTERFACE:
             LOGD("Called RETRO_ENVIRONMENT_GET_LOG_INTERFACE");
             ((struct retro_log_callback*) data)->log = &callback_retro_log;
@@ -375,6 +388,7 @@ bool Environment::handle_callback_environment(unsigned cmd, void *data) {
         case RETRO_ENVIRONMENT_SET_ROTATION: {
             LOGD("Called RETRO_ENVIRONMENT_SET_ROTATION");
             unsigned screenRotationIndex = (*static_cast<unsigned*>(data));
+            coreRotationIndex = screenRotationIndex % 4;
             screenRotation = screenRotationIndex * (float) (-M_PI / 2.0);
             screenRotationUpdated = true;
             return true;
@@ -532,19 +546,27 @@ bool Environment::isBottomLeftOrigin() const {
 }
 
 float Environment::getScreenRotation() const {
-    if (manualRotation >= 0) {
-        return manualRotation;
+    if (manualRotationDegrees >= 0) {
+        return manualRotationDegrees * (float) (-M_PI / 180.0);
     }
     return screenRotation;
 }
 
 void Environment::setManualRotation(int degrees) {
-    if (degrees < 0) {
-        manualRotation = -1;
-    } else {
-        manualRotation = degrees * (float) (-M_PI / 180.0);
-    }
+    manualRotationDegrees = degrees < 0 ? -1 : degrees % 360;
     screenRotationUpdated = true;
+}
+
+/**
+ * Whether a manual rotation sits an odd number of quarter turns away from the core's own rotation,
+ * the orientation the core's reported aspect ratio describes.
+ */
+bool Environment::rotationSwapsAspect() const {
+    if (manualRotationDegrees < 0) {
+        return false;
+    }
+    unsigned manualTurns = (manualRotationDegrees / 90) % 4;
+    return ((manualTurns + 4 - coreRotationIndex) % 2) == 1;
 }
 
 bool Environment::isGameGeometryUpdated() const {

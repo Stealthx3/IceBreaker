@@ -1,13 +1,24 @@
 package com.nendo.argosy.util
 
 import android.content.Context
+import android.os.ParcelFileDescriptor
 import java.io.File
 
 /**
- * Runs shell scripts as root through the AYN/Retroid daemon [PServerExecutor] or Ayaneo's
- * [XsuExecutor]. Neither reports a script's exit code and the daemon returns only the first line of
- * output, so every script is written to a file, run through a wrapper that captures its full
- * output, and reported as an exit code plus output lines.
+ * Reaches other apps' Android/data folders without root: runs scripts there and opens files for
+ * Argosy to read or write through the returned descriptor.
+ */
+interface AppDataShell {
+    fun runScript(script: String): RootShell.Result?
+    fun open(path: String, mode: Int): ParcelFileDescriptor?
+}
+
+/**
+ * Runs shell scripts as root through the AYN/Retroid daemon [PServerExecutor], Ayaneo's
+ * [XsuExecutor], or a root route the user enabled in Argosy ([adopt]). The vendor routes report
+ * neither a script's exit code nor more than one output line, so their scripts are written to a
+ * file, run through a wrapper that captures the full output, and reported as an exit code plus
+ * output lines.
  */
 actual object RootShell {
 
@@ -23,22 +34,54 @@ actual object RootShell {
 
     private val lock = Any()
 
-    actual val isAvailable: Boolean
+    @Volatile
+    var enabledRoot: RootCommandRunner? = null
+        private set
+
+    @Volatile
+    var appDataShell: AppDataShell? = null
+        private set
+
+    val hasVendorRoute: Boolean
         get() = PServerExecutor.isAvailable || XsuExecutor.isAvailable
 
-    actual fun execute(command: String): kotlin.Result<String?> =
-        if (PServerExecutor.isAvailable) PServerExecutor.execute(command) else XsuExecutor.execute(command)
+    val isAvailable: Boolean
+        get() = hasVendorRoute || enabledRoot != null
+
+    /**
+     * Installs the routes the user enabled: [root] backs every root caller, [appData] only the
+     * Android/data mirror. Null clears a route.
+     */
+    fun adopt(root: RootCommandRunner?, appData: AppDataShell?) {
+        enabledRoot = root
+        appDataShell = appData
+    }
+
+    fun execute(command: String): kotlin.Result<String?> = when {
+        PServerExecutor.isAvailable -> PServerExecutor.execute(command)
+        XsuExecutor.isAvailable -> XsuExecutor.execute(command)
+        else -> enabledRoot?.execute(command)
+            ?: kotlin.Result.failure(IllegalStateException("no root route"))
+    }
 
     actual fun quote(value: String): String = "'" + value.replace("'", "'\\''") + "'"
 
-    actual fun run(context: Context, body: String): Result? = synchronized(lock) {
-        if (!isAvailable) return null
+    fun run(context: Context, body: String): Result? {
+        if (hasVendorRoute) return runThroughVendor(context, body)
+        return enabledRoot?.runScript(body)
+    }
+
+    private fun runThroughVendor(context: Context, body: String): Result? = synchronized(lock) {
+        val dir = File(context.cacheDir, WORK_DIR)
+        val script = File(dir, SCRIPT_NAME)
+        val output = File(dir, OUTPUT_NAME)
+        val wrapper = File(dir, WRAPPER_NAME)
         try {
-            val dir = File(context.cacheDir, WORK_DIR).apply { mkdirs() }
+            dir.mkdirs()
             dir.setExecutable(true, false)
-            val script = File(dir, SCRIPT_NAME).apply { writeText(body + "\n") }
-            val output = File(dir, OUTPUT_NAME).apply { delete() }
-            val wrapper = File(dir, WRAPPER_NAME).apply {
+            script.writeText(body + "\n")
+            output.delete()
+            wrapper.apply {
                 writeText(
                     "sh ${script.absolutePath} > ${output.absolutePath} 2>&1\n" +
                         "rc=\$?\nchmod 644 ${output.absolutePath}\necho \$rc\n"
@@ -54,6 +97,10 @@ actual object RootShell {
         } catch (e: Exception) {
             Logger.warn(TAG, "root shell failed: ${e.message}")
             null
+        } finally {
+            script.delete()
+            wrapper.delete()
+            output.delete()
         }
     }
 }

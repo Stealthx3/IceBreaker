@@ -97,6 +97,7 @@ import com.nendo.argosy.platform.image.intrinsicHeight
 import com.nendo.argosy.platform.image.intrinsicWidth
 import com.nendo.argosy.data.preferences.BoxArtBorderStyle
 import com.nendo.argosy.data.preferences.BoxArtInnerEffect
+import com.nendo.argosy.data.preferences.NewBadgePlacement
 import com.nendo.argosy.data.preferences.SystemIconPosition
 import com.nendo.argosy.ui.common.rememberFileImageModel
 import com.nendo.argosy.ui.screens.home.GameDownloadIndicator
@@ -120,6 +121,7 @@ fun GameCard(
     downloadIndicator: GameDownloadIndicator = GameDownloadIndicator.NONE,
     showPlatformBadge: Boolean = true,
     showStatusOverlays: Boolean = true,
+    showDownloadedIndicator: Boolean = true,
     coverPathOverride: String? = null,
     onCoverLoadFailed: ((gameId: Long, failedPath: String) -> Unit)? = null,
     onCoverLoaded: ((gameId: Long, bitmap: Bitmap) -> Unit)? = null,
@@ -267,8 +269,6 @@ fun GameCard(
             boxArtStyle.platformIndicatorStyle != com.nendo.argosy.data.preferences.PlatformIndicatorStyle.OFF
         val spineActive = !drawsAs3d && indicatorActive &&
             boxArtStyle.platformIndicatorStyle == com.nendo.argosy.data.preferences.PlatformIndicatorStyle.SPINE
-        // Skip the cover's inner edge effect when the spine container wraps the cover;
-        // the stroke at the cover's spine-side edge reads as a hard line between spine and cover.
         val innerEffect = if (spineActive) BoxArtInnerEffect.OFF else boxArtStyle.innerEffect
         val innerEffectWidth = boxArtStyle.innerEffectThicknessPx
         val effectiveBadgePosition = if (indicatorActive &&
@@ -372,7 +372,7 @@ fun GameCard(
                     if (showStatusOverlays) {
                         StatusIndicators(
                             isFavorite = game.isFavorite,
-                            isDownloaded = game.isDownloaded
+                            isDownloaded = game.isDownloaded && showDownloadedIndicator
                         )
                     }
                 }
@@ -416,7 +416,7 @@ fun GameCard(
                  boxArtStyle.systemIconPosition == SystemIconPosition.BOTTOM_RIGHT)
             StatusIndicators(
                 isFavorite = game.isFavorite,
-                isDownloaded = game.isDownloaded,
+                isDownloaded = game.isDownloaded && showDownloadedIndicator,
                 tabAtBottom = tabAtBottom
             )
         }
@@ -593,9 +593,8 @@ fun GameCardWithBadge(
 }
 
 /**
- * How far the new-game badge rises above the card it belongs to. The badge is laid out inside the
- * card's own bounds so nothing clips it, which makes a badged card this much taller than a plain
- * one; a caller that lines cards up has to take the difference back out.
+ * How far the new-game badge rises above its card; a badged card is this much taller than a
+ * plain one.
  */
 val NEW_BADGE_TOP_OVERFLOW = ComponentDefaults.Carousel.newBadgeOverflowDp.dp
 
@@ -616,12 +615,15 @@ fun GameCardWithNewBadge(
     scaleOverride: Float? = null,
     alphaOverride: Float? = null,
     useBoxArt: Boolean = false,
+    newBadgePlacement: NewBadgePlacement = NewBadgePlacement.RIGHT,
+    showDownloadedIndicator: Boolean = true,
     interactionModifier: Modifier = Modifier
 ) {
     val hover = rememberHoverFocus()
     val hoverScale = if (hover.isHovered && !isFocused) minOf(focusScale, ComponentDefaults.Focus.scaleFocused) else focusScale
     val isFocused = isFocused || hover.isHovered
-    val showNewBadge = game.isNew && !downloadIndicator.isActive
+    val showNewBadge = game.isNew && !downloadIndicator.isActive &&
+        newBadgePlacement != NewBadgePlacement.HIDDEN
     val newAsDot = showNewBadge && hasDisplayProfile && !isFocused
     val badgeWidthDp = ComponentDefaults.Carousel.newBadgeWidthDp.dp
     val badgeHeightDp = ComponentDefaults.Carousel.newBadgeHeightDp.dp
@@ -649,6 +651,7 @@ fun GameCardWithNewBadge(
                 scalePivotY = scalePivotY,
                 downloadIndicator = downloadIndicator,
                 showPlatformBadge = showPlatformBadge,
+                showDownloadedIndicator = showDownloadedIndicator,
                 useBoxArt = useBoxArt,
                 coverPathOverride = coverPathOverride,
                 onCoverLoadFailed = onCoverLoadFailed,
@@ -667,7 +670,11 @@ fun GameCardWithNewBadge(
                 NewBadge(
                     width = badgeWidthDp,
                     height = badgeHeightDp,
-                    rotation = ComponentDefaults.Carousel.newBadgeRotationDegrees.toFloat()
+                    rotation = if (newBadgePlacement == NewBadgePlacement.LEFT) {
+                        -ComponentDefaults.Carousel.newBadgeRotationDegrees.toFloat()
+                    } else {
+                        ComponentDefaults.Carousel.newBadgeRotationDegrees.toFloat()
+                    }
                 )
             }
         },
@@ -698,19 +705,34 @@ fun GameCardWithNewBadge(
 
         val topOverflow = NEW_BADGE_TOP_OVERFLOW.roundToPx()
         val layoutHeight = cardPlaceable.height + topOverflow
+        val sideReservePx = if (newBadgePlacement == NewBadgePlacement.HIDDEN) {
+            0
+        } else {
+            ComponentDefaults.Carousel.newBadgeCornerShiftDp.dp.roundToPx()
+        }
 
-        layout(cardPlaceable.width, layoutHeight) {
-            cardPlaceable.placeRelative(0, topOverflow)
+        layout(cardPlaceable.width + 2 * sideReservePx, layoutHeight) {
+            cardPlaceable.placeRelative(sideReservePx, topOverflow)
+            val leftShifted = newBadgePlacement == NewBadgePlacement.LEFT
             if (newAsDot) {
                 val inset = badgePlaceable?.height ?: 0
-                badgePlaceable?.placeRelative(
-                    x = cardPlaceable.width - badgePlaceable.width - inset,
+                badgePlaceable?.place(
+                    x = if (leftShifted) {
+                        sideReservePx + inset
+                    } else {
+                        sideReservePx + cardPlaceable.width - badgePlaceable.width - inset
+                    },
                     y = topOverflow + inset
                 )
             } else {
-                badgePlaceable?.placeRelative(
-                    x = cardPlaceable.width - badgePlaceable.width,
-                    y = topOverflow - (badgePlaceable.height / 2)
+                badgePlaceable?.place(
+                    x = if (leftShifted) {
+                        0
+                    } else {
+                        cardPlaceable.width + 2 * sideReservePx - badgePlaceable.width
+                    },
+                    y = topOverflow - (badgePlaceable.height / 2) +
+                        ComponentDefaults.Carousel.newBadgeCornerDropDp.dp.roundToPx()
                 )
             }
         }

@@ -27,6 +27,7 @@ import com.nendo.argosy.core.event.AchievementUpdateBus
 import com.nendo.argosy.ui.screens.common.CollectionModalDelegate
 import com.nendo.argosy.ui.screens.common.GradientExtractionDelegate
 import com.nendo.argosy.ui.screens.common.GameLaunchDelegate
+import com.nendo.argosy.ui.screens.common.GameStart
 import com.nendo.argosy.ui.ModalResetSignal
 import com.nendo.argosy.hardware.AmbientLedContext
 import com.nendo.argosy.hardware.AmbientLedManager
@@ -75,6 +76,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 import com.nendo.argosy.platform.startActivity
 import com.nendo.argosy.platform.getApplicationInfo
@@ -131,7 +133,6 @@ class HomeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val gameRepository: GameRepository,
     private val displayAffinityHelper: com.nendo.argosy.util.DisplayAffinityHelper,
-    private val gameStartRouter: com.nendo.argosy.ui.screens.common.GameStartRouter,
     private val configureEmulatorUseCase: com.nendo.argosy.domain.usecase.game.ConfigureEmulatorUseCase,
     private val appShortcutActions: com.nendo.argosy.ui.screens.common.AppShortcutActions,
     private val preferencesRepository: UserPreferencesRepository,
@@ -155,8 +156,7 @@ class HomeViewModel @Inject constructor(
     val mediaDelegate: HomeMediaDelegate,
     val tilePickerDelegate: HomeTilePickerDelegate,
     private val dockDelegate: HomeDockDelegate,
-    private val steamContentManager: com.nendo.argosy.data.steam.SteamContentManager,
-    private val steamDownloadPromptController: com.nendo.argosy.data.steam.SteamDownloadPromptController,
+    private val steamLauncherLinkController: com.nendo.argosy.data.steam.SteamLauncherLinkController,
     private val appsRepository: com.nendo.argosy.data.repository.AppsRepository,
     private val homeTileRepository: com.nendo.argosy.data.repository.HomeTileRepository,
     private val customGridShapeStore: CustomGridShapeStore,
@@ -176,8 +176,13 @@ class HomeViewModel @Inject constructor(
     private val showcaseSource: com.nendo.argosy.ui.common.PresentationShowcaseSource,
     private val quickNavigationSource: com.nendo.argosy.data.preferences.QuickNavigationSource,
     private val firstFrameCache: HomeFirstFrameCache,
-    private val monthlyRecap: com.nendo.argosy.ui.components.recap.MonthlyRecapController
+    private val monthlyRecap: com.nendo.argosy.ui.components.recap.MonthlyRecapController,
+    gameActions: com.nendo.argosy.ui.screens.common.GameActionsDelegate
 ) : ViewModel(), HomeInputActions {
+
+    val gameConfirm = com.nendo.argosy.ui.common.GameConfirmController(
+        gameActions::deleteDownloadConfirm, gameActions::hideConfirm, viewModelScope
+    )
 
     private val selectDoubleTap = com.nendo.argosy.ui.screens.home.delegates.SelectDoubleTap(
         scope = viewModelScope,
@@ -518,6 +523,8 @@ class HomeViewModel @Inject constructor(
         carouselConfig = prefs.homeLayout.carousel,
         autoGridConfig = prefs.homeLayout.autoGrid,
         boxArt3d = prefs.homeLayout.boxArt3d,
+        installedOnlyHome = prefs.installedOnlyHome,
+        newBadgePlacement = prefs.newBadgePlacement,
         customGridConfig = prefs.homeLayout.customGrid,
         layoutKind = prefs.homeLayout.selected
     )
@@ -837,7 +844,7 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun observeGradientChanges() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             gradientExtractionDelegate.gradients.collect { gradients ->
                 _uiState.update { state ->
                     state.copy(
@@ -855,7 +862,7 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             gradientExtractionDelegate.mediaGradients.collect { gradients ->
                 if (gradients.isEmpty()) return@collect
                 _uiState.update { state ->
@@ -987,7 +994,7 @@ class HomeViewModel @Inject constructor(
         }
         val state = _uiState.value
         when (val index = state.appBarIndex) {
-            APP_BAR_DRAWER_INDEX -> openAppDrawer()
+            APP_BAR_DRAWER_INDEX -> openAppsScreen()
             in state.homeApps.indices -> launchTileApp(state.homeApps[index])
             else -> toggleAppBarTools()
         }
@@ -1664,12 +1671,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    override fun openAppBarAppMenu(): Boolean {
-        val state = _uiState.value
-        val packageName = state.appDrawer?.focusedPackage ?: return false
-        return openAppMenuFor(packageName)
-    }
-
     override fun openDockAppMenu(): Boolean {
         if (dockDelegate.isReordering()) return false
         val state = _uiState.value
@@ -1784,37 +1785,9 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(appBarMenu = null) }
     }
 
-    override fun openAppDrawer() {
-        if (_uiState.value.appDrawer != null) return
-        _uiState.update { it.copy(appDrawer = AppDrawerState(), appBarToolsOpen = false) }
-        viewModelScope.launch {
-            val apps = appsRepository.getInstalledApps()
-                .map { com.nendo.argosy.ui.components.AppDrawerEntry(it.packageName, it.label) }
-                .sortedBy { it.label.lowercase() }
-            _uiState.update { state ->
-                state.appDrawer?.let { drawer ->
-                    state.copy(appDrawer = drawer.copy(apps = apps))
-                } ?: state
-            }
-        }
-    }
-
-    override fun moveAppDrawer(delta: Int) {
-        val drawer = _uiState.value.appDrawer ?: return
-        if (drawer.apps.isEmpty()) return
-        val next = (drawer.focusIndex + delta).mod(drawer.apps.size)
-        _uiState.update { it.copy(appDrawer = drawer.copy(focusIndex = next)) }
-    }
-
-    override fun confirmAppDrawer() {
-        val packageName = _uiState.value.appDrawer?.focusedPackage ?: return
-        dismissAppDrawer()
-        launchTileApp(packageName)
-    }
-
-    override fun dismissAppDrawer() {
-        if (_uiState.value.appDrawer == null) return
-        _uiState.update { it.copy(appDrawer = null) }
+    override fun openAppsScreen() {
+        _uiState.update { it.copy(appBarToolsOpen = false) }
+        viewModelScope.launch { _events.emit(HomeEvent.NavigateToApps) }
     }
 
     override fun openTileCollection(collectionId: Long) {
@@ -2045,7 +2018,7 @@ class HomeViewModel @Inject constructor(
             HomeGameActivation.INSTALL -> installApk(game.id)
             HomeGameActivation.LAUNCH -> launchGame(game.id)
             HomeGameActivation.RESUME_DOWNLOAD -> resumeDownload(game.id)
-            HomeGameActivation.STEAM_DOWNLOAD -> queueSteamDownload(game.id)
+            HomeGameActivation.STEAM_LINK_LAUNCHER -> linkSteamLauncher(game.id)
             HomeGameActivation.DOWNLOAD_EXACT -> downloadDelegate.queueDownload(viewModelScope, game.id)
             HomeGameActivation.DOWNLOAD_WITH_CHOICE -> queueDownload(game.id)
         }
@@ -2059,7 +2032,7 @@ class HomeViewModel @Inject constructor(
             gameId = gameId,
             channelName = channelName,
             allowVariantPrompt = false,
-            onLaunch = { intent -> gameStartRouter.start(gameId, intent) }
+            start = GameStart(gameId, onFailure = { showLaunchFailed() })
         )
     }
 
@@ -2071,10 +2044,12 @@ class HomeViewModel @Inject constructor(
             scope = viewModelScope,
             gameId = gameId,
             allowVariantPrompt = false,
-            onLaunch = { intent ->
-                gameStartRouter.start(gameId = gameId, intent = intent, overrideDisplayId = displayId)
-            }
+            start = GameStart(gameId = gameId, overrideDisplayId = displayId, onFailure = { showLaunchFailed() })
         )
+    }
+
+    private fun showLaunchFailed() {
+        notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
     }
 
     private fun rememberGameScreen(gameId: Long, displayId: Int) {
@@ -2103,7 +2078,9 @@ class HomeViewModel @Inject constructor(
     }
 
     fun hideGame(gameId: Long) {
-        gameMenuDelegate.hideGame(viewModelScope, gameId) { refreshCurrentRowInternal() }
+        gameConfirm.requestHide(gameId) {
+            gameMenuDelegate.hideGame(viewModelScope, gameId) { refreshCurrentRowInternal() }
+        }
     }
 
     fun removeFromHome(gameId: Long) {
@@ -2126,9 +2103,11 @@ class HomeViewModel @Inject constructor(
     }
 
     fun deleteLocalFile(gameId: Long) {
-        downloadDelegate.deleteLocalFile(viewModelScope, gameId) {
-            libraryDelegate.invalidateRecentGamesCache()
-            refreshCurrentRowInternal()
+        gameConfirm.requestDelete(gameId) { withSoundtrack ->
+            downloadDelegate.deleteLocalFile(viewModelScope, gameId, withSoundtrack) {
+                libraryDelegate.invalidateRecentGamesCache()
+                refreshCurrentRowInternal()
+            }
         }
     }
 
@@ -2138,8 +2117,8 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    override fun queueSteamDownload(gameId: Long) {
-        steamDownloadPromptController.requestSteamDownload(gameId)
+    override fun linkSteamLauncher(gameId: Long) {
+        steamLauncherLinkController.requestLink(gameId)
     }
 
     override fun installApk(gameId: Long) {
@@ -2339,6 +2318,8 @@ class HomeViewModel @Inject constructor(
 
     fun selectDisc(discPath: String) = gameLaunchDelegate.selectDisc(viewModelScope, discPath)
     fun dismissDiscPicker() = gameLaunchDelegate.dismissDiscPicker()
+    val menuWrapMode get() = preferencesRepository.menuWrapMode
+
     fun setDiscPickerFocusIndex(index: Int) { _uiState.update { it.copy(discPickerFocusIndex = index) } }
 
     fun selectMemcard(cardPath: String) = gameLaunchDelegate.selectMemcard(viewModelScope, cardPath)

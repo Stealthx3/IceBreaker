@@ -26,12 +26,11 @@ import com.nendo.argosy.ui.screens.settings.sections.BiosItem
 import com.nendo.argosy.ui.screens.settings.sections.biosItemAtFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.SteamItem
 import com.nendo.argosy.ui.screens.settings.sections.StorageItem
-import com.nendo.argosy.ui.screens.settings.sections.createStorageCachesLayoutInfo
 import com.nendo.argosy.ui.screens.settings.sections.createStorageGamesLayoutInfo
 import com.nendo.argosy.ui.screens.settings.sections.createStorageLayoutInfo
+import com.nendo.argosy.ui.screens.settings.sections.storageGamesFocusIndexOfLocalOnly
 import com.nendo.argosy.ui.screens.settings.sections.storageGamesFocusIndexOfPlatform
 import com.nendo.argosy.ui.screens.settings.sections.steamItemAtFocusIndex
-import com.nendo.argosy.ui.screens.settings.sections.storageCachesFocusIndexOfSteam
 import com.nendo.argosy.ui.screens.settings.sections.storageFocusIndexOf
 import com.nendo.argosy.ui.screens.settings.sections.storageMediaVisibleLive
 import com.nendo.argosy.ui.screens.settings.sections.storageSteamVisibleLive
@@ -118,10 +117,14 @@ private fun routeReresolveParentFocus(
     }
     state.currentSection == SettingsSection.STORAGE_PLATFORM_GAMES &&
         parent.section == SettingsSection.STORAGE_GAMES ->
-        storageGamesFocusIndexOfPlatform(
-            state.storagePlatformGames.selectedPlatformId,
-            createStorageGamesLayoutInfo(state)
-        ).coerceAtLeast(0)
+        if (state.storagePlatformGames.localOnly) {
+            storageGamesFocusIndexOfLocalOnly(createStorageGamesLayoutInfo(state))
+        } else {
+            storageGamesFocusIndexOfPlatform(
+                state.storagePlatformGames.selectedPlatformId,
+                createStorageGamesLayoutInfo(state)
+            ).coerceAtLeast(0)
+        }
     else -> null
 }
 
@@ -235,16 +238,9 @@ internal fun routeNavigateToStorageMedia(vm: SettingsViewModel) {
     routePushSection(vm, SettingsSection.STORAGE_MEDIA)
 }
 
-internal fun routeNavigateToStorageCaches(vm: SettingsViewModel, entryFocus: Int) {
+internal fun routeNavigateToStorageCaches(vm: SettingsViewModel) {
     vm.syncDelegate.loadLibrarySettings(vm.viewModelScope)
-    vm.storageCachesDelegate.refreshOnOpen(vm.viewModelScope)
     routePushSection(vm, SettingsSection.STORAGE_CACHES)
-    if (entryFocus == CACHES_ENTRY_STEAM) {
-        vm._uiState.update { state ->
-            val steamFocus = storageCachesFocusIndexOfSteam(createStorageCachesLayoutInfo(state))
-            state.copy(focusedIndex = steamFocus.coerceAtLeast(0))
-        }
-    }
 }
 
 internal fun routeNavigateToThemeBackdrop(vm: SettingsViewModel) {
@@ -709,12 +705,6 @@ internal fun routeToggleUploadScreenshots(vm: SettingsViewModel) {
     val server = vm._uiState.value.server
     if (!server.screenshotUploadSupported) return
     vm.syncDelegate.toggleUploadScreenshots(vm.viewModelScope, server.uploadScreenshotsEnabled) { newValue ->
-        vm.serverDelegate.updateState(vm._uiState.value.server.copy(uploadScreenshotsEnabled = newValue))
-    }
-}
-
-internal fun routeOnMediaPermissionResult(vm: SettingsViewModel, granted: Boolean) {
-    vm.syncDelegate.onMediaPermissionResult(vm.viewModelScope, granted) { newValue ->
         vm.serverDelegate.updateState(vm._uiState.value.server.copy(uploadScreenshotsEnabled = newValue))
     }
 }

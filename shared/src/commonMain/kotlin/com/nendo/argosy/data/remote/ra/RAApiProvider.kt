@@ -49,7 +49,7 @@ class RAApiProvider @Inject constructor(
             .readTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
-                    .header("User-Agent", "Argosy/${BuildConfig.VERSION_NAME} (Android ${com.nendo.argosy.platform.PlatformBuild.VERSION.RELEASE}) rcheevos/12.2.1")
+                    .header("User-Agent", "Argosy/${BuildConfig.VERSION_NAME} (Android ${com.nendo.argosy.platform.PlatformBuild.VERSION.RELEASE}) rcheevos/${RAApi.RCHEEVOS_VERSION}")
                     .build()
                 chain.proceed(request)
             }

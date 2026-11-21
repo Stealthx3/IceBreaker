@@ -4,6 +4,7 @@ import com.nendo.argosy.core.game.AchievementUi
 import com.nendo.argosy.data.launcher.SteamLaunchers
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.local.entity.GameScreenshotEntity
+import com.nendo.argosy.data.local.entity.inDisplayOrder
 import com.nendo.argosy.data.model.GameSource
 import com.nendo.argosy.data.model.ResolvedGameArt
 import com.nendo.argosy.data.steam.resolveSteamGenres
@@ -33,10 +34,9 @@ fun GameEntity.toGameDetailUi(
     steamLauncherName: String? = null,
     isHidden: Boolean = false
 ): GameDetailUi {
-    val screenshots = screenshotRows.sortedBy { it.position }.map { row ->
-        ScreenshotPair(remoteUrl = row.sourceUrl, cachedPath = row.cachedPath)
-    }
-    val effectiveBackground = art?.backgroundPath ?: screenshots.firstOrNull()?.remoteUrl
+    val screenshots = screenshotRows.toScreenshotPairs()
+    val effectiveBackground = art?.backgroundPath
+        ?: screenshotRows.filter { it.isOfficial }.minByOrNull { it.position }?.sourceUrl
     return GameDetailUi(
         id = id,
         title = title,
@@ -82,6 +82,7 @@ fun GameEntity.toGameDetailUi(
         canManageStates = canManageStates,
         isSteamGame = isSteamGame,
         steamLauncherName = steamLauncherName,
+        steamLauncherSetManually = hasSteamLauncherPin,
         isExternallyManaged = isExternallyManaged,
         managingLauncherDisplayName = steamLauncher
             ?.takeIf { it != GameEntity.LAUNCHER_UNSPECIFIED }
@@ -93,5 +94,45 @@ fun GameEntity.toGameDetailUi(
         igdbId = igdbId,
         steamAppId = steamAppId,
         rommFileName = rommFileName
+    )
+}
+
+internal fun List<GameScreenshotEntity>.toScreenshotPairs(): List<ScreenshotPair> =
+    inDisplayOrder()
+        .map { row -> ScreenshotPair(remoteUrl = row.sourceUrl, cachedPath = row.cachedPath) }
+
+internal val GameEntity.hasSteamLauncherPin: Boolean
+    get() = launcherSetManually && steamLauncher != null && steamLauncher != GameEntity.LAUNCHER_UNSPECIFIED
+
+internal fun GameEntity.steamLaunchCandidates(
+    reporting: List<String>,
+    isInstalled: (String) -> Boolean
+): List<String> {
+    if (!isSteamGame) return emptyList()
+    val storedPackage = steamLauncher?.takeIf { it != GameEntity.LAUNCHER_UNSPECIFIED }
+    val pinned = hasSteamLauncherPin
+    return SteamLaunchers.launchCandidates(
+        storedPackage = storedPackage,
+        pinned = pinned,
+        reporting = if (pinned) emptyList() else reporting,
+        isInstalled = { runCatching { isInstalled(it) }.getOrDefault(false) }
+    )
+}
+
+internal fun GameDetailUi.withSteamLauncher(
+    game: GameEntity,
+    candidates: List<String>,
+    pathExists: Boolean
+): GameDetailUi {
+    if (!game.isSteamGame || id != game.id) return this
+    val storedPackage = game.steamLauncher?.takeIf { it != GameEntity.LAUNCHER_UNSPECIFIED }
+    val displayPackage = if (game.hasSteamLauncherPin) storedPackage else candidates.singleOrNull()
+    return copy(
+        steamLauncherName = displayPackage?.let { SteamLaunchers.getByPackage(it)?.displayName },
+        steamLauncherPackage = displayPackage,
+        steamLauncherSetManually = game.hasSteamLauncherPin,
+        isExternallyManaged = game.isExternallyManaged,
+        managingLauncherDisplayName = storedPackage?.let(SteamLaunchers::displayNameForPackage),
+        canPlay = candidates.isNotEmpty() && (game.isExternallyManaged || (game.localPath != null && pathExists))
     )
 }

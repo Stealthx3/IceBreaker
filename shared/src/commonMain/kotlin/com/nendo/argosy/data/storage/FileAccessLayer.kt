@@ -97,22 +97,29 @@ interface FileAccessLayer {
     fun normalizeForDisplay(path: String): String
     fun externalStorageRoots(): List<String>
 
+    /**
+     * Names and sizes of the regular files directly inside [path]. Where Android/data is
+     * mirrored, reads the real folder's listing without copying the files. Null when the folder
+     * cannot be listed.
+     */
+    fun fileSizes(path: String): Map<String, Long>? =
+        listFiles(path)?.filter { it.isFile }?.associate { it.name to it.size }
+
     // Escape hatch for third-party APIs requiring File
     fun getTransformedFile(path: String): File
 
     /**
-     * Makes the folders holding [paths] readable and writable by Argosy before a save operation
-     * reads or writes them, where the device allows it: a folder save's folder, a file save's
-     * containing folder. A no-op everywhere the saves are already reachable. Every save operation
-     * calls this once, up front, with each path it will touch.
+     * Makes the folders holding [paths] readable and writable before a save operation touches
+     * them. False when a mirrored copy of Android/data could not be refreshed and holds stale
+     * bytes, and a caller about to overwrite a save stops there.
      */
-    fun prepareSaveAccess(vararg paths: String?)
+    fun prepareSaveAccess(vararg paths: String?): Boolean
 
     /**
-     * Carries what a save operation wrote under [paths] out to the real folders, where the device
+     * Carries what an operation wrote under [paths] out to the real folders, where the device
      * keeps a mirrored copy of Android/data, and reports whether every write landed. True and a
-     * no-op everywhere else. Every save operation that writes calls this once it has finished
-     * writing, with the same paths it prepared, and fails the operation on false.
+     * no-op everywhere else. Every save operation, and anything else that writes into another
+     * app's Android/data, calls this once it has finished writing and fails the operation on false.
      */
     fun commitSaveAccess(vararg paths: String?): Boolean
 }

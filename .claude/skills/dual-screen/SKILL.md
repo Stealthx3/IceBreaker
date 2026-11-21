@@ -96,8 +96,10 @@ LAW: inside `ArgosyApp` and anything it hosts, reach DSM through the Holder, nev
 `context as? ArgosyActivity`.
 - Why: on the companion that cast is null, and roughly twenty sites went silently inert when the
   companion held PRIMARY - overlay events, keyboard toggle, media routing, the screen dimmer.
-- Exception: genuinely ArgosyActivity-owned things, e.g. `pendingDeepLink`, which exists because
-  ArgosyActivity receives the Intent.
+- Exception: genuinely ArgosyActivity-owned things. Deep links are not one: ArgosyActivity
+  receives the Intent and publishes it to `DualScreenManager.pendingDeepLink`, and an
+  ArgosyActivity created on another display forwards the Intent to the default-display instance
+  before it yields or hands that display to the companion.
 
 ## PresentationSlot
 
@@ -263,8 +265,12 @@ singletons through `dsm.*` for anything DSM owns.
 
 - FGS guard: `CompanionGuardService`, subtype `companion_display_guard`.
 - onCreate gate: `SessionStateStore.isDualScreenEnabled()` finishes immediately when off.
-- Stale-DSM reconnect: `onResume` compares `dsm` to the Holder instance and re-runs
-  `initializeCompanion()` on mismatch. Init-time wiring you add MUST live inside that path.
+- Stale-DSM: the companion collects `DualScreenManagerHolder.instanceFlow` from `onCreate` and
+  `recreate()`s when a different manager appears. Its composition reads `dsm` as a plain field,
+  so rebinding in place would leave every screen on the old manager. Init-time wiring belongs in
+  `initializeCompanion()`, which the recreated instance runs.
+- One companion per display: `registerCompanionHost` finishes the companion it replaces. A
+  replaced instance left running keeps a stopped `ArgosyApp` that still holds ViewModels.
 - Theme: `SecondaryHomeTheme` provides the same locals as `ALauncherTheme`, including
   `LocalSurfaceBackdrop`.
 
@@ -272,6 +278,11 @@ singletons through `dsm.*` for anything DSM owns.
 
 `hasSecondaryDisplay` is gated by THREE conditions:
 `dualScreenEnabled && secondaryDisplayUsable && hasPhysicalSecondaryDisplay`.
+
+`DisplayAffinityHelper.getRoleDisplayIds` follows the same gate: with `hasSecondaryDisplay` false
+it returns null, whatever the stored layout names as PRIMARY. DS off means one screen with no
+roles, so the interactive/showcase queries, the dashboard decision and the session's recorded game
+display all read single-screen. The stored layout still decides APP_TARGET and OFF screens.
 
 `secondaryDisplayUsable` is a FALLBACK LATCH, not a preference. It is set false by
 `fallbackToSingleScreen(persistent)` once the companion has proven unable to start on the

@@ -6,6 +6,7 @@
     <string name="sync_prelaunch_connecting">Connexion...</string>
     <string name="sync_prelaunch_connected">Connecté</string>
     <string name="sync_prelaunch_connect_failed">Échec de la connexion</string>
+    <string name="sync_prelaunch_timed_out">Le serveur a mis trop de temps</string>
     <string name="sync_prelaunch_downloading">Téléchargement...</string>
     <string name="sync_prelaunch_download_complete">Téléchargement terminé</string>
     <string name="sync_prelaunch_download_failed">Échec du téléchargement</string>
@@ -14,29 +15,13 @@
     <string name="sync_prelaunch_write_failed">Échec de l\'écriture</string>
     <string name="sync_prelaunch_launching">Lancement du jeu...</string>
 
-    <string name="sync_postsession_checking_save">Vérification de la sauvegarde...</string>
-    <string name="sync_postsession_save_found">Sauvegarde trouvée</string>
-    <string name="sync_postsession_save_absent">Sauvegarde introuvable</string>
-    <string name="sync_postsession_connecting">Connexion...</string>
-    <string name="sync_postsession_connected">Connecté</string>
-    <string name="sync_postsession_connect_failed">Échec de la connexion</string>
-    <string name="sync_postsession_uploading">Envoi...</string>
-    <string name="sync_postsession_upload_complete">Envoi terminé</string>
-    <string name="sync_postsession_upload_queued">Envoi en file d\'attente</string>
-    <string name="sync_postsession_complete">Synchronisation terminée</string>
-
     <string name="sync_progress_skipped">Synchronisation ignorée</string>
     <string name="sync_progress_hardcore_conflict">Conflit de sauvegarde en mode hardcore</string>
     <string name="sync_progress_local_modified">Sauvegarde locale modifiée</string>
-    <string name="sync_progress_save_conflict">Conflit de sauvegarde</string>
 
     <string name="sync_blocked_permission_title">Autorisation d\'accès aux fichiers requise</string>
     <string name="sync_blocked_permission_detail">Accordez l\'autorisation \"Accès à tous les fichiers\" pour synchroniser les sauvegardes de %1$s.</string>
     <string name="sync_blocked_permission_emulator_fallback">cet émulateur</string>
-
-    <string name="sync_blocked_path_not_found_title">Dossier de sauvegarde introuvable</string>
-    <string name="sync_blocked_path_not_found_detail">Le dossier de sauvegarde de %1$s est introuvable. L\'émulateur utilise peut-être un emplacement de sauvegarde non standard.</string>
-    <string name="sync_blocked_path_not_found_emulator_fallback">cet émulateur</string>
 
     <string name="sync_blocked_access_denied_title">Accès au dossier de sauvegarde bloqué</string>
     <string name="sync_blocked_access_denied_detail">Votre appareil bloque l\'accès aux données de sauvegarde de %1$s. Cela peut être dû à des restrictions du fabricant (Samsung, Xiaomi, etc.) ou à des politiques de sécurité.</string>
@@ -54,12 +39,10 @@
     <string name="sync_service_saves">Synchronisation des sauvegardes...</string>
     <string name="steam_service_connecting">Connexion...</string>
     <string name="steam_service_signing_in">Authentification...</string>
-    <string name="steam_service_syncing_library">Synchronisation de la bibliothèque Steam...</string>
 
     <string name="sync_download_channel_name">Progression du téléchargement</string>
     <string name="sync_download_channel_description">Affiche la progression du téléchargement en arrière-plan</string>
     <string name="sync_download_service_preparing">Préparation du téléchargement...</string>
-    <string name="sync_download_service_steam_downloading">Téléchargement : %1$s</string>
     <string name="sync_download_service_extracting">Extraction : %1$s</string>
     <string name="sync_download_service_moving">Déplacement vers le stockage ROM : %1$s</string>
     <string name="sync_download_service_downloading">Téléchargement : %1$s</string>
@@ -80,6 +63,9 @@
     <string name="sync_session_save_upload_failed">Échec de l\'envoi</string>
     <string name="sync_session_save_upload_failed_subtitle">%1$s : %2$s</string>
     <string name="sync_session_save_upload_failed_name_fallback">Sauvegarde</string>
+    <string name="sync_session_save_queued">Enregistrée sur cet appareil. Elle n\'a pas encore été envoyée.</string>
+    <string name="sync_session_save_queued_orphan">Enregistrée sur cet appareil. Elle n\'a pas encore été envoyée.</string>
+    <string name="sync_session_save_not_kept">Impossible de copier cette sauvegarde en lieu sûr.</string>
     <string name="sync_migration_refused_title">Impossible de déplacer la sauvegarde de %1$s</string>
     <string name="sync_migration_refused_no_route">Argosy ne peut pas convertir les sauvegardes entre ces deux émulateurs</string>
     <string name="sync_migration_refused_unreadable">Le dossier de sauvegarde de l\'émulateur est illisible</string>
@@ -144,10 +130,6 @@
     <string name="sync_steam_rate_limited_subtitle">Limite de connexion atteinte. Réessayez dans une heure</string>
     <string name="sync_steam_auth_expired_title">Session Steam expirée</string>
     <string name="sync_steam_auth_expired_subtitle">Reconnectez-vous depuis Paramètres &gt; Steam</string>
-    <string name="sync_steam_download_signed_out_title">Session Steam expirée</string>
-    <string name="sync_steam_download_signed_out_subtitle">Connectez-vous depuis Paramètres &gt; Steam pour télécharger</string>
-    <string name="sync_steam_path_blocked_title">Impossible de télécharger %1$s</string>
-    <string name="sync_steam_storage_blocked_title">Impossible de télécharger %1$s</string>
 
     <string name="sync_steam_qr_rate_limited">Limite atteinte. Réessayez plus tard</string>
     <string name="sync_steam_qr_login_failed">Échec de la connexion : %1$s</string>
@@ -157,4 +139,15 @@
     <string name="sync_steam_qr_disconnected">Steam non connecté</string>
 
     <string name="sync_launch_core_fallback">Échec du chargement de %1$s, utilisation de %2$s à la place</string>
+
+    <plurals name="sync_screenshot_uploaded">
+        <item quantity="one">%1$d capture d\'écran envoyée</item>
+        <item quantity="many">%1$d captures d\'écran envoyées</item>
+        <item quantity="other">%1$d captures d\'écran envoyées</item>
+    </plurals>
+    <plurals name="sync_screenshot_rejected">
+        <item quantity="one">RomM n\'a pas accepté %1$d capture d\'écran</item>
+        <item quantity="many">RomM n\'a pas accepté %1$d captures d\'écran</item>
+        <item quantity="other">RomM n\'a pas accepté %1$d captures d\'écran</item>
+    </plurals>
 </resources>

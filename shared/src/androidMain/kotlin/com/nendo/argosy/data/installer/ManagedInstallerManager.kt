@@ -38,6 +38,26 @@ private const val TAG = "ManagedInstaller"
 private const val BUFFER_SIZE = 64 * 1024
 private const val CACHE_DIR_NAME = "managed_installer_apks"
 
+sealed class InstallerJobState {
+    data object Idle : InstallerJobState()
+    data object Checking : InstallerJobState()
+    data class Downloading(val progress: Float) : InstallerJobState()
+    data object WaitingForInstall : InstallerJobState()
+    data class NeedsVariantChoice(val assets: List<GitHubAsset>) : InstallerJobState()
+    data class Failed(val reason: InstallerFailure) : InstallerJobState()
+}
+
+enum class InstallerFailure {
+    NO_RELEASE,
+    NO_APK,
+    DOWNLOAD,
+    RATE_LIMITED,
+    NOT_FOUND,
+    WRONG_PACKAGE
+}
+
+data class InstallerJob(val installerId: Long, val state: InstallerJobState)
+
 @Singleton
 actual class ManagedInstallerManager @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -214,7 +234,17 @@ actual class ManagedInstallerManager @Inject constructor(
             val apkFile = download(row.id, asset)
                 ?: return@launch fail(row.id, InstallerFailure.DOWNLOAD)
 
-            val expectedPackage = row.packageName ?: apkArchivePackageName(context, apkFile)
+            val archivePackage = apkArchivePackageName(context, apkFile)
+            if (archivePackage == null) {
+                apkFile.delete()
+                return@launch fail(row.id, InstallerFailure.DOWNLOAD)
+            }
+            if (row.packageName != null && row.packageName != archivePackage) {
+                Logger.warn(TAG, "Installer ${row.id} served $archivePackage, expected ${row.packageName}")
+                apkFile.delete()
+                return@launch fail(row.id, InstallerFailure.WRONG_PACKAGE)
+            }
+            val expectedPackage = archivePackage
             pending = PendingInstall(
                 installerId = row.id,
                 apkPath = apkFile.absolutePath,
@@ -238,6 +268,7 @@ actual class ManagedInstallerManager @Inject constructor(
         withContext(Dispatchers.IO) {
             val cacheDir = File(context.cacheDir, CACHE_DIR_NAME).apply { mkdirs() }
             val apkFile = File(cacheDir, FileNames.sanitize(asset.name))
+            val partFile = File(cacheDir, apkFile.name + ".part")
             try {
                 val request = Request.Builder()
                     .url(asset.downloadUrl)
@@ -248,7 +279,7 @@ actual class ManagedInstallerManager @Inject constructor(
                     val body = response.body ?: return@withContext null
                     val total = body.contentLength()
                     var read = 0L
-                    FileOutputStream(apkFile).use { output ->
+                    FileOutputStream(partFile).use { output ->
                         body.byteStream().use { input ->
                             val buffer = ByteArray(BUFFER_SIZE)
                             var count: Int
@@ -264,11 +295,20 @@ actual class ManagedInstallerManager @Inject constructor(
                             }
                         }
                     }
+                    if (total > 0 && read != total) {
+                        partFile.delete()
+                        return@withContext null
+                    }
+                }
+                apkFile.delete()
+                if (!partFile.renameTo(apkFile)) {
+                    partFile.delete()
+                    return@withContext null
                 }
                 apkFile
             } catch (e: Exception) {
                 Logger.error(TAG, "Download threw", e)
-                apkFile.delete()
+                partFile.delete()
                 null
             }
         }

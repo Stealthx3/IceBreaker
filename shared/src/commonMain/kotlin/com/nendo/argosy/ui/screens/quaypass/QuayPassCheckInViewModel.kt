@@ -252,8 +252,9 @@ class QuayPassCheckInViewModel @Inject constructor(
                 true
             }
             socialRepository.isConnected() -> {
-                socialRepository.sendFriendRequest(accountId)
-                sessionSentAccountIds.update { it + accountId }
+                if (socialRepository.sendFriendRequest(accountId)) {
+                    sessionSentAccountIds.update { it + accountId }
+                }
                 true
             }
             else -> {

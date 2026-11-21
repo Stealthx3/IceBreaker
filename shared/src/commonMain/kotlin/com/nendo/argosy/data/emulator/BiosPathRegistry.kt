@@ -16,12 +16,11 @@ data class BiosRequirement(
 /**
  * Where an emulator reads BIOS files from, and which platforms it will accept them for.
  *
- * [acceptsAnyPlatform] belongs to emulators that own a flat system directory and take whatever
- * is put in it: the built-in core host and RetroArch. Every platform a downloaded firmware file
- * names is one they can be handed, so listing platforms would restate what the firmware rows
- * already say, and a platform missing from the list gets no BIOS with nothing on screen to say
- * why. The built-in emulator's [defaultPaths] are empty for a separate reason: its directory is
- * internal and resolved at runtime by BiosRepository.getLibretroSystemDir.
+ * [acceptsAnyPlatform] marks emulators with a flat system directory that take whatever is put in
+ * it: the built-in core host and RetroArch. [supports] is true for every platform on either.
+ * [actsUnprompted] is true for every platform on the built-in host alone, whose [defaultPaths]
+ * are empty and whose directory BiosRepository.getLibretroSystemDir resolves at runtime.
+ * RetroArch declares [defaultPaths], and automatic distribution and cleanup skip it.
  */
 data class BiosPathConfig(
     val emulatorId: String,
@@ -33,22 +32,13 @@ data class BiosPathConfig(
      * the user supplies; the shared md5 and nested-path tables stay global because those names
      * are not one emulator's private preference.
      */
-    val fileNameOverrides: Map<String, String> = emptyMap(),
-    /**
-     * Names that must never be replaced or swept once present. A firmware blob is static and
-     * overwriting it is harmless, but a disk image is a volume the user's saves live inside, so
-     * redistributing over it destroys them.
-     */
-    val writeOnceFileNames: Set<String> = emptySet()
+    val fileNameOverrides: Map<String, String> = emptyMap()
 ) {
     fun targetNameFor(fileName: String): String =
         fileNameOverrides.entries
             .firstOrNull { it.key.equals(fileName, ignoreCase = true) }
             ?.value
             ?: fileName
-
-    fun isWriteOnce(fileName: String): Boolean =
-        writeOnceFileNames.any { it.equals(fileName, ignoreCase = true) }
 
     fun supports(canonicalSlug: String): Boolean =
         acceptsAnyPlatform || canonicalSlug in supportedPlatforms
@@ -281,19 +271,11 @@ object BiosPathRegistry {
                 "xbox",
                 "Complex_4627.bin",
                 null,
-                "Flash ROM. A retail Xbox BIOS does not boot under xemu-derived emulators, " +
-                    "which leave its DRM unimplemented; Complex 4627 is the build hakuX asks " +
-                    "for. Also ships as Complex_4627v1.03.bin.",
-                isRequired = true
+                "Flash ROM. hakuX boots without it and reads it only to re-sign saves copied " +
+                    "from a real console. Also ships as Complex_4627v1.03.bin.",
+                isRequired = false
             ),
-            BiosRequirement("xbox", "mcpx_1.0.bin", null, "MCPX boot ROM", isRequired = true),
-            BiosRequirement(
-                "xbox",
-                "xbox_hdd.qcow2",
-                null,
-                "Hard disk image. Any compatible 8GB prebuilt image also works.",
-                isRequired = true
-            )
+            BiosRequirement("xbox", "mcpx_1.0.bin", null, "MCPX boot ROM", isRequired = false)
         ),
         "amiga" to listOf(
             BiosRequirement("amiga", "kick34005.A500", "82a21c1890cae844b3df741f2762d48d", "Kickstart v1.3 rev 34.005 (A500)", isRequired = false),
@@ -311,6 +293,15 @@ object BiosPathRegistry {
             BiosRequirement("cdtv", "kick34005.CDTV", "89da1838a24460e4b93f4f0c5d92d48d", "CDTV extended ROM v1.00", isRequired = false)
         )
     )
+
+    private val retiredFirmwareNames = setOf("xbox_hdd.qcow2")
+
+    /**
+     * Firmware no supported emulator reads. Argosy neither tracks nor keeps these files, even
+     * when the server offers them.
+     */
+    fun isRetiredFirmware(fileName: String): Boolean =
+        retiredFirmwareNames.any { it.equals(fileName, ignoreCase = true) }
 
     private val primaryRoot: String get() = StoragePathUtils.primaryExternalRoot
 
@@ -359,10 +350,8 @@ object BiosPathRegistry {
             fileNameOverrides = mapOf(
                 "Complex_4627.bin" to "flash.bin",
                 "Complex_4627v1.03.bin" to "flash.bin",
-                "mcpx_1.0.bin" to "mcpx.bin",
-                "xbox_hdd.qcow2" to "hdd.img"
-            ),
-            writeOnceFileNames = setOf("xbox_hdd.qcow2")
+                "mcpx_1.0.bin" to "mcpx.bin"
+            )
         ),
         "melonds" to BiosPathConfig(
             emulatorId = "melonds",

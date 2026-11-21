@@ -23,7 +23,7 @@ enum class HardcoreConflictChoice { KEEP_HARDCORE, DOWNGRADE_TO_CASUAL, KEEP_LOC
 enum class LocalModifiedChoice { KEEP_LOCAL, RESTORE_SELECTED, LAUNCH_WITHOUT_SYNC }
 
 data class LaunchResultCallbacks(
-    val onLaunch: (Intent) -> Unit,
+    val start: GameStart,
     val onSelectDisc: ((List<DiscOption>) -> Unit)? = null,
     val onSelectVariant: ((List<com.nendo.argosy.data.emulator.VariantOption>) -> Unit)? = null,
     val onNoEmulator: (() -> Unit)? = null,
@@ -49,7 +49,7 @@ data class DiscPickerState(
     val channelName: String? = null,
     val launchMode: LaunchMode? = null,
     val origin: LaunchOrigin = LaunchOrigin.INTERNAL,
-    val onLaunch: (Intent) -> Unit
+    val start: GameStart
 )
 
 data class VariantPickerState(
@@ -58,7 +58,7 @@ data class VariantPickerState(
     val channelName: String? = null,
     val launchMode: LaunchMode? = null,
     val origin: LaunchOrigin = LaunchOrigin.INTERNAL,
-    val onLaunch: (Intent) -> Unit
+    val start: GameStart
 )
 
 data class MemcardPickerState(
@@ -69,5 +69,5 @@ data class MemcardPickerState(
     val channelName: String? = null,
     val launchMode: LaunchMode? = null,
     val origin: LaunchOrigin = LaunchOrigin.INTERNAL,
-    val onLaunch: (Intent) -> Unit
+    val start: GameStart
 )

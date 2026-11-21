@@ -54,6 +54,8 @@ import com.nendo.argosy.hardware.DevicePerformanceResolver
 import com.nendo.argosy.hardware.VolumeController
 import com.nendo.argosy.ui.components.QuickSettingsController
 import com.nendo.argosy.ui.components.friends.QuickFriendsController
+import com.nendo.argosy.ui.components.connections.QuickConnectionsController
+import com.nendo.argosy.ui.components.InputButton
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.ui.input.InputDispatcher.Companion.computeWrappedIndex
 import com.nendo.argosy.ui.input.GamepadInputHandler
@@ -160,7 +162,11 @@ data class NavRingState(
     val footerYieldsToBar: Boolean get() = isBarVisible && !isAlwaysVisible
 }
 
-private fun isNavRouteAvailable(route: String, socialConnected: Boolean, mediaSignedIn: Boolean): Boolean =
+private fun isNavRouteAvailable(
+    route: String,
+    socialConnected: Boolean,
+    mediaSignedIn: Boolean
+): Boolean =
     when (route) {
         Screen.Social.route -> socialConnected
         Screen.MediaLibrary.route -> mediaSignedIn
@@ -194,12 +200,14 @@ class ArgosyViewModel @Inject constructor(
     private val brightnessController: BrightnessController,
     private val volumeController: VolumeController,
     private val performanceResolver: DevicePerformanceResolver,
+    private val performanceModeStore: com.nendo.argosy.hardware.PerformanceModeStore,
     private val displayRefreshController: DisplayRefreshController,
+    private val hardwareStatsReader: com.nendo.argosy.hardware.HardwareStatsReader,
+    private val radioController: com.nendo.argosy.hardware.RadioController,
     private val platformSyncQueue: com.nendo.argosy.data.sync.PlatformSyncQueue,
     private val socialRepository: SocialRepository,
-    private val steamContentManager: com.nendo.argosy.data.steam.SteamContentManager,
     private val mediaDownloadManager: com.nendo.argosy.data.download.MediaDownloadManager,
-    val steamDownloadPromptController: com.nendo.argosy.data.steam.SteamDownloadPromptController,
+    val steamLauncherLinkController: com.nendo.argosy.data.steam.SteamLauncherLinkController,
     val coreCrashController: com.nendo.argosy.libretro.CoreCrashController,
     private val netplayPreflightChecker: NetplayPreflightChecker,
     private val netplayJoinService: com.nendo.argosy.data.netplay.NetplayJoinService,
@@ -209,6 +217,8 @@ class ArgosyViewModel @Inject constructor(
     private val deepLinkLaunchCoordinator: com.nendo.argosy.ui.deeplink.DeepLinkLaunchCoordinator,
     private val gameStartRouter: com.nendo.argosy.ui.screens.common.GameStartRouter,
     private val connectedControllerTracker: com.nendo.argosy.core.input.ConnectedControllerTracker,
+    val apkInstallManager: com.nendo.argosy.data.update.ApkInstallManager,
+    val privilegedAccess: com.nendo.argosy.data.access.PrivilegedAccess,
     private val navigationButtonCapture: com.nendo.argosy.ui.input.NavigationButtonCapture
 ) : ViewModel() {
 
@@ -354,12 +364,16 @@ class ArgosyViewModel @Inject constructor(
 
     val quickFriends = QuickFriendsController(socialRepository, preferencesRepository, viewModelScope)
 
+    val quickConnections = QuickConnectionsController(radioController, viewModelScope)
+
     val quickSettings = QuickSettingsController(
         preferencesRepository = preferencesRepository,
         brightnessController = brightnessController,
         volumeController = volumeController,
         performanceResolver = performanceResolver,
+        performanceStore = performanceModeStore,
         refreshController = displayRefreshController,
+        hardwareStatsReader = hardwareStatsReader,
         socialRepository = socialRepository,
         hapticManager = hapticManager,
         soundManager = soundManager,
@@ -378,8 +392,6 @@ class ArgosyViewModel @Inject constructor(
             ) { emulators, cores -> emulators + cores },
             _navFocusIndex,
             socialRepository.connectionState,
-            steamContentManager.activeDownload,
-            steamContentManager.downloadQueue,
             ownedConflictCount(),
             preferencesRepository.userPreferences,
             mediaDownloadManager.activeDownload,
@@ -391,19 +403,13 @@ class ArgosyViewModel @Inject constructor(
         val pendingUpdateCount = values[2] as Int
         val navIndex = values[3] as Int
         val socialConnection = values[4] as SocialConnectionState
-        val steamActiveDownload = values[5] as com.nendo.argosy.data.steam.SteamDownloadProgress?
+        val saveSyncAttentionCount = values[5] as Int
+        val userPrefs = values[6] as com.nendo.argosy.data.preferences.UserPreferences
+        val mediaActiveDownload = values[7] as com.nendo.argosy.data.download.MediaDownloadProgress?
         @Suppress("UNCHECKED_CAST")
-        val steamQueue = values[6] as List<com.nendo.argosy.data.steam.QueuedSteamDownload>
-        val saveSyncAttentionCount = values[7] as Int
-        val userPrefs = values[8] as com.nendo.argosy.data.preferences.UserPreferences
-        val mediaActiveDownload = values[9] as com.nendo.argosy.data.download.MediaDownloadProgress?
-        @Suppress("UNCHECKED_CAST")
-        val mediaQueue = values[10] as List<com.nendo.argosy.data.download.QueuedMediaDownload>
+        val mediaQueue = values[8] as List<com.nendo.argosy.data.download.QueuedMediaDownload>
 
-        val steamActive = steamActiveDownload != null
-        val steamQueued = steamQueue.size
         val downloadCount = downloads.activeDownloads.size + downloads.queue.size +
-            (if (steamActive) 1 else 0) + steamQueued +
             (if (mediaActiveDownload != null) 1 else 0) + mediaQueue.size
         DrawerState(
             rommConnected = connection is ConnectionState.Connected,
@@ -430,7 +436,9 @@ class ArgosyViewModel @Inject constructor(
     val drawerItems: List<DrawerItem>
         get() {
             val socialConnected = socialRepository.connectionState.value is SocialConnectionState.Connected
-            return allDrawerItems.filter { isNavRouteAvailable(it.route, socialConnected, _isMediaSignedIn) }
+            return allDrawerItems.filter {
+                isNavRouteAvailable(it.route, socialConnected, _isMediaSignedIn)
+            }
         }
 
     private val navBarVisibility = NavBarVisibility(viewModelScope)

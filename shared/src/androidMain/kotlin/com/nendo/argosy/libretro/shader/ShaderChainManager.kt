@@ -339,7 +339,7 @@ actual class ShaderChainManager actual constructor(
 
                 val outputWidth = simWidth * PREVIEW_UPSCALE
                 val outputHeight = simHeight * PREVIEW_UPSCALE
-                val shaderConfig = ShaderConfig.Custom(passes = allPasses)
+                val shaderConfig = ShaderConfig.Custom(passes = shaderRegistry.withOriginalSizesBound(allPasses))
                 val rendered = previewRenderer.render(
                     inputBitmap = inputBitmap,
                     shaderConfig = shaderConfig,
