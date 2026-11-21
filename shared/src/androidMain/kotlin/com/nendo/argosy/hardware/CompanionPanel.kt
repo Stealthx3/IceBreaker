@@ -12,11 +12,7 @@ import java.time.Instant
  * The flag can change while the metadata is being loaded, so the metadata snapshot
  * must not replace it with its default.
  */
-internal fun CompanionInGameState.withLiveQuickActionState(
-    quickActionsAvailable: Boolean
-): CompanionInGameState = copy(quickActionsAvailable = quickActionsAvailable)
-
-class CompanionSessionTimer {
+actual class CompanionSessionTimer {
     private var screenOnDuration: Duration = Duration.ZERO
     private var lastScreenOnTime: Instant? = null
     private var isScreenOn = true

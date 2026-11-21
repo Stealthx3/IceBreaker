@@ -158,7 +158,7 @@ actual class SteamService : Service() {
         nm.notify(NOTIFICATION_ID, notification)
     }
 
-    companion object {
+    actual companion object {
         actual const val EXTRA_FORCE_CONNECT = "force_connect"
         actual const val EXTRA_CONNECT_FOR_AUTH = "connect_for_auth"
         private const val MAX_RECONNECT_ATTEMPTS = 5

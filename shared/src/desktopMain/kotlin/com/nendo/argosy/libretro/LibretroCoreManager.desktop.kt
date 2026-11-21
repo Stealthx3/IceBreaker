@@ -28,7 +28,7 @@ actual class LibretroCoreManager @Inject constructor() {
 
     actual suspend fun downloadCoreForPlatform(platformSlug: String): Result<String> = Result.failure(UnsupportedOperationException("not available on desktop"))
 
-    actual suspend fun downloadCoreForPlatform(platformSlug: String, selectedCoreId: String?, onProgress: ((Float) -> Unit)?): Result<String> = Result.failure(UnsupportedOperationException("not available on desktop"))
+    actual suspend fun downloadCoreForPlatform(platformSlug: String, selectedCoreId: String?, onProgress: ((fraction: Float, zipBytes: Long) -> Unit)?): Result<String> = Result.failure(UnsupportedOperationException("not available on desktop"))
 
     actual suspend fun downloadCoreById(coreId: String): Result<File> = Result.failure(UnsupportedOperationException("not available on desktop"))
 

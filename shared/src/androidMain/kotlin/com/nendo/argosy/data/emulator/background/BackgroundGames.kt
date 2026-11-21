@@ -28,7 +28,7 @@ import com.nendo.argosy.platform.getQuantityString
 import com.nendo.argosy.platform.getString
 import com.nendo.argosy.platform.resources
 import com.nendo.argosy.platform.PlatformBuild as Build
-import com.nendo.argosy.platform.PlatformProcess as Process
+import android.os.Process
 import android.view.Display
 import com.nendo.argosy.data.emulator.ActiveSession
 import com.nendo.argosy.data.emulator.EmulatorRegistry

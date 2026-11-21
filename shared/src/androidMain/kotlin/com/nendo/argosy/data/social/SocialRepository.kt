@@ -769,7 +769,7 @@ actual class SocialRepository @Inject constructor(
         socialService.reconnectIfNeeded()
     }
 
-    actual fun requestUserProfile(userId: String? = null): Boolean {
+    actual fun requestUserProfile(userId: String?): Boolean {
         if (!socialService.isConnected()) return false
         _isLoadingProfile.update { true }
         val sent = socialService.requestUserProfile(userId)
@@ -1148,7 +1148,7 @@ actual class SocialRepository @Inject constructor(
         return true
     }
 
-    actual fun reportEvent(eventId: String, reason: String? = null): Boolean {
+    actual fun reportEvent(eventId: String, reason: String?): Boolean {
         Log.d(TAG, "reportEvent: eventId=$eventId, reason=$reason, connected=${socialService.isConnected()}")
         return sendWrite { socialService.reportEvent(eventId, reason) }
     }
@@ -1228,12 +1228,11 @@ actual class SocialRepository @Inject constructor(
 
     actual fun createPost(
         body: String,
-        canvasSize: Int? = null,
-        doodleData: String? = null,
-        igdbId: Int? = null,
-        gameTitle: String? = null,
-        public: Boolean = false
-    ): Boolean = sendWrite {
+        canvasSize: Int?,
+        doodleData: String?,
+        igdbId: Int?,
+        gameTitle: String?,
+        public: Boolean): Boolean = sendWrite {
         socialService.createPost(body, canvasSize, doodleData, igdbId, gameTitle, public)
     }
 

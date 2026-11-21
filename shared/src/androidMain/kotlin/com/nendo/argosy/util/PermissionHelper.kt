@@ -131,8 +131,7 @@ actual class PermissionHelper @Inject constructor() {
     actual fun isPackageOnScreenOrRecent(
         context: Context,
         packageName: String,
-        recencyMs: Long = RECENT_USE_WINDOW_MS
-    ): Boolean {
+        recencyMs: Long): Boolean {
         isPackageOnScreen(context, packageName)?.let { return it }
         return isPackageInForeground(context, packageName, recencyMs)
     }
@@ -285,7 +284,7 @@ actual class PermissionHelper @Inject constructor() {
         return SessionDurations(foregroundMs, finalScreenOn)
     }
 
-    companion object {
+    actual companion object {
         const val RECENT_USE_WINDOW_MS = 15_000L
         private const val SCREEN_INTERACTIVE = 15
         private const val SCREEN_NON_INTERACTIVE = 16

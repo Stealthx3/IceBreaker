@@ -457,6 +457,8 @@ kotlin {
             implementation("org.bitlet:weupnp:0.1.4")
         }
         androidMain.dependencies {
+            implementation(libs.shizuku.api)
+            implementation(libs.shizuku.provider)
             if (findProject(":sigil") != null) implementation(project(":sigil"))
             if (findProject(":libretrodroid") != null) implementation(project(":libretrodroid"))
             implementation(project(":graphics-shim-android"))

@@ -31,10 +31,10 @@ actual class SaveStateManager actual constructor(
     private val diskJudge: ActiveSaveDiskJudge,
     private val secureSaves: Boolean,
     private val ownerUserId: Long?,
-    private val usesExternalMemcard: Boolean = false,
-    private val channelName: String? = null,
-    private val isVariant: Boolean = false,
-    primarySavePath: String? = null,
+    private val usesExternalMemcard: Boolean,
+    private val channelName: String?,
+    private val isVariant: Boolean,
+    primarySavePath: String?,
     private val onLiveStateWritten: ((Int, File) -> Unit)? = null,
     private val onLiveStateRemoved: ((Int, File) -> Unit)? = null
 ) {

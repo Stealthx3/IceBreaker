@@ -15,7 +15,7 @@ private const val GN_PACKAGE = "app.gamenative"
 private const val DOWNLOAD_COMPLETE_MARKER = ".download_complete"
 
 @Singleton
-class SteamPathResolver @Inject constructor(
+actual class SteamPathResolver @Inject constructor(
     private val gameDao: GameDao,
     private val androidDataAccessor: AndroidDataAccessor,
     private val storageVolumeDetector: StorageVolumeDetector

@@ -6,7 +6,7 @@ import com.nendo.argosy.data.repository.SaveCacheManager
 import java.io.File
 import javax.inject.Inject
 
-actual class SaveStateManager actual constructor(savesDir: File, statesDir: File, romPath: String, gameId: Long, activeSaveRepository: ActiveSaveRepository, saveCacheManager: SaveCacheManager, usesExternalMemcard: Boolean, channelName: String?, isVariant: Boolean, primarySavePath: String?, onLiveStateWritten: ((Int, File) -> Unit)?, onLiveStateRemoved: ((Int, File) -> Unit)?) {
+actual class SaveStateManager actual constructor(savesDir: File, statesDir: File, romPath: String, gameId: Long, activeSaveRepository: ActiveSaveRepository, saveCacheManager: SaveCacheManager, diskJudge: com.nendo.argosy.data.repository.ActiveSaveDiskJudge, secureSaves: Boolean, ownerUserId: Long?, usesExternalMemcard: Boolean, channelName: String?, isVariant: Boolean, primarySavePath: String?, onLiveStateWritten: ((Int, File) -> Unit)?, onLiveStateRemoved: ((Int, File) -> Unit)?) {
     actual data class RestoreResult(
         actual val sramData: ByteArray?,
         actual val switchToHardcore: Boolean = false,

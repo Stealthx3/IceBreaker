@@ -26,7 +26,7 @@ expect class LibretroCoreManager {
 
     suspend fun downloadCoreForPlatform(platformSlug: String): Result<String>
 
-    suspend fun downloadCoreForPlatform(platformSlug: String, selectedCoreId: String?, onProgress: ((Float) -> Unit)? = null): Result<String>
+    suspend fun downloadCoreForPlatform(platformSlug: String, selectedCoreId: String?, onProgress: ((fraction: Float, zipBytes: Long) -> Unit)? = null): Result<String>
 
     suspend fun downloadCoreById(coreId: String): Result<File>
 

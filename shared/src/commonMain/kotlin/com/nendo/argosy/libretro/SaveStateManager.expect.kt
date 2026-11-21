@@ -13,7 +13,7 @@ import com.nendo.argosy.data.repository.ActiveSaveRepository
 import com.nendo.argosy.data.repository.SaveCacheManager
 import java.io.File
 
-expect class SaveStateManager(savesDir: File, statesDir: File, romPath: String, gameId: Long, activeSaveRepository: ActiveSaveRepository, saveCacheManager: SaveCacheManager, usesExternalMemcard: Boolean = false, channelName: String? = null, isVariant: Boolean = false, primarySavePath: String? = null, onLiveStateWritten: ((Int, File) -> Unit)? = null, onLiveStateRemoved: ((Int, File) -> Unit)? = null) {
+expect class SaveStateManager(savesDir: File, statesDir: File, romPath: String, gameId: Long, activeSaveRepository: ActiveSaveRepository, saveCacheManager: SaveCacheManager, diskJudge: com.nendo.argosy.data.repository.ActiveSaveDiskJudge, secureSaves: Boolean, ownerUserId: Long?, usesExternalMemcard: Boolean = false, channelName: String? = null, isVariant: Boolean = false, primarySavePath: String? = null, onLiveStateWritten: ((Int, File) -> Unit)? = null, onLiveStateRemoved: ((Int, File) -> Unit)? = null) {
     class RestoreResult {
         val sramData: ByteArray?
         val switchToHardcore: Boolean

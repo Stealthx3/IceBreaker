@@ -18,11 +18,11 @@ private const val TAG = "VerifyRAGameIdUseCase"
 
 data class HashVerification(val raId: Long?, val matchedHash: String?)
 
-class VerifyRAGameIdUseCase @Inject constructor(
+actual class VerifyRAGameIdUseCase @Inject constructor(
     private val gameDao: GameDao,
     private val raRepository: RetroAchievementsRepository
 ) {
-    suspend operator fun invoke(gameId: Long, forceRehash: Boolean = false): Long? =
+    actual suspend operator fun invoke(gameId: Long, forceRehash: Boolean): Long? =
         withContext(Dispatchers.IO) { verify(gameId, forceRehash).raId }
 
     /**

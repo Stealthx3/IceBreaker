@@ -298,9 +298,8 @@ actual class DisplayAffinityHelper @Inject constructor(
 
     actual fun getActivityOptions(
         forEmulator: Boolean,
-        rolesSwapped: Boolean = false,
-        overrideDisplayId: Int? = null
-    ): Bundle? {
+        rolesSwapped: Boolean,
+        overrideDisplayId: Int?): Bundle? {
         val targetDisplayId = launchDisplayId(forEmulator, rolesSwapped, overrideDisplayId) ?: return null
         return ActivityOptions.makeBasic()
             .setLaunchDisplayId(targetDisplayId)

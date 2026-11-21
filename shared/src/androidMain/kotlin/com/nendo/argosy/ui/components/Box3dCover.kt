@@ -84,9 +84,9 @@ private val loggedDecodeFailures = java.util.Collections.newSetFromMap(
 actual fun Box3dCover(
     frontPath: String,
     spinePath: String,
-    backPath: String? = null,
-    modifier: Modifier = Modifier,
-    isInteractive: Boolean = true,
+    backPath: String?,
+    modifier: Modifier,
+    isInteractive: Boolean,
     onUnavailable: () -> Unit = {},
     fallback: @Composable () -> Unit = {}
 ) {
