@@ -49,7 +49,9 @@ exec 3>"$fifo"
 sleep "$settle"
 for step in "${steps[@]}"; do
   case "$step" in
-    shot:*) import -window "$win" "$outdir/${step#shot:}.png" && echo "screenshot $outdir/${step#shot:}.png t=$(date +%s%3N)" ;;
+    shot:*) name="${step#shot:}"; tmp="$(dirname "$fifo")/shot-$name.png"; rm -f "$tmp"; echo "SHOT:$tmp" >&3
+            for _ in $(seq 1 50); do [ -s "$tmp" ] && break; sleep 0.2; done
+            if [ -s "$tmp" ]; then mv "$tmp" "$outdir/$name.png"; echo "screenshot $outdir/$name.png t=$(date +%s%3N)"; else echo "screenshot $name failed"; fi ;;
     wait:*) sleep "${step#wait:}" ;;
     TYPE:*) echo "$step" >&3; echo "type ${step#TYPE:} t=$(date +%s%3N)"; sleep 1 ;;
     TYPEFILE:*) echo "TYPE:$(head -n1 "${step#TYPEFILE:}")" >&3; echo "type <${step#TYPEFILE:}> t=$(date +%s%3N)"; sleep 1 ;;

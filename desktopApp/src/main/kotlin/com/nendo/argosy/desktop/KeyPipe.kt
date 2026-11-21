@@ -22,6 +22,7 @@ import javax.swing.SwingUtilities
  * (`PAD:LEFTY=32767`, back to rest with `=0`), through the app's real SDL gamepad path. A line
  * `TYPE:<text>` types the text as it stands (case kept), one press, typed and release per character.
  * A line `CLICK:<x>,<y>` clicks the left mouse button at that point of the window's content area.
+ * A line `SHOT:<file>` writes the window's own rendered content to <file> as PNG.
  */
 class KeyPipe(private val pipe: File, private val gamepads: DesktopGamepadDispatcher) {
     @Volatile
@@ -43,6 +44,10 @@ class KeyPipe(private val pipe: File, private val gamepads: DesktopGamepadDispat
     }
 
     private fun press(line: String) {
+        if (line.startsWith(SHOT_PREFIX)) {
+            shot(File(line.removePrefix(SHOT_PREFIX).trim()))
+            return
+        }
         if (line.startsWith(TYPE_PREFIX)) {
             line.removePrefix(TYPE_PREFIX).forEach(::type)
             return
@@ -96,6 +101,29 @@ class KeyPipe(private val pipe: File, private val gamepads: DesktopGamepadDispat
         target.setButton(button, true)
         Thread.sleep(HOLD_MS)
         target.setButton(button, false)
+    }
+
+    private fun shot(target: File) {
+        val root = window ?: return
+        SwingUtilities.invokeAndWait {
+            val layer = findLayer(root)
+            val bitmap = layer?.screenshot()
+            if (bitmap == null) {
+                System.err.println("key-pipe: no rendered layer to capture")
+                return@invokeAndWait
+            }
+            val png = org.jetbrains.skia.Image.makeFromBitmap(bitmap).encodeToData(org.jetbrains.skia.EncodedImageFormat.PNG)
+            target.parentFile?.mkdirs()
+            if (png != null) target.writeBytes(png.bytes)
+        }
+    }
+
+    private fun findLayer(component: Component): org.jetbrains.skiko.SkiaLayer? {
+        if (component is org.jetbrains.skiko.SkiaLayer) return component
+        if (component is Container) {
+            for (child in component.components) findLayer(child)?.let { return it }
+        }
+        return null
     }
 
     private fun click(command: String) {
@@ -154,6 +182,7 @@ class KeyPipe(private val pipe: File, private val gamepads: DesktopGamepadDispat
         const val HOLD_MS = 80L
         const val PAD_PREFIX = "PAD:"
         const val CLICK_PREFIX = "CLICK:"
+        const val SHOT_PREFIX = "SHOT:"
         const val TYPE_PREFIX = "TYPE:"
         const val TYPE_GAP_MS = 20L
         const val PAD_READY_MS = 5_000L
