@@ -51,6 +51,12 @@ def main():
 
     if not git_command.runs_gh_pr_create(cmd):
         return 0
+    try:
+        target_repo = load_ci_module(root, "target_repo")
+        if target_repo.targets_other_repository(payload, cmd, root, "gh"):
+            return 0
+    except Exception:
+        pass
 
     sha = head_sha(root)
     if sha is None:

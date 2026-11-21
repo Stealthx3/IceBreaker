@@ -92,6 +92,12 @@ def main():
     pushes = [args for subcommand, args in git_command.git_invocations(cmd) if subcommand == "push"]
     if all("--dry-run" in args for args in pushes):
         return 0
+    try:
+        target_repo = load_ci_module(root, "target_repo")
+        if target_repo.targets_other_repository(payload, cmd, root, "git"):
+            return 0
+    except Exception:
+        pass
 
     changed = outgoing_kotlin(root)
     if not changed:
