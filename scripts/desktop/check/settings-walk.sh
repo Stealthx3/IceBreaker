@@ -2,7 +2,7 @@
 # usage: settings-walk.sh android|desktop <outdir>; the same pad walk on the check AVD (adb keyevents) or desktop (desktop-drive.sh): Home, drawer to Settings, then open, shoot and leave each of the first 20 rows.
 set -u
 mode=$1; out=$2
-cd /path/to/Personal/Projects/Git/argosy-desktop
+cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 steps=(shot:home START wait:2 DOWN*8 wait:1 A wait:3 shot:settings)
 for i in $(seq -w 0 19); do steps+=(A wait:3 shot:row$i B wait:2 DOWN wait:1); done
 steps+=(shot:settings-end)

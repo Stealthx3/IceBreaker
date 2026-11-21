@@ -3,7 +3,7 @@
 set -u
 mode=$1; out=$2; shift 2
 steps=("$@")
-cd /path/to/Personal/Projects/Git/argosy-desktop
+cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 if [ "$mode" = android ]; then
   ADB="$HOME/Android/Sdk/platform-tools/adb -s emulator-5556"
   mkdir -p "$out"

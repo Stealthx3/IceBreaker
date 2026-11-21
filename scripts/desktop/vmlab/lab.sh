@@ -1,6 +1,7 @@
 # Shared settings for the Argosy Desktop VM test lab. Sourced by the other vmlab scripts.
 # VMs are named argosy-lab-<profile>; nothing here touches any other domain.
-LAB=/path/to/VMs/argosy-lab
+LAB=${ARGOSY_LAB_DIR:-$(cat "$(dirname "${BASH_SOURCE[0]}")/lab-dir.local" 2>/dev/null)}
+[ -n "$LAB" ] || { echo "set ARGOSY_LAB_DIR or write the lab folder to scripts/desktop/vmlab/lab-dir.local" >&2; exit 2; }
 # Session libvirt: the VMs run as the owner (the drive is private to them) and stay apart from the
 # system VMs. Guests use user-mode networking and reach the host, and the RomM testbed, at 10.0.2.2.
 export LIBVIRT_DEFAULT_URI=qemu:///session

@@ -1,0 +1,44 @@
+{
+  "publicIdentity": {
+    "name": "Stealthx3",
+    "handle": "Stealthx3",
+    "email": "6005279+Stealthx3@users.noreply.github.com"
+  },
+  "allow": [
+    "and", "Stealthx3",
+    "10.0.2.2", "192.168.122.1",
+    "deck", "pat", "tester", "00000001",
+    "4.1.1.4", "1.58.0.0", "3.41.2.2", "1.4.0.0", "1.4.3.3", "1.3.1.1"
+  ],
+  "skip": [
+    "libretrodroid/**",
+    "app/**",
+    "shared/src/androidMain/**",
+    "libs/maven/**",
+    ".claude/skills/**",
+    "spikes/compose-desktop-library/src/upstream/**",
+    "spikes/compose-desktop-library/src/extracted/**",
+    "spikes/compose-desktop-library/extracted-decls.txt",
+    "scripts/desktop/restructure/*.txt",
+    "desktopApp/flatpak/generated/**",
+    "docs/save-id-to-path.md",
+    "scripts/jellyfin-auth.sh",
+    "testbed/romm/README.md",
+    "gradle/libs.versions.toml",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/data/emulator/SavePathRegistry.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/data/quaypass/QuayPassCredentialBundle.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/data/remote/jellyfin/JellyfinCapabilities.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/data/repository/SaveSyncApiClient.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/data/social/ArgosSocialService.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/data/steam/SteamAuthManager.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/data/sync/platform/FolderSaveHandler.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/data/sync/platform/GciSaveHandler.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/data/sync/platform/Ps2FolderCardSuperblock.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/data/sync/platform/SwitchSaveHandler.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/data/sync/platform/UnitSaveHandler.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/ui/components/DownloadProgressCover.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/ui/components/FrostedSurface.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/ui/components/GameCard.kt",
+    "shared/src/commonMain/kotlin/com/nendo/argosy/ui/screens/gamedetail/components/DocumentReaderController.kt"
+  ]
+}

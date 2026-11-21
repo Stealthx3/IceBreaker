@@ -66,3 +66,6 @@ wiki/
 
 # RomM version testbed local env
 testbed/romm/.env
+
+# Local VM lab folder (PII Redaction Standard)
+scripts/desktop/vmlab/lab-dir.local
