@@ -35,9 +35,8 @@ actual class SaveStateManager actual constructor(
     private val channelName: String?,
     private val isVariant: Boolean,
     primarySavePath: String?,
-    private val onLiveStateWritten: ((Int, File) -> Unit)? = null,
-    private val onLiveStateRemoved: ((Int, File) -> Unit)? = null
-) {
+    private val onLiveStateWritten: ((Int, File) -> Unit)?,
+    private val onLiveStateRemoved: ((Int, File) -> Unit)?) {
     private var lastSramHash: String? = null
     var hasQuickSave by mutableStateOf(false)
         private set

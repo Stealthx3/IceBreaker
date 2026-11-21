@@ -186,7 +186,7 @@ expect class SocialRepository {
 
     suspend fun emitMarathonSession(igdbId: Long?, gameTitle: String, durationMins: Int, platformSlug: String)
 
-    fun createDoodle(canvasSize: Int, data: String, caption: String?, igdbId: Int?, gameTitle: String?)
+    fun createDoodle(canvasSize: Int, data: String, caption: String?, igdbId: Int?, gameTitle: String?): Boolean
 
     suspend fun clearPresenceCovers()
 }

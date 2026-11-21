@@ -204,8 +204,7 @@ actual class SocialRepository @Inject constructor() {
     actual suspend fun emitMarathonSession(igdbId: Long?, gameTitle: String, durationMins: Int, platformSlug: String) {
     }
 
-    actual fun createDoodle(canvasSize: Int, data: String, caption: String?, igdbId: Int?, gameTitle: String?) {
-    }
+    actual fun createDoodle(canvasSize: Int, data: String, caption: String?, igdbId: Int?, gameTitle: String?): Boolean = false
 
     actual suspend fun clearPresenceCovers() {
     }

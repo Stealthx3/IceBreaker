@@ -87,9 +87,8 @@ actual fun Box3dCover(
     backPath: String?,
     modifier: Modifier,
     isInteractive: Boolean,
-    onUnavailable: () -> Unit = {},
-    fallback: @Composable () -> Unit = {}
-) {
+    onUnavailable: () -> Unit,
+    fallback: @Composable () -> Unit) {
     val context = LocalContext.current
     val screenHeightPx = context.resources.displayMetrics.heightPixels
     var faces by remember(frontPath, spinePath, backPath) { mutableStateOf<BoxFaces?>(null) }
