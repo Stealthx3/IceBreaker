@@ -2,7 +2,7 @@
 
 Rewritten (not appended) at the end of every work unit, so a fresh session can start from it alone. History and reasoning live in `DEVLOG.md` (Phase 5 section). Earlier phases: `phase-0.md` … `phase-4.md`.
 
-**Updated:** 2026-11-21. Steps 1–4 done; step 5 in progress (unit 5a next).
+**Updated:** 2026-11-21 (parked for usage mid-unit 5a). Steps 1–4 done; step 5 in progress.
 
 ## State
 
@@ -21,15 +21,12 @@ Plan (`DEVLOG.md`, Phase 5 plan): 1 wizard wording, 2 Close Argosy, 3 thumbnails
 
 Triage of every upstream commit: `docs/desktop/upstream-2.31-triage.md` (uncommitted until owner says; read it first). Owner decisions: `DEVLOG.md`, 2026-11-21.
 
-- **5a. Merge v2.31.0 (next).**
-  - Work in a worktree on branch `merge/upstream-2.31`; fast-forward `main` once verified.
-  - Dry run: `git merge-tree --write-tree -X find-renames=40% main origin/upstream` gives 200 conflicts (90 content, 87 file location, 25 delete, 2 rename/rename) and 319 clean merges.
-  - Rules:
-    - Bucket 2 (Android-only) takes upstream's side; accept upstream's Steam/Xbox deletions.
-    - New upstream files go in `commonMain` unless they import Android.
-    - Keep our issue #2 decoder and both sides of the play-session pull (upstream's deletion cutoffs plus our full account pass).
-    - DB 214 → 222 applies as is.
-  - Every new settings row or entry point from upstream needs a `PlatformFeatures` gate when the feature is Android-only (Select as Back, Motion, Gyro, Steam launchers, root, Magisk).
+- **5a. Merge v2.31.0 (in progress, parked for usage 2026-11-21).**
+  - Worktree `/path/to/Personal/Projects/Git/argosy-desktop-merge`, branch `merge/upstream-2.31`, WIP merge commit `c4f1433b1` (parents `main` 56b74f508 and v2.31.0). Amend it as work continues; fast-forward `main` only once the gates pass. Submodules are initialised there (Sigil at upstream's 794d99f).
+  - Done: all 200 conflicts resolved; upstream's new files placed (`app/src/main` → `shared`, 6 Android-only ones in `androidMain`); seams for `BackgroundGames`, `HardwareStatsReader`, `LidSleepGuard`, `RadioController`, `PrivilegedAccess`, `GameLaunchOptions`, `padBattery()`, `hostIsChangingConfigurations()`, `RomScanActivity`; `SoundFeedbackManager` implements `AppEventFeedback`/`SfxCacheCleaner`; desktop binds those plus `LibrarySyncNotifier`; tokens regenerated; new Interface/Navigation rows (screen orientation, quick panel in emulators, touchpad) hidden on desktop.
+  - Caught: rename detection had paired 11 upstream files with the byte-identical v2.24 copies under `spikes/compose-desktop-library/src/upstream/`; re-merged into the real files with `git merge-file`, spikes restored. `scripts/desktop/merge/landing_check.py 98562a1e7 origin/upstream` now reports only `UserPreferencesRepository` (expected: its block lives in `UserPreferences.kt`/`PreferenceEnums.kt`).
+  - **Next:** `:shared:compileKotlinDesktop` has 226 errors, almost all "expect drift": upstream added members to Android classes our `expect` declarations mirror (`DisplayAffinityHelper` usableDisplayId/launchDisplayId/bothScreensDisplayId/panelMirroredToExternal, `PlatformIntent.getBooleanExtra`, StatFs `blockSizeLong`, `PlatformKeyEvent` constructor/flags, `SOURCE_MOUSE`/`SOURCE_TOUCHPAD`/`supportsSource`, `SteamPathResolver` without `SteamInstallTarget`, `isImeVisible`, `SocialOverlayService`, `FocusAccessibilityService`, Coil 2 → Coil 3 in `ScreenshotImage`/`ShowcaseMotionLayers`, `isPackageMissing`, `userScreenshotTargetFile` args, `DesktopFileAccessLayer.prepareSaveAccess` return type). Add each to the `expect` plus a desktop actual; then the Android compile, the push gate and unit 5b.
+  - Helpers and notes: `scripts/desktop/merge/README.md` (in the merge branch).
 - **5b. Verify the merge:** push gate (`:shared:desktopTest`, `testDebugUnitTest`), host walk, testbed save-sync live check (`GET /api/saves`, negotiate no_op twice), and the session-end rework (launch, quit, relaunch during upload).
 - **5c. Catalog and Eden:**
   - Catalog (data, served from GitHub): Vita3K, ScummVM, PICO-8, xemu; Flycast VMU, Azahar/Lime3DS and PPSSPP save paths; m3u multi-disc launch per emulator.

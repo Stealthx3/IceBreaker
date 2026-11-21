@@ -1906,3 +1906,12 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Reasoning:**
   - v2.31 before v3: v2.31 conflicts in 200 files against 515 for v3.0.0-beta.10, and v3 is still changing daily.
   - The Steam shortcut writes the app id into Steam's `shortcuts.vdf`; doing it before the rename would leave beta users with a shortcut pointing at the old id.
+
+### 2026-11-21 — Unit 5a in progress: upstream v2.31.0 merge (parked for usage)
+
+- **Action:** merged upstream v2.31.0 into branch `merge/upstream-2.31` in a separate worktree (`../argosy-desktop-merge`), WIP commit `c4f1433b1`. All 200 conflicts are resolved; upstream's new files are placed in `shared`; nine seams cover new Android-only classes that shared code uses; the desktop compile is down to 226 errors from upstream API additions the `expect` declarations do not mirror yet. `main` is untouched.
+- **Reasoning and findings:**
+  - `scripts/desktop/restructure/reapply.sh` (the v2.24 merge tool) fits only the Phase 1 tree; it regenerated two preference files from the wrong place, so the first merge attempt was discarded and conflicts were resolved with new helpers (`scripts/desktop/merge/`).
+  - Rename detection paired 11 upstream files (among them `PlaySessionDao`, `GameListRow`, `Modifiers`, `Dimensions`) with the byte-identical v2.24 copies kept under `spikes/compose-desktop-library/src/upstream/`, so their upstream changes landed in the spike folder. They were re-merged into the real files; `landing_check.py` confirms every other upstream change reached our copy. For the v3.0 merge: run the landing check, or delete the spike copies first.
+  - Parked because the 5-hour usage window reached 50%.
+
