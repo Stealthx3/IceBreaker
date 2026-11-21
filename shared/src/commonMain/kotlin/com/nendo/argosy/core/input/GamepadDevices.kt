@@ -4,6 +4,7 @@ import com.nendo.argosy.platform.PlatformInputDevice as InputDevice
 import com.nendo.argosy.platform.SOURCE_MOUSE
 import com.nendo.argosy.platform.SOURCE_MOUSE_RELATIVE
 import com.nendo.argosy.platform.SOURCE_TOUCHPAD
+import com.nendo.argosy.platform.supportsSource
 import com.nendo.argosy.platform.PlatformInputDevices
 import com.nendo.argosy.platform.controllerNumber
 import com.nendo.argosy.platform.descriptor

@@ -42,10 +42,7 @@ import com.nendo.argosy.platform.getString
 import com.nendo.argosy.platform.resources
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImagePainter
-import coil.memory.MemoryCache
 import com.nendo.argosy.platform.image.ImageRequest
-import coil.transition.Transition
 import com.nendo.argosy.ui.common.AlwaysCrossfadeFactory
 import com.nendo.argosy.ui.common.rememberFileImageModel
 import com.nendo.argosy.ui.common.stackedScreenshotBackdrop
@@ -56,7 +53,7 @@ import kotlinx.coroutines.launch
 
 internal class ShowcaseBackdrop(
     val request: ImageRequest,
-    val onSuccess: (AsyncImagePainter.State.Success) -> Unit
+    val onSuccess: (com.nendo.argosy.platform.image.AsyncImageSuccess) -> Unit
 )
 
 @Composable
@@ -67,13 +64,13 @@ internal fun rememberShowcaseBackdrop(
 ): ShowcaseBackdrop {
     val context = LocalContext.current
     val model = rememberFileImageModel(path)
-    val lastKey = remember { mutableStateOf<MemoryCache.Key?>(null) }
+    val lastKey = remember { mutableStateOf<Any?>(null) }
     val request = remember(model, crossfadeMs, stackedScreenshot) {
         ImageRequest.Builder(context)
             .data(model)
             .placeholderMemoryCacheKey(Snapshot.withoutReadObservation { lastKey.value })
             .apply { if (stackedScreenshot) stackedScreenshotBackdrop() }
-            .transitionFactory(if (crossfadeMs > 0) AlwaysCrossfadeFactory(crossfadeMs) else Transition.Factory.NONE)
+            .apply { if (crossfadeMs > 0) transitionFactory(AlwaysCrossfadeFactory(crossfadeMs)) else crossfade(false) }
             .build()
     }
     return remember(request) {

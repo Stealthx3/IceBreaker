@@ -47,11 +47,7 @@ import com.nendo.argosy.platform.image.AsyncImage
 import com.nendo.argosy.platform.image.bitmap
 import com.nendo.argosy.platform.image.intrinsicHeight
 import com.nendo.argosy.platform.image.intrinsicWidth
-import coil.compose.AsyncImagePainter
-import coil.memory.MemoryCache
 import com.nendo.argosy.platform.image.ImageRequest
-import coil.size.Size
-import coil.transform.Transformation
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -67,7 +63,7 @@ fun ScreenshotImage(
     model: Any?,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    onError: ((AsyncImagePainter.State.Error) -> Unit)? = null
+    onError: ((Any) -> Unit)? = null
 ) {
     val context = LocalContext.current
     BoxWithConstraints(modifier = modifier) {
@@ -96,28 +92,26 @@ private const val ASPECT_KEY_PRECISION = 100f
  * shape.
  */
 fun ImageRequest.Builder.stackedScreenshotBackdrop(): ImageRequest.Builder =
-    transformations(StackedScreenshotTransformation(StackedScreenshot.DEFAULT_SLOT_ASPECT))
+    transformations(stackedScreenshotTransformation(StackedScreenshot.DEFAULT_SLOT_ASPECT))
 
 private fun screenshotRequest(context: Context, model: Any?, slotAspect: Float): ImageRequest {
-    val transformation = StackedScreenshotTransformation(slotAspect)
+    val transformation = stackedScreenshotTransformation(slotAspect)
     val source = model as? ImageRequest
     val builder = source?.newBuilder() ?: ImageRequest.Builder(context).data(model)
-    source?.memoryCacheKey?.let { key ->
-        builder.memoryCacheKey(MemoryCache.Key("${key.key}#${transformation.cacheKey}", key.extras))
+    if (transformation != null) {
+        source?.memoryCacheKey?.let { key -> builder.memoryCacheKey("$key#${stackedScreenshotCacheKey(slotAspect)}") }
     }
     return builder.transformations(transformation).build()
 }
 
-private class StackedScreenshotTransformation(private val slotAspect: Float) : Transformation {
+internal fun stackedScreenshotCacheKey(slotAspect: Float): String =
+    "stacked-screenshot:${(slotAspect * ASPECT_KEY_PRECISION).roundToInt()}"
 
-    override val cacheKey: String =
-        "stacked-screenshot:${(slotAspect * ASPECT_KEY_PRECISION).roundToInt()}"
-
-    override suspend fun transform(input: Bitmap, size: Size): Bitmap {
-        val rect = StackedScreenshot.sourceRect(input.width, input.height, slotAspect) ?: return input
-        return PlatformBitmaps.createBitmap(input, rect.left, rect.top, rect.width, rect.height)
-    }
-}
+/**
+ * The image transformation that crops a stacked dual-screen frame for a slot of [slotAspect];
+ * null where the platform's image loader has no transformation stage.
+ */
+expect fun stackedScreenshotTransformation(slotAspect: Float): Any?
 
 internal object StackedScreenshot {
 

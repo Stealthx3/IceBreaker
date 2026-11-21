@@ -158,7 +158,7 @@ expect class SocialRepository {
 
     fun commentEvent(eventId: String, content: String): Boolean
 
-    fun createPost(body: String, canvasSize: Int? = null, doodleData: String? = null, igdbId: Int? = null, gameTitle: String? = null, public: Boolean = false)
+    fun createPost(body: String, canvasSize: Int? = null, doodleData: String? = null, igdbId: Int? = null, gameTitle: String? = null, public: Boolean = false): Boolean
 
     fun requestCommunityFeed(igdbGameId: Int? = null, limit: Int = 10)
 

@@ -170,8 +170,7 @@ actual class SocialRepository @Inject constructor() {
 
     actual fun commentEvent(eventId: String, content: String): Boolean = false
 
-    actual fun createPost(body: String, canvasSize: Int?, doodleData: String?, igdbId: Int?, gameTitle: String?, public: Boolean) {
-    }
+    actual fun createPost(body: String, canvasSize: Int?, doodleData: String?, igdbId: Int?, gameTitle: String?, public: Boolean): Boolean = false
 
     actual fun requestCommunityFeed(igdbGameId: Int?, limit: Int) {
     }

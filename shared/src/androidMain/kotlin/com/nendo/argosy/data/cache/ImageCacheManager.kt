@@ -100,11 +100,6 @@ data class AppIconCacheRequest(
     val packageName: String
 )
 
-internal fun artUrlHash(url: String): String {
-    val digest = MessageDigest.getInstance("MD5").digest(url.toByteArray())
-    return digest.joinToString("") { "%02x".format(it) }.take(12)
-}
-
 internal fun isCachedFileFrom(cachedPath: String, sourceUrl: String): Boolean =
     File(cachedPath).nameWithoutExtension.endsWith("_${artUrlHash(sourceUrl)}")
 

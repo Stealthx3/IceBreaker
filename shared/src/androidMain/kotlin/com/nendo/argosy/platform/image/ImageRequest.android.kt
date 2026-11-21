@@ -2,6 +2,8 @@ package com.nendo.argosy.platform.image
 
 import coil.request.CachePolicy as CoilCachePolicy
 import coil.request.ImageRequest as CoilImageRequest
+import coil.memory.MemoryCache
+import coil.transform.Transformation
 import coil.transition.Transition
 
 private fun CachePolicy.toCoil(): CoilCachePolicy = when (this) {
@@ -25,6 +27,8 @@ fun ImageRequest.toCoil(): CoilImageRequest {
             is BuilderCall.CrossfadeMillis -> builder.crossfade(call.durationMillis)
             is BuilderCall.AllowHardware -> builder.allowHardware(call.enable)
             is BuilderCall.AddHeader -> builder.addHeader(call.name, call.value)
+            is BuilderCall.PlaceholderMemoryCacheKey -> builder.placeholderMemoryCacheKey(call.key as MemoryCache.Key?)
+            is BuilderCall.Transformations -> builder.transformations(call.transformations.map { it as Transformation })
         }
     }
     return builder.build()

@@ -28,7 +28,7 @@ actual fun AsyncImage(
 ) {
     val platformModel = remember(model) { platformImageModel(model) }
     val successCallback = remember(onSuccess) {
-        onSuccess?.let { callback -> { state: AsyncImagePainter.State.Success -> callback(AsyncImageSuccess(AsyncImageSuccessResult(state.result.drawable))) } }
+        onSuccess?.let { callback -> { state: AsyncImagePainter.State.Success -> callback(AsyncImageSuccess(AsyncImageSuccessResult(state.result.drawable, state.result.memoryCacheKey))) } }
     }
     val errorCallback = remember(onError) {
         onError?.let { callback -> { state: AsyncImagePainter.State.Error -> callback(state) } }

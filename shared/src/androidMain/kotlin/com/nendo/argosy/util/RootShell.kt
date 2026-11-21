@@ -22,7 +22,7 @@ interface AppDataShell {
  */
 actual object RootShell {
 
-    actual data class Result(actual val exitCode: Int?, actual val output: List<String>) {
+    actual data class Result actual constructor(actual val exitCode: Int?, actual val output: List<String>) {
         actual val succeeded: Boolean get() = exitCode == 0
     }
 

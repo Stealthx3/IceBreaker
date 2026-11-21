@@ -30,6 +30,8 @@ fun ImageRequest.toCoil(): CoilImageRequest {
             is BuilderCall.Crossfade -> builder.crossfade(call.enable)
             is BuilderCall.CrossfadeMillis -> builder.crossfade(call.durationMillis)
             is BuilderCall.AllowHardware -> Unit
+            is BuilderCall.PlaceholderMemoryCacheKey -> Unit
+            is BuilderCall.Transformations -> Unit
             is BuilderCall.AddHeader -> {
                 headers.add(call.name, call.value)
                 hasHeaders = true

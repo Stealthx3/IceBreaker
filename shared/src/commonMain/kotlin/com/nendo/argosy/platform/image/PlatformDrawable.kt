@@ -22,4 +22,4 @@ expect val PlatformBitmapDrawable.bitmap: PlatformBitmap?
 
 class AsyncImageSuccess(val result: AsyncImageSuccessResult)
 
-class AsyncImageSuccessResult(val drawable: PlatformDrawable)
+class AsyncImageSuccessResult(val drawable: PlatformDrawable, val memoryCacheKey: Any? = null)

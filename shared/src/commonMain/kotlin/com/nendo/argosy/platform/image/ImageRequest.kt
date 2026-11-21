@@ -38,6 +38,9 @@ class ImageRequest internal constructor(
     internal val calls: List<BuilderCall>,
 ) {
     val data: Any? get() = calls.filterIsInstance<BuilderCall.Data>().lastOrNull()?.data
+    val memoryCacheKey: String? get() = calls.filterIsInstance<BuilderCall.MemoryCacheKey>().lastOrNull()?.key
+
+    fun newBuilder(): Builder = Builder(context).also { it.replay(calls) }
 
     override fun equals(other: Any?): Boolean =
         other is ImageRequest && other.context == context && other.calls == calls
@@ -58,6 +61,12 @@ class ImageRequest internal constructor(
         fun crossfade(durationMillis: Int): Builder = apply { calls += BuilderCall.CrossfadeMillis(durationMillis) }
         fun allowHardware(enable: Boolean): Builder = apply { calls += BuilderCall.AllowHardware(enable) }
         fun addHeader(name: String, value: String): Builder = apply { calls += BuilderCall.AddHeader(name, value) }
+        fun placeholderMemoryCacheKey(key: Any?): Builder = apply { calls += BuilderCall.PlaceholderMemoryCacheKey(key) }
+        fun transformations(vararg transformations: Any?): Builder =
+            apply { calls += BuilderCall.Transformations(transformations.filterNotNull()) }
+        internal fun replay(previous: List<BuilderCall>) {
+            calls += previous
+        }
         fun build(): ImageRequest = ImageRequest(context, calls.toList())
     }
 }
@@ -73,4 +82,6 @@ internal sealed interface BuilderCall {
     data class CrossfadeMillis(val durationMillis: Int) : BuilderCall
     data class AllowHardware(val enable: Boolean) : BuilderCall
     data class AddHeader(val name: String, val value: String) : BuilderCall
+    data class PlaceholderMemoryCacheKey(val key: Any?) : BuilderCall
+    data class Transformations(val transformations: List<Any>) : BuilderCall
 }
