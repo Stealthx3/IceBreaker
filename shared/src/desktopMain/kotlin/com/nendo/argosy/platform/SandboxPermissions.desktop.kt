@@ -41,6 +41,8 @@ actual class SandboxPermissions @Inject constructor() {
 object FlatpakInfo {
     val REMOVABLE_MEDIA_FOLDERS = listOf("/run/media", "/media", "/mnt")
 
+    val STEAM_FOLDERS = listOf("~/.steam", "~/.steam/steam", "~/.var/app/com.valvesoftware.Steam")
+
     val EMULATOR_FOLDERS = listOf(
         "~/Emulation",
         "~/.var/app/org.libretro.RetroArch",
@@ -77,10 +79,12 @@ object FlatpakInfo {
         val devices = list("devices")
         val sessionBus = sections[SESSION_BUS].orEmpty()
         val missingFolders = EMULATOR_FOLDERS.filterNot { hasFilesystem(filesystems, it, home) }
+        val missingSteam = STEAM_FOLDERS.filterNot { hasFilesystem(filesystems, it, home) }
         val granted = SandboxPermission.entries.associateWith { permission ->
             when (permission) {
                 SandboxPermission.GAMES_FOLDER -> hasFilesystem(filesystems, "~/Games/IceBreaker", home)
                 SandboxPermission.EMULATOR_FOLDERS -> missingFolders.isEmpty()
+                SandboxPermission.STEAM_FOLDERS -> missingSteam.isEmpty()
                 SandboxPermission.HOST_ACCESS -> sessionBus["org.freedesktop.Flatpak"] == "talk"
                 SandboxPermission.NOTIFICATIONS, SandboxPermission.SCREENSHOTS -> true
                 SandboxPermission.CONTROLLERS -> "all" in devices || "input" in devices
@@ -93,6 +97,8 @@ object FlatpakInfo {
         val missingFlags = granted.filterValues { !it }.keys.associateWith { permission ->
             if (permission == SandboxPermission.EMULATOR_FOLDERS) {
                 missingFolders.map { "--filesystem=$it" }
+            } else if (permission == SandboxPermission.STEAM_FOLDERS) {
+                missingSteam.map { "--filesystem=$it:rw" }
             } else {
                 listOf(permission.flag)
             }

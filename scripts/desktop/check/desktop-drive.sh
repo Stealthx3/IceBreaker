@@ -25,7 +25,9 @@ if [ "${DRIVE_TARGET:-}" = flatpak ]; then
   fifo="$HOME/.var/app/$app_id/cache/key-pipe"
   mkdir -p "$(dirname "$fifo")"
   rm -f "$fifo"; mkfifo "$fifo"
-  flatpak run --env=JAVA_TOOL_OPTIONS=-Dskiko.vsync.enabled=false "$app_id" --windowed --size="$size" --key-pipe="$fifo" > "$log" 2>&1 &
+  # FLATPAK_RUN_ARGS: extra `flatpak run` options, e.g. a data folder for this run only.
+  # shellcheck disable=SC2086
+  flatpak run ${FLATPAK_RUN_ARGS:-} --env=JAVA_TOOL_OPTIONS=-Dskiko.vsync.enabled=false "$app_id" --windowed --size="$size" --key-pipe="$fifo" > "$log" 2>&1 &
 else
   fifo="$root/$outdir/key-pipe"
   rm -f "$fifo"; mkfifo "$fifo"

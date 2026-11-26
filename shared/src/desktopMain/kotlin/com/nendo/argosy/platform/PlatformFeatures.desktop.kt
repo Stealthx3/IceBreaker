@@ -10,5 +10,6 @@ actual object PlatformFeatures {
     actual val selfUpdate: Boolean = false
     actual val systemApp: Boolean = false
     actual val desktopWindow: Boolean = true
+    actual val steamShortcut: Boolean by lazy { SteamShortcuts().isSupported }
     actual val darkThemeByDefault: Boolean = true
 }

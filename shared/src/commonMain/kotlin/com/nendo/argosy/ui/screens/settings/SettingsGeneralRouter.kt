@@ -183,6 +183,7 @@ private fun routeApplySectionEntry(vm: SettingsViewModel, section: SettingsSecti
             vm.refreshJellyfinConnection()
         }
         SettingsSection.PERMISSIONS -> vm.permissionsDelegate.refreshPermissions()
+        SettingsSection.STEAM_SHORTCUT -> vm.steamShortcutDelegate.refresh()
         SettingsSection.SHADER_STACK -> vm.shaderChainManager.loadChain(
             routeResolveShaderChainSettingsScope(vm._uiState.value).chainJson
         )

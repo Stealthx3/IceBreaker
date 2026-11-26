@@ -1999,3 +1999,21 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Not covered:** emulators' own configs that list `~/Games/Argosy` (Dolphin game paths, RetroArch playlists) are not rewritten; launches pass the ROM path from the database, so only those emulators' own game lists go stale. `scripts/desktop/vmlab/reset-test.sh` still says `~/Games/Argosy` (another session's folder; follow-up).
 - **Next:** unit 4, Add to Steam.
 
+### 2026-11-26 — Rename unit 4: Add to Steam (Steam Shortcut Standard v1)
+
+- **Owner:** "Continue without approval until we are ready to begin the Flathub submission process" (units 4–6 run without stops).
+- **Packaging:** `packaging/steam/` holds the helper `add_to_steam.py` (v1, vendored unchanged from IceFin Player's adoption; the ai-assets repo was not reachable from here), the five brand-kit Steam PNGs (names unchanged) and `steam-shortcut.json` (`IceBreaker`, tag `IceSuite`, no launch arguments). Both manifests install them in a `steam-shortcut` module and grant exactly `~/.steam:rw`, `~/.steam/steam:rw` and `~/.var/app/com.valvesoftware.Steam:rw` (owner 2026-11-26: in the manifest). The runtime's python3 is 3.13.
+- **App:**
+  - `SteamShortcuts` (expect/actual; Android unsupported) runs `/app/bin/io.github.stealthx3.IceBreaker-steam` and reads its JSON; `PlatformFeatures.steamShortcut` is true only when the helper ships (the Flatpak).
+  - Settings → System → **Add to Steam** (`STEAM_SHORTCUT`): intro, status ("not in Steam yet" / "in Steam (n accounts)" / "Steam not found"), the Flathub-Steam permission command when that Steam is found, and Add / Update art / Remove. Add and Remove open a confirm modal (quit Steam completely, tray icon included; button "Steam is closed"); Update art runs at once (art only, safe while Steam runs). The result line names how many accounts changed. Gamepad: A opens, LEFT/RIGHT move in the modal, B cancels (ModalInputRouter); touch through `clickableNoFocus` rows.
+  - Wizard, last step: when Steam is found without the shortcut, a second button offers Add to Steam once; the first press shows "quit Steam first" and turns the button into "Steam is closed: add it". Pressing Start skips it; the wizard never comes back, so the offer is once.
+  - Every start: `refreshArtInBackground()` (helper `refresh`, art only, existing shortcut only).
+  - Permissions: new `STEAM_FOLDERS` row, missing paths shown with their own `flatpak override` fix.
+- **Verification:**
+  - `scripts/desktop/check/steam-shortcut-test.py` (§8 step 1, its own VDF reader instead of the `vdf` package, to avoid a download): 14/14 against a fake Steam root holding another game: add, the other game unchanged, five art files, icon field, re-add keeps one entry and its id, refresh restores art without touching `shortcuts.vdf`, status, remove leaves only the other game and deletes our art, backup kept.
+  - Desktop tests 184 green (new `SteamHelperOutputTest`, Steam cases in `FlatpakInfoTest`); Android `FirstRunSkipCoresTest` green (constructor change; first Android build caught an unescaped apostrophe in a new string).
+  - Installed Flatpak: the sandboxed helper reads the owner's real Steam (2 accounts, no shortcut). Walk on the dev data (`FLATPAK_RUN_ARGS`, new in `desktop-drive.sh`): Settings shows "Add to Steam · Not in Steam yet", Permissions "All granted"; the section, the confirm modal and Cancel render and work; 0 exceptions; nothing written to Steam.
+  - Lint: no new findings.
+- **Not checked yet:** a real Add/Remove in Steam (the owner's Steam was running; Add needs it closed), Flatpak Steam, Game Mode, and the wizard offer on screen (needs a fresh setup). Carried to the step-close checks.
+- **Next:** unit 5, links and the repo rename.
+

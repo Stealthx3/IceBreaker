@@ -51,7 +51,8 @@ class FirstRunSkipCoresTest {
             gamepadInputHandler = mockk(relaxed = true),
             hapticManager = mockk(relaxed = true),
             userCertStore = certStore,
-            hostFolderAccess = HostFolderAccess()
+            hostFolderAccess = HostFolderAccess(),
+            steamShortcuts = com.nendo.argosy.platform.SteamShortcuts()
         )
         repeat(6) { viewModel.nextStep() }
         assertEquals(FirstRunStep.CORE_PROMPT, viewModel.uiState.value.currentStep)

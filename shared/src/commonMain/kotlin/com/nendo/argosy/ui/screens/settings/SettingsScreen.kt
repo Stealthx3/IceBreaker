@@ -771,6 +771,7 @@ fun SettingsScreen(
                         SettingsSection.SHADER_STACK -> ShaderStackSection(viewModel.shaderChainManager)
                         SettingsSection.FRAME_PICKER -> FrameSection(uiState, viewModel)
                         SettingsSection.PERMISSIONS -> PermissionsSection(uiState, viewModel)
+                        SettingsSection.STEAM_SHORTCUT -> com.nendo.argosy.ui.screens.settings.sections.SteamShortcutSection(uiState, viewModel)
                         SettingsSection.DRIVERS -> DriversSection(uiState, viewModel)
                         SettingsSection.ABOUT -> AboutSection(uiState, viewModel)
                         SettingsSection.SOCIAL -> SocialSection(uiState, viewModel)
@@ -1267,6 +1268,24 @@ fun SettingsScreen(
         onDismiss = { viewModel.cancelDeleteCore() }
     )
 
+    uiState.steamShortcut.pendingOperation?.let { operation ->
+        ArgosyConfirmModal(
+            title = stringResource(
+                if (operation == com.nendo.argosy.data.model.SteamShortcutOperation.REMOVE) {
+                    R.string.settings_steam_shortcut_confirm_remove_title
+                } else {
+                    R.string.settings_steam_shortcut_confirm_add_title
+                }
+            ),
+            message = stringResource(R.string.settings_steam_shortcut_confirm_message),
+            confirmLabel = stringResource(R.string.settings_steam_shortcut_confirm_button),
+            destructive = operation == com.nendo.argosy.data.model.SteamShortcutOperation.REMOVE,
+            onConfirm = { viewModel.steamShortcutDelegate.confirm() },
+            onDismiss = { viewModel.steamShortcutDelegate.cancel() },
+            focusedIndex = uiState.steamShortcut.confirmButtonIndex
+        )
+    }
+
     uiState.permissions.sandboxGrant?.let { permission ->
         ArgosyConfirmModal(
             title = stringResource(R.string.settings_permissions_sandbox_grant_title, stringResource(permission.titleRes)),
@@ -1656,6 +1675,7 @@ private fun settingsSectionTitle(uiState: SettingsUiState): String = when (uiSta
     SettingsSection.SHADER_STACK -> stringResource(R.string.settings_shell_header_shader_stack)
     SettingsSection.FRAME_PICKER -> stringResource(R.string.settings_shell_header_frame_picker)
     SettingsSection.PERMISSIONS -> stringResource(R.string.settings_shell_header_permissions)
+    SettingsSection.STEAM_SHORTCUT -> stringResource(R.string.settings_shell_header_steam_shortcut)
     SettingsSection.DRIVERS -> stringResource(R.string.settings_shell_header_drivers)
     SettingsSection.ABOUT -> stringResource(R.string.settings_shell_header_about)
     SettingsSection.SOCIAL -> stringResource(R.string.settings_shell_header_social)

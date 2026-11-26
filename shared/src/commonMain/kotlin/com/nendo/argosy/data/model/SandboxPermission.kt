@@ -7,6 +7,7 @@ package com.nendo.argosy.data.model
 enum class SandboxPermission(val flag: String, val isPortal: Boolean = false) {
     GAMES_FOLDER("--filesystem=~/Games/IceBreaker:create"),
     EMULATOR_FOLDERS("--filesystem=~/Emulation"),
+    STEAM_FOLDERS("--filesystem=~/.steam:rw"),
     HOST_ACCESS("--talk-name=org.freedesktop.Flatpak"),
     NOTIFICATIONS("org.freedesktop.portal.Notification", isPortal = true),
     SCREENSHOTS("org.freedesktop.portal.Screenshot", isPortal = true),

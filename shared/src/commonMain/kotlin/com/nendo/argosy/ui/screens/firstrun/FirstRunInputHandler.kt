@@ -38,7 +38,11 @@ class FirstRunInputHandler(
     override fun onConfirm(): InputResult {
         val state = viewModel.uiState.value
         if (state.currentStep == FirstRunStep.COMPLETE) {
-            viewModel.completeSetup(onDone = onComplete)
+            if (state.focusedIndex == 1 && state.steamOfferOpen) {
+                viewModel.pressSteamOffer()
+            } else {
+                viewModel.completeSetup(onDone = onComplete)
+            }
             return InputResult.HANDLED
         }
         viewModel.handleConfirm(

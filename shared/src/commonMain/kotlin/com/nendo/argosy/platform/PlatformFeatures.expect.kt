@@ -14,5 +14,6 @@ expect object PlatformFeatures {
     val selfUpdate: Boolean
     val systemApp: Boolean
     val desktopWindow: Boolean
+    val steamShortcut: Boolean
     val darkThemeByDefault: Boolean
 }

@@ -187,6 +187,7 @@ internal fun routeConfirm(vm: SettingsViewModel): InputResult {
                 MainSettingsItem.Bios -> vm.navigateToSection(SettingsSection.BIOS)
                 MainSettingsItem.Drivers -> vm.navigateToSection(SettingsSection.DRIVERS)
                 MainSettingsItem.Permissions -> vm.navigateToSection(SettingsSection.PERMISSIONS)
+                MainSettingsItem.SteamShortcut -> vm.navigateToSection(SettingsSection.STEAM_SHORTCUT)
                 MainSettingsItem.About -> vm.navigateToSection(SettingsSection.ABOUT)
                 MainSettingsItem.FactoryReset -> vm.requestFactoryReset()
                 MainSettingsItem.CloseApp -> com.nendo.argosy.platform.AppShutdown.requestConfirm()
@@ -310,6 +311,10 @@ internal fun routeConfirm(vm: SettingsViewModel): InputResult {
         SettingsSection.PLATFORM_DETAIL -> routePlatformDetailConfirm(vm, state)
         SettingsSection.BIOS -> routeBiosConfirm(vm, state)
         SettingsSection.PERMISSIONS -> routePermissionsConfirm(vm, state)
+        SettingsSection.STEAM_SHORTCUT -> {
+            com.nendo.argosy.ui.screens.settings.sections.steamShortcutConfirm(vm, state.focusedIndex, state.steamShortcut)
+            InputResult.HANDLED
+        }
         SettingsSection.DRIVERS -> InputResult.HANDLED
         SettingsSection.ABOUT -> routeAboutConfirm(vm, state)
         SettingsSection.BUILTIN_VIDEO -> InputResult.HANDLED
@@ -1368,6 +1373,7 @@ private fun routeDismissTopOverlay(vm: SettingsViewModel): Boolean {
         state.syncSettings.showSyncFiltersModal -> { vm.dismissSyncFiltersModal(); true }
         state.syncSettings.showForceSyncConfirm -> { vm.cancelSyncSaves(); true }
         state.permissions.sandboxGrant != null -> { vm.cancelSandboxGrant(); true }
+        state.steamShortcut.pendingOperation != null -> { vm.steamShortcutDelegate.cancel(); true }
         state.emulators.showEmulatorPicker -> { vm.dismissEmulatorPicker(); true }
         state.bios.showDistributeResultModal -> { vm.dismissDistributeResultModal(); true }
         state.bios.showDownloadFailureModal -> { vm.dismissDownloadFailureModal(); true }
@@ -1548,6 +1554,7 @@ private fun computeMaxFocusIndex(
     SettingsSection.FRAME_PICKER -> com.nendo.argosy.ui.screens.settings.sections.framePickerMaxFocusIndex(vm.getFrameRegistry())
     SettingsSection.BIOS -> biosMaxFocusIndex(state.bios.platformGroups, state.bios.expandedPlatformIndex)
     SettingsSection.PERMISSIONS -> permissionsMaxFocusIndex(state.permissions)
+    SettingsSection.STEAM_SHORTCUT -> com.nendo.argosy.ui.screens.settings.sections.steamShortcutMaxFocusIndex(state.steamShortcut)
     SettingsSection.DRIVERS -> if (state.drivers.hostGpuSupported) {
         (com.nendo.argosy.ui.screens.settings.sections.hostGpuRows(state.drivers.hostGpu).count { it.focusable } - 1).coerceAtLeast(0)
     } else {

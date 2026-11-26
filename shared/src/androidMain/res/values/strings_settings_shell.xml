@@ -190,6 +190,7 @@
     <string name="settings_shell_header_shader_stack">SHADER CHAIN</string>
     <string name="settings_shell_header_frame_picker">SELECT FRAME</string>
     <string name="settings_shell_header_permissions">PERMISSIONS</string>
+    <string name="settings_shell_header_steam_shortcut">ADD TO STEAM</string>
     <!-- "GPU" is the graphics chip. -->
     <string name="settings_shell_header_drivers">GPU DRIVERS</string>
     <string name="settings_shell_header_about">ABOUT</string>

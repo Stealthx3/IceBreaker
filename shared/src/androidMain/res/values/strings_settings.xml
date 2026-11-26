@@ -5600,4 +5600,42 @@
     <string name="settings_emulator_manager_uninstall_message_emudeck">EmuDeck installed this emulator. EmuDeck may reinstall it, and its EmuDeck shortcuts stop working until it does. Its saves and settings stay.</string>
     <string name="settings_emulator_manager_uninstall_confirm">Uninstall</string>
     <string name="settings_emulator_manager_filebrowser_bios_title">BIOS file for %1$s</string>
+    <string name="settings_permissions_sandbox_steam_title">Steam folders</string>
+    <string name="settings_permissions_sandbox_steam_description">Add IceBreaker to Steam with its artwork, only when you ask.</string>
+    <!-- Main settings row that opens the Add to Steam page; "Steam" is the Valve store and launcher. -->
+    <string name="settings_main_steam_shortcut_title">Add to Steam</string>
+    <string name="settings_main_steam_shortcut_subtitle_present">In your Steam library</string>
+    <string name="settings_main_steam_shortcut_subtitle_absent">Not in Steam yet</string>
+    <string name="settings_main_steam_shortcut_subtitle_not_found">Steam not found</string>
+    <string name="settings_steam_shortcut_intro">IceBreaker can add itself to Steam with its library artwork, so you can start it from Steam and from Game Mode.</string>
+    <string name="settings_steam_shortcut_status_checking">Looking for Steam…</string>
+    <string name="settings_steam_shortcut_status_absent">IceBreaker is not in Steam yet.</string>
+    <string name="settings_steam_shortcut_status_not_found">Steam was not found on this computer. Install Steam and sign in once, then come back here.</string>
+    <plurals name="settings_steam_shortcut_status_present">
+        <item quantity="one">IceBreaker is in Steam (%1$d account).</item>
+        <item quantity="other">IceBreaker is in Steam (%1$d accounts).</item>
+    </plurals>
+    <string name="settings_steam_shortcut_add_title">Add to Steam</string>
+    <string name="settings_steam_shortcut_add_description">Adds a shortcut with IceBreaker\'s capsule, banner, logo and icon.</string>
+    <!-- "Art" is the shortcut's library artwork (capsule, banner, logo, icon). -->
+    <string name="settings_steam_shortcut_update_art_title">Update art</string>
+    <string name="settings_steam_shortcut_update_art_description">Copies the current artwork into Steam again. Steam can stay open.</string>
+    <string name="settings_steam_shortcut_remove_title">Remove from Steam</string>
+    <string name="settings_steam_shortcut_remove_description">Removes the shortcut and its artwork. Do this before you uninstall IceBreaker.</string>
+    <string name="settings_steam_shortcut_flatpak_notice">Steam from Flathub needs permission to start other Flatpak apps. Run this once in a terminal: %1$s</string>
+    <string name="settings_steam_shortcut_working">Working…</string>
+    <plurals name="settings_steam_shortcut_result_added">
+        <item quantity="one">Added to Steam for %1$d account. Start Steam to see it.</item>
+        <item quantity="other">Added to Steam for %1$d accounts. Start Steam to see it.</item>
+    </plurals>
+    <plurals name="settings_steam_shortcut_result_removed">
+        <item quantity="one">Removed from Steam for %1$d account. Start Steam to see the change.</item>
+        <item quantity="other">Removed from Steam for %1$d accounts. Start Steam to see the change.</item>
+    </plurals>
+    <string name="settings_steam_shortcut_result_art">Artwork updated in Steam.</string>
+    <string name="settings_steam_shortcut_result_failed">That did not work. Check that Steam is closed and try again.</string>
+    <string name="settings_steam_shortcut_confirm_add_title">Add IceBreaker to Steam?</string>
+    <string name="settings_steam_shortcut_confirm_remove_title">Remove IceBreaker from Steam?</string>
+    <string name="settings_steam_shortcut_confirm_message">Quit Steam completely first, including its icon in the system tray. Steam rewrites its shortcuts when it closes, so a change made while it runs is lost.</string>
+    <string name="settings_steam_shortcut_confirm_button">Steam is closed</string>
 </resources>

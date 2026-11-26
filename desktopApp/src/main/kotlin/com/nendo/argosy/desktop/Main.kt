@@ -89,6 +89,7 @@ fun main(args: Array<String>) {
     Runtime.getRuntime().addShutdownHook(Thread({ shutDown(gamepadDispatcher) }, "argosy-shutdown"))
     app.component.hostSessionWatcher().start()
     app.component.backgroundJobs().start()
+    com.nendo.argosy.platform.SteamShortcuts().refreshArtInBackground()
     val fontFamilyResolver = robotoFontFamilyResolver()
     val keyPipe = options.keyPipe?.let { KeyPipe(java.io.File(it), gamepadDispatcher) }?.also { it.start() }
     val gamescope = DesktopWindowMode.isGamescope(System.getenv())

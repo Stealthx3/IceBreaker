@@ -39,6 +39,7 @@ internal class ModalInputRouter(private val viewModel: SettingsViewModel) {
         interceptSyncFiltersModal(state, method)?.let { return it }
         interceptForceSyncConfirm(state, method)?.let { return it }
         interceptSandboxGrant(state, method)?.let { return it }
+        interceptSteamShortcutConfirm(state, method)?.let { return it }
         interceptAddressVerifyPrompt(state, method)?.let { return it }
         interceptAddressEditor(state, method)?.let { return it }
         interceptAddressMenu(state, method)?.let { return it }
@@ -393,6 +394,21 @@ internal class ModalInputRouter(private val viewModel: SettingsViewModel) {
                 }
             }
             InputMethod.BACK -> { viewModel.dismissSyncFiltersModal(); InputResult.HANDLED }
+            else -> InputResult.HANDLED
+        }
+    }
+
+    private fun interceptSteamShortcutConfirm(state: SettingsUiState, method: InputMethod): InputResult? {
+        if (state.steamShortcut.pendingOperation == null) return null
+        val delegate = viewModel.steamShortcutDelegate
+        return when (method) {
+            InputMethod.LEFT -> { delegate.moveConfirmFocus(-1); InputResult.HANDLED }
+            InputMethod.RIGHT -> { delegate.moveConfirmFocus(1); InputResult.HANDLED }
+            InputMethod.CONFIRM -> {
+                if (state.steamShortcut.confirmButtonIndex == 0) delegate.cancel() else delegate.confirm()
+                InputResult.HANDLED
+            }
+            InputMethod.BACK -> { delegate.cancel(); InputResult.HANDLED }
             else -> InputResult.HANDLED
         }
     }

@@ -182,6 +182,7 @@ class SettingsViewModel @Inject constructor(
     val jellyfinDelegate: com.nendo.argosy.ui.screens.settings.delegates.JellyfinSettingsDelegate,
     val raDelegate: RASettingsDelegate,
     val permissionsDelegate: PermissionsSettingsDelegate,
+    val steamShortcutDelegate: com.nendo.argosy.ui.screens.settings.delegates.SteamShortcutSettingsDelegate,
     val biosDelegate: BiosSettingsDelegate,
     val driversDelegate: com.nendo.argosy.ui.screens.settings.delegates.DriversSettingsDelegate,
     internal val modalResetSignal: ModalResetSignal,
@@ -341,6 +342,7 @@ class SettingsViewModel @Inject constructor(
         displayDelegate.observeScreenCapturePermission(viewModelScope)
         permissionsDelegate.observeLockScreenArt(viewModelScope)
         permissionsDelegate.observePrivilegedAccess(viewModelScope)
+        steamShortcutDelegate.refresh()
         routeStartControllerDetectionPolling(this)
         installerDelegate.observeJobs(viewModelScope)
         viewModelScope.launch {

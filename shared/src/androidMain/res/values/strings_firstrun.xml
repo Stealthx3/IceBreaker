@@ -380,4 +380,9 @@
     <!-- Margin kept clear around the screen edges, for TVs that crop the picture -->
     <string name="firstrun_display_setup_safe_area_title">Safe Area</string>
     <string name="firstrun_display_setup_ui_scale_title">UI Scale</string>
+    <string name="firstrun_complete_steam_offer">Add IceBreaker to Steam</string>
+    <string name="firstrun_complete_steam_hint">Quit Steam completely first, including its icon in the system tray.</string>
+    <string name="firstrun_complete_steam_confirm">Steam is closed: add it</string>
+    <string name="firstrun_complete_steam_added">Added to Steam. Start Steam to see it.</string>
+    <string name="firstrun_complete_steam_failed">That did not work. You can try again in Settings.</string>
 </resources>

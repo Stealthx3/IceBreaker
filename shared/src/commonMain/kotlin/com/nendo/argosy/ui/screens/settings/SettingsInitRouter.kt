@@ -228,6 +228,10 @@ internal fun routeObserveDelegateStates(vm: SettingsViewModel) {
         vm._uiState.update { it.copy(permissions = permissions) }
     }.launchIn(vm.viewModelScope)
 
+    vm.steamShortcutDelegate.state.onEach { steamShortcut ->
+        vm._uiState.update { it.copy(steamShortcut = steamShortcut) }
+    }.launchIn(vm.viewModelScope)
+
     vm.biosDelegate.state.onEach { bios ->
         vm._uiState.update { it.copy(bios = bios) }
     }.launchIn(vm.viewModelScope)

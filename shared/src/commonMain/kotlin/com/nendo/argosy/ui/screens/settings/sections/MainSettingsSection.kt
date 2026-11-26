@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.DeveloperBoard
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -206,6 +207,13 @@ internal sealed class MainSettingsItem(
         R.string.settings_main_permissions_title,
         "system"
     )
+    data object SteamShortcut : MainSettingsItem(
+        "steamShortcut",
+        Icons.Default.SportsEsports,
+        R.string.settings_main_steam_shortcut_title,
+        "system",
+        { PlatformFeatures.steamShortcut }
+    )
     data object DeviceSettings : MainSettingsItem(
         "device",
         Icons.Default.PhoneAndroid,
@@ -242,7 +250,7 @@ internal sealed class MainSettingsItem(
                 Header("connectionsHeader", "connections", R.string.settings_main_section_connections),
                 RomM, Steam, Jellyfin, Social,
                 Header("systemHeader", "system", R.string.settings_main_section_system),
-                Permissions, ManagedInstallers, DeviceSettings, About, FactoryReset, CloseApp
+                Permissions, SteamShortcut, ManagedInstallers, DeviceSettings, About, FactoryReset, CloseApp
             )
     }
 }
@@ -367,6 +375,12 @@ fun MainSettingsSection(uiState: SettingsUiState, viewModel: SettingsViewModel) 
                 uiState.permissions.totalCount
             )
         }
+        MainSettingsItem.SteamShortcut -> when {
+            uiState.steamShortcut.status.availability == com.nendo.argosy.data.model.SteamShortcutAvailability.NOT_FOUND ->
+                context.getString(R.string.settings_main_steam_shortcut_subtitle_not_found)
+            uiState.steamShortcut.status.present -> context.getString(R.string.settings_main_steam_shortcut_subtitle_present)
+            else -> context.getString(R.string.settings_main_steam_shortcut_subtitle_absent)
+        }
         MainSettingsItem.About -> context.getString(R.string.settings_main_about_subtitle, uiState.appVersion)
         MainSettingsItem.FactoryReset -> context.getString(R.string.settings_main_factory_reset_subtitle)
         MainSettingsItem.CloseApp -> context.getString(R.string.settings_main_close_app_subtitle)
@@ -399,6 +413,7 @@ fun MainSettingsSection(uiState: SettingsUiState, viewModel: SettingsViewModel) 
             MainSettingsItem.Jellyfin -> viewModel.navigateToSection(SettingsSection.JELLYFIN)
             MainSettingsItem.Social -> viewModel.navigateToSection(SettingsSection.SOCIAL)
             MainSettingsItem.Permissions -> viewModel.navigateToSection(SettingsSection.PERMISSIONS)
+            MainSettingsItem.SteamShortcut -> viewModel.navigateToSection(SettingsSection.STEAM_SHORTCUT)
             MainSettingsItem.About -> viewModel.navigateToSection(SettingsSection.ABOUT)
             MainSettingsItem.FactoryReset -> viewModel.requestFactoryReset()
             MainSettingsItem.CloseApp -> AppShutdown.requestConfirm()

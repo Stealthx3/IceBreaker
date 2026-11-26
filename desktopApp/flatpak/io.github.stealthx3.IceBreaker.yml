@@ -14,6 +14,9 @@ finish-args:
   - --device=all
   - --socket=pulseaudio
   - --filesystem=~/Games/IceBreaker:create
+  - --filesystem=~/.steam:rw
+  - --filesystem=~/.steam/steam:rw
+  - --filesystem=~/.var/app/com.valvesoftware.Steam:rw
   - --filesystem=/run/media
   - --filesystem=/media
   - --filesystem=/mnt
@@ -123,6 +126,15 @@ modules:
       - type: dir
         path: ../build/jni-include
         dest: jni-include
+  - name: steam-shortcut
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 add_to_steam.py ${FLATPAK_DEST}/bin/${FLATPAK_ID}-steam
+      - install -Dm644 -t ${FLATPAK_DEST}/share/${FLATPAK_ID}/steam steam-shortcut.json
+          capsule-600x900.png header-920x430.png hero-3840x1240.png logo-1280x720.png icon-256.png
+    sources:
+      - type: dir
+        path: ../../packaging/steam
   - name: icebreaker
     buildsystem: simple
     build-commands:

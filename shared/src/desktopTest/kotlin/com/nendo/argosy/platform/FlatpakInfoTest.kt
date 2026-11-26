@@ -26,7 +26,9 @@ class FlatpakInfoTest {
         $bus
     """.trimIndent()
 
-    private val fullFilesystems = (listOf("~/Games/IceBreaker:create") + FlatpakInfo.EMULATOR_FOLDERS).joinToString(";") + ";"
+    private val fullFilesystems = (
+        listOf("~/Games/IceBreaker:create") + FlatpakInfo.STEAM_FOLDERS.map { "$it:rw" } + FlatpakInfo.EMULATOR_FOLDERS
+    ).joinToString(";") + ";"
 
     @Test
     fun theShippedManifestGrantsEverything() {
@@ -53,6 +55,14 @@ class FlatpakInfoTest {
     }
 
     @Test
+    fun aMissingSteamFolderShowsItsOwnFix() {
+        val filesystems = fullFilesystems.replace("~/.var/app/com.valvesoftware.Steam:rw;", "")
+        val report = FlatpakInfo.report(info(filesystems), home)
+        assertFalse(report.granted.getValue(SandboxPermission.STEAM_FOLDERS))
+        assertEquals(listOf("--filesystem=~/.var/app/com.valvesoftware.Steam:rw"), report.missingFlags[SandboxPermission.STEAM_FOLDERS])
+    }
+
+    @Test
     fun portalsAreAlwaysAvailable() {
         val report = FlatpakInfo.report(info(""), home)
         assertTrue(report.granted.getValue(SandboxPermission.NOTIFICATIONS))
@@ -74,7 +84,9 @@ class FlatpakInfoTest {
             .filter { it.startsWith("- --filesystem=") }
             .map { it.removePrefix("- --filesystem=") }
             .filterNot { it.startsWith("~/Games/IceBreaker") }
-        assertEquals(manifest - FlatpakInfo.REMOVABLE_MEDIA_FOLDERS.toSet(), FlatpakInfo.EMULATOR_FOLDERS)
+        val steam = FlatpakInfo.STEAM_FOLDERS.map { "$it:rw" }
+        assertTrue(manifest.containsAll(steam))
+        assertEquals(manifest - FlatpakInfo.REMOVABLE_MEDIA_FOLDERS.toSet() - steam.toSet(), FlatpakInfo.EMULATOR_FOLDERS)
         assertTrue(manifest.containsAll(FlatpakInfo.REMOVABLE_MEDIA_FOLDERS))
     }
 

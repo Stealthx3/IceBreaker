@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.ScreenshotMonitor
+import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -19,6 +20,7 @@ val SandboxPermission.titleRes: Int
     get() = when (this) {
         SandboxPermission.GAMES_FOLDER -> R.string.settings_permissions_sandbox_games_folder_title
         SandboxPermission.EMULATOR_FOLDERS -> R.string.settings_permissions_sandbox_emulator_folders_title
+        SandboxPermission.STEAM_FOLDERS -> R.string.settings_permissions_sandbox_steam_title
         SandboxPermission.HOST_ACCESS -> R.string.settings_permissions_sandbox_host_title
         SandboxPermission.NOTIFICATIONS -> R.string.settings_permissions_sandbox_notifications_title
         SandboxPermission.SCREENSHOTS -> R.string.settings_permissions_sandbox_screenshots_title
@@ -33,6 +35,7 @@ val SandboxPermission.descriptionRes: Int
     get() = when (this) {
         SandboxPermission.GAMES_FOLDER -> R.string.settings_permissions_sandbox_games_folder_description
         SandboxPermission.EMULATOR_FOLDERS -> R.string.settings_permissions_sandbox_emulator_folders_description
+        SandboxPermission.STEAM_FOLDERS -> R.string.settings_permissions_sandbox_steam_description
         SandboxPermission.HOST_ACCESS -> R.string.settings_permissions_sandbox_host_description
         SandboxPermission.NOTIFICATIONS -> R.string.settings_permissions_sandbox_notifications_description
         SandboxPermission.SCREENSHOTS -> R.string.settings_permissions_sandbox_screenshots_description
@@ -47,6 +50,7 @@ val SandboxPermission.icon: ImageVector
     get() = when (this) {
         SandboxPermission.GAMES_FOLDER -> Icons.Default.Folder
         SandboxPermission.EMULATOR_FOLDERS -> Icons.Default.Save
+        SandboxPermission.STEAM_FOLDERS -> Icons.Default.SportsEsports
         SandboxPermission.HOST_ACCESS -> Icons.Default.PlayArrow
         SandboxPermission.NOTIFICATIONS -> Icons.Default.Notifications
         SandboxPermission.SCREENSHOTS -> Icons.Default.ScreenshotMonitor

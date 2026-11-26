@@ -62,6 +62,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
+import com.nendo.argosy.data.model.SteamShortcutAvailability
+import com.nendo.argosy.data.model.SteamShortcutOperation
+import com.nendo.argosy.platform.SteamShortcuts
 
 enum class FirstRunStep {
     WELCOME,
@@ -247,8 +250,14 @@ data class FirstRunUiState(
     val platformButtonFocus: Int = 1,
     val missingCoreCount: Int = 0,
     val coreDownloads: List<CoreDownloadState> = emptyList(),
-    val coreDownloadComplete: Boolean = false
-)
+    val coreDownloadComplete: Boolean = false,
+    val steamOffer: Boolean = false,
+    val steamOfferConfirming: Boolean = false,
+    val steamOfferBusy: Boolean = false,
+    val steamOfferResult: Boolean? = null
+) {
+    val steamOfferOpen: Boolean get() = steamOffer && steamOfferResult != true
+}
 
 @HiltViewModel
 @Suppress("TooManyFunctions")
@@ -262,7 +271,8 @@ class FirstRunViewModel @Inject constructor(
     private val gamepadInputHandler: GamepadInputHandler,
     private val hapticManager: HapticFeedbackManager,
     private val userCertStore: UserCertStore,
-    private val hostFolderAccess: HostFolderAccess
+    private val hostFolderAccess: HostFolderAccess,
+    private val steamShortcuts: SteamShortcuts
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -290,6 +300,13 @@ class FirstRunViewModel @Inject constructor(
     private var devicePollJob: Job? = null
 
     init {
+        if (steamShortcuts.isSupported) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val status = steamShortcuts.status()
+                val offer = status.availability == SteamShortcutAvailability.FOUND && !status.present
+                _uiState.update { it.copy(steamOffer = offer) }
+            }
+        }
         viewModelScope.launch {
             userCertStore.certs.collect { certs ->
                 _uiState.update { it.copy(importedCertCount = certs.size) }
@@ -724,7 +741,7 @@ class FirstRunViewModel @Inject constructor(
             FirstRunStep.PLATFORM_SELECT -> state.platforms.size
             FirstRunStep.CORE_PROMPT -> 1
             FirstRunStep.CORE_DOWNLOAD -> 1
-            FirstRunStep.COMPLETE -> 0
+            FirstRunStep.COMPLETE -> if (state.steamOfferOpen) 1 else 0
         }
     }
 
@@ -1354,6 +1371,27 @@ class FirstRunViewModel @Inject constructor(
                 else if (state.focusedIndex == 1) skipCoreDownloads()
             }
             FirstRunStep.COMPLETE -> {}
+        }
+    }
+
+    fun pressSteamOffer() {
+        val state = _uiState.value
+        if (!state.steamOfferOpen || state.steamOfferBusy) return
+        if (!state.steamOfferConfirming) {
+            _uiState.update { it.copy(steamOfferConfirming = true, steamOfferResult = null) }
+            return
+        }
+        _uiState.update { it.copy(steamOfferBusy = true) }
+        viewModelScope.launch(Dispatchers.IO) {
+            val outcome = steamShortcuts.run(SteamShortcutOperation.ADD)
+            _uiState.update {
+                it.copy(
+                    steamOfferBusy = false,
+                    steamOfferConfirming = false,
+                    steamOfferResult = outcome.success,
+                    focusedIndex = if (outcome.success) 0 else it.focusedIndex
+                )
+            }
         }
     }
 

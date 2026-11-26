@@ -447,10 +447,16 @@ fun FirstRunScreen(
                     FirstRunStep.COMPLETE -> CompleteStep(
                         gameCount = uiState.rommGameCount,
                         platformCount = uiState.rommPlatformCount,
-                        isFocused = true,
+                        isFocused = uiState.focusedIndex == 0 || !uiState.steamOfferOpen,
                         onStart = {
                             viewModel.completeSetup(onDone = onComplete)
-                        }
+                        },
+                        steamOffer = uiState.steamOffer,
+                        steamOfferConfirming = uiState.steamOfferConfirming,
+                        steamOfferBusy = uiState.steamOfferBusy,
+                        steamOfferResult = uiState.steamOfferResult,
+                        steamOfferFocused = uiState.focusedIndex == 1 && uiState.steamOfferOpen,
+                        onSteamOffer = { viewModel.pressSteamOffer() }
                     )
                 }
             }
@@ -1974,7 +1980,13 @@ private fun CompleteStep(
     gameCount: Int,
     platformCount: Int,
     isFocused: Boolean,
-    onStart: () -> Unit
+    onStart: () -> Unit,
+    steamOffer: Boolean,
+    steamOfferConfirming: Boolean,
+    steamOfferBusy: Boolean,
+    steamOfferResult: Boolean?,
+    steamOfferFocused: Boolean,
+    onSteamOffer: () -> Unit
 ) {
     StepColumn {
         Icon(
@@ -2013,6 +2025,38 @@ private fun CompleteStep(
             isFocused = isFocused,
             onClick = onStart
         )
+        if (steamOffer) {
+            Spacer(modifier = Modifier.height(Dimens.spacingLg))
+            when (steamOfferResult) {
+                true -> Text(
+                    text = stringResource(R.string.firstrun_complete_steam_added),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                else -> {
+                    Text(
+                        text = stringResource(
+                            if (steamOfferResult == false) R.string.firstrun_complete_steam_failed
+                            else R.string.firstrun_complete_steam_hint
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(Dimens.spacingSm))
+                    FocusableButton(
+                        text = stringResource(
+                            if (steamOfferConfirming) R.string.firstrun_complete_steam_confirm
+                            else R.string.firstrun_complete_steam_offer
+                        ),
+                        isFocused = steamOfferFocused,
+                        enabled = !steamOfferBusy,
+                        onClick = onSteamOffer
+                    )
+                }
+            }
+        }
     }
 }
 

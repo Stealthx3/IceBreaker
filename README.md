@@ -76,9 +76,9 @@ The setup wizard asks for your RomM server, signs you in, picks a display profil
 flatpak install --user flathub org.libretro.RetroArch
 ```
 
-- **Steam Deck:** install in Desktop Mode, add Argosy Desktop to Steam as a non-Steam game, then start it from Game Mode.
+- **Steam and Steam Deck:** **Settings → Add to Steam** (also offered once at the end of setup) adds IceBreaker to Steam with its capsule, banner, logo and icon, in the `IceSuite` collection. Quit Steam completely first, including its tray icon. On a Deck, do this in Desktop Mode, then start IceBreaker from Game Mode. Steam from Flathub also needs, once: `flatpak override --user --talk-name=org.freedesktop.Flatpak com.valvesoftware.Steam`.
 - **Updates:** `flatpak update` (the repository is signed; your data stays).
-- **Uninstall:** `flatpak uninstall --user io.github.stealthx3.IceBreaker` (add `--delete-data` to remove settings; games in `~/Games/IceBreaker` stay).
+- **Uninstall:** first use **Settings → Add to Steam → Remove from Steam** if you added it (Flatpak cannot remove the Steam shortcut on uninstall), then `flatpak uninstall --user io.github.stealthx3.IceBreaker` (add `--delete-data` to remove settings; games in `~/Games/IceBreaker` stay).
 
 This is a beta: back up emulator saves before turning on Save Sync. Report bugs in [Issues](https://github.com/Stealthx3/argosy-desktop/issues) with a log of a run that shows the problem:
 
