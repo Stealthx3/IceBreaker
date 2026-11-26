@@ -63,7 +63,6 @@ swap("""      - type: git
         url: {APP_URL}
         tag: {tag}
         commit: {commit}
-        disable-submodules: true
 """)
 text = "\n".join(l for l in text.splitlines() if not l.startswith("# For Flathub, the two git sources")) + "\n"
 
