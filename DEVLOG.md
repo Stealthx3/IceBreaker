@@ -1963,3 +1963,8 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - Add to Steam: Steam folder grants ship in the manifest (Steam Shortcut Standard §5), unit 4.
 - The upstream triage report stays an uncommitted local file.
 
+### 2026-11-26 — Rename unit 2b (part 1): About credit line on desktop
+
+- **Action:** a desktop-only `Credit` row in About (under the version info, gated on `PlatformFeatures.desktopWindow`, not focusable) with the required credit: "Based on Argosy by the RomM team. IceBreaker is an independent port and is not affiliated with or endorsed by rommapp." (`settings_about_desktop_credit`, with translator notes). The desktop brand filter skips that one string so the credit keeps naming Argosy. Desktop compile green; generated resource checked.
+- **Next (part 2):** the brand kit's About lockup and splash (`brand/deployment/app/`), desktop only.
+

@@ -245,7 +245,8 @@ val desktopBrandWord = Regex("(?<![\\w/.:-])Argosy(?! Social)(?![\\w-])")
 val desktopBrandCaps = Regex("(?<![\\w/.:-])ARGOSY(?![\\w-])")
 
 fun desktopBrand(line: String): String =
-    line.replace(desktopBrandWord, "IceBreaker").replace(desktopBrandCaps, "ICEBREAKER")
+    if ("name=\"settings_about_desktop_credit\"" in line) line
+    else line.replace(desktopBrandWord, "IceBreaker").replace(desktopBrandCaps, "ICEBREAKER")
 
 val prepareDesktopComposeResources by tasks.registering(Sync::class) {
     inputs.property("desktopBrand", desktopBrandWord.pattern + desktopBrandCaps.pattern + "IceBreaker")

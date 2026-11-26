@@ -1430,6 +1430,10 @@
 
     <!-- Heading over the version and update rows. Noun. Rendered in caps in English. -->
     <string name="settings_about_section_version">VERSION</string>
+    <!-- Desktop About: title of the credit line naming the upstream project. -->
+    <string name="settings_about_desktop_credit_title">Credits</string>
+    <!-- Desktop About: credit line. "Argosy" and "RomM" are project names; keep them untranslated. -->
+    <string name="settings_about_desktop_credit">Based on Argosy by the RomM team. IceBreaker is an independent port and is not affiliated with or endorsed by rommapp.</string>
     <!-- Heading over the rows that save and restore settings. Noun. Rendered in caps in
          English. -->
     <string name="settings_about_section_backup">BACKUP</string>

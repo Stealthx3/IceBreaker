@@ -1,6 +1,7 @@
 package com.nendo.argosy.ui.screens.settings.sections
 
 import com.nendo.argosy.platform.PlatformFeatures
+import com.nendo.argosy.ui.components.InfoPreference
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -89,7 +90,7 @@ internal sealed class AboutItem(
     val visibleWhen: (AboutLayoutState) -> Boolean = { true }
 ) {
     val isFocusable: Boolean get() = when (this) {
-        is Header, VersionInfo, SectionSpacer, SystemSpacer, BackupSpacer -> false
+        is Header, VersionInfo, Credit, SectionSpacer, SystemSpacer, BackupSpacer -> false
         else -> true
     }
 
@@ -100,6 +101,7 @@ internal sealed class AboutItem(
         visibleWhen: (AboutLayoutState) -> Boolean = { true }
     ) : AboutItem(key, section, visibleWhen)
     data object VersionInfo : AboutItem("versionInfo", "version")
+    data object Credit : AboutItem("credit", "version", { PlatformFeatures.desktopWindow })
     data object CheckUpdates : AboutItem("checkUpdates", "version")
     data object ChangelogPreview : AboutItem(
         key = "changelogPreview",
@@ -135,7 +137,7 @@ internal sealed class AboutItem(
 
         val ALL: List<AboutItem>
             get() = listOf(
-                VersionHeader, VersionInfo, CheckUpdates, ChangelogPreview, BetaUpdates,
+                VersionHeader, VersionInfo, Credit, CheckUpdates, ChangelogPreview, BetaUpdates,
                 BackupSpacer, BackupHeader, ExportSettings, ImportSettings,
                 SystemSpacer, SystemHeader, SystemizeHelper, RestartApp,
                 SectionSpacer, DebugHeader, FileLogging, LogLevel, SaveDebugLogging
@@ -221,6 +223,13 @@ fun AboutSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                     argosyVersion = uiState.appVersion,
                     rommVersion = uiState.server.rommVersion,
                     onLicensesClick = { showLicensesDialog = true }
+                )
+
+                AboutItem.Credit -> InfoPreference(
+                    title = stringResource(R.string.settings_about_desktop_credit_title),
+                    value = "",
+                    isFocused = false,
+                    subtitle = stringResource(R.string.settings_about_desktop_credit)
                 )
 
                 AboutItem.CheckUpdates -> {
