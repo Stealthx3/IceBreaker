@@ -542,6 +542,7 @@ android {
     }
 
     lint {
+        baseline = file("lint-baseline.xml")
         error += listOf(
             "MissingTranslation",
             "ExtraTranslation",
