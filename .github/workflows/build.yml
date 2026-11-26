@@ -60,7 +60,9 @@ jobs:
         run: ./gradlew testDebugUnitTest -PallAbis
 
       - name: Build and test the desktop target
-        run: ./gradlew :shared:desktopTest :desktopApp:assemble
+        run: |
+          sudo apt-get install -y xvfb
+          xvfb-run -a ./gradlew :shared:desktopTest :desktopApp:assemble
 
       - name: Upload test results
         if: always()
