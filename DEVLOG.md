@@ -1950,3 +1950,9 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Kept on purpose (stored tokens):** the device-id digest prefix and `PlatformBuild.PRODUCT` (`argosy-desktop`; changing them would register a new device with RomM), the default library folder `~/Games/Argosy` and its Flatpak grant (users' games live there), and the `StartupWMClass` (it follows the Java main class).
 - **Verification:** local Flatpak build installs `io.github.stealthx3.IceBreaker`; the icon is exported (the manifest now creates `/app/share/icons` before copying); lint shows only the screenshot item; the walk starts the app with 0 exceptions; desktop tests green (174). In-app text still says Argosy: unit 2.
 
+### 2026-11-21/26 — Rename unit 2a: in-app text on desktop
+
+- **Action:** `prepareDesktopComposeResources` (the Sync that copies Android strings into the desktop's Compose resources) now passes every string line through `desktopBrand`: the word "Argosy" becomes "IceBreaker" and the wordmark "ARGOSY" becomes "ICEBREAKER", in every language. Android's resources are untouched.
+- **Kept:** "Argosy Social" (Argosy's own service, hidden on desktop) and anything inside a path, URL or identifier (`~/Games/Argosy`, `argosy://`, `argosy-launcher`). Result: 963 "IceBreaker" across languages; the 44 "Argosy" left are those cases.
+- **Next (2b):** the desktop About credit line ("Based on Argosy by the RomM team…") and the brand kit's splash and About lockup.
+

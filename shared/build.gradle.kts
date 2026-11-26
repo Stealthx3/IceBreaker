@@ -241,7 +241,14 @@ tasks.matching { it.name.matches(Regex("ksp(Debug|Release)KotlinAndroid")) }.con
 
 val androidResources = layout.projectDirectory.dir("src/androidMain/res")
 
+val desktopBrandWord = Regex("(?<![\\w/.:-])Argosy(?! Social)(?![\\w-])")
+val desktopBrandCaps = Regex("(?<![\\w/.:-])ARGOSY(?![\\w-])")
+
+fun desktopBrand(line: String): String =
+    line.replace(desktopBrandWord, "IceBreaker").replace(desktopBrandCaps, "ICEBREAKER")
+
 val prepareDesktopComposeResources by tasks.registering(Sync::class) {
+    inputs.property("desktopBrand", desktopBrandWord.pattern + desktopBrandCaps.pattern + "IceBreaker")
     inputs.property("stringFilter", "android-escapes-v1")
     from(androidResources) {
         include("values*/strings*.xml", "drawable/*.xml", "raw/*")
@@ -252,7 +259,7 @@ val prepareDesktopComposeResources by tasks.registering(Sync::class) {
                 .replace(Regex("^raw/"), "files/raw/")
         }
         filesMatching("values*/strings*.xml") {
-            filter { line -> line.replace("\\'", "'").replace("\\\"", "\"") }
+            filter { line -> desktopBrand(line.replace("\\'", "'").replace("\\\"", "\"")) }
         }
     }
     includeEmptyDirs = false
