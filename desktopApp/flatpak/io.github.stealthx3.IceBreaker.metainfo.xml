@@ -74,7 +74,7 @@
   <releases>
     <release version="0.5.0" date="2026-11-26" type="development">
       <description>
-        <p>Argosy Desktop is now IceBreaker: a new app id, name and artwork. Settings, sign-in and downloads move over on the first start, and the games folder becomes ~/Games/IceBreaker. New: Add to Steam with library artwork, upstream Argosy 2.31, and a start-up splash.</p>
+        <p>Argosy Desktop is now IceBreaker: a new app id, name and artwork. Settings, sign-in and downloads move over on the first start, and the games folder becomes ~/Games/IceBreaker. New: Add to Steam with library artwork, upstream Argosy 2.31, and a start-up splash. Fixed: play sessions now reach RomM, so play time shows on your other devices.</p>
       </description>
     </release>
     <release version="0.4.0" date="2026-11-08" type="development">
