@@ -2,8 +2,10 @@ package com.nendo.argosy.data.sync
 
 import com.nendo.argosy.data.emulator.LinuxEmulatorDatabase
 import com.nendo.argosy.data.remote.romm.ConnectionState
+import com.nendo.argosy.data.remote.romm.RomMConnectionManager
 import com.nendo.argosy.data.remote.romm.RomMRepository
 import com.nendo.argosy.data.repository.RetroAchievementsRepository
+import com.nendo.argosy.data.social.uploader.PlaySessionBackfill
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.util.SafeCoroutineScope
 import javax.inject.Inject
@@ -14,6 +16,8 @@ import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -27,7 +31,9 @@ class DesktopBackgroundJobs @Inject constructor(
     private val saveSyncPass: SaveSyncPass,
     private val syncCoordinator: SyncCoordinator,
     private val romMRepository: RomMRepository,
+    private val romMConnectionManager: RomMConnectionManager,
     private val saveSyncDownloadObserver: SaveSyncDownloadObserver,
+    private val playSessionBackfill: PlaySessionBackfill,
     private val raRepository: dagger.Lazy<RetroAchievementsRepository>,
     private val raPatchBackfill: dagger.Lazy<RAPatchBackfill>
 ) {
@@ -38,6 +44,7 @@ class DesktopBackgroundJobs @Inject constructor(
         saveSyncDownloadObserver.start()
         scope.launch { runPeriodicSaveSync() }
         scope.launch { drainQueuePeriodically() }
+        scope.launch { retryPendingPlaySessionsOnConnect() }
         scope.launch {
             if (raRepository.get().isLoggedIn()) scheduleRAPatchBackfill()
         }
@@ -60,6 +67,14 @@ class DesktopBackgroundJobs @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun retryPendingPlaySessionsOnConnect() {
+        combine(romMConnectionManager.connectionState, romMConnectionManager.registeredDeviceId) { state, deviceId ->
+            deviceId?.takeIf { state is ConnectionState.Connected && state.capabilities.supportsPlaySessionIngest }
+        }.distinctUntilChanged().collect { deviceId ->
+            if (deviceId != null) playSessionBackfill.uploadThenPull()
         }
     }
 

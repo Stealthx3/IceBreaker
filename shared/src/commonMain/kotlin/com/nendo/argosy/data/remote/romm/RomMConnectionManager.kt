@@ -147,6 +147,14 @@ class RomMConnectionManager @Inject constructor(
     private var accessToken: String? = null
     private val _deviceId = MutableStateFlow<String?>(null)
     val deviceIdState: StateFlow<String?> = _deviceId.asStateFlow()
+    private val _registeredDeviceId = MutableStateFlow<String?>(null)
+
+    /**
+     * The device id once this process has registered it with the server, or confirmed an earlier
+     * registration for this client version; null until then, even when [deviceIdState] holds a
+     * stored id.
+     */
+    val registeredDeviceId: StateFlow<String?> = _registeredDeviceId.asStateFlow()
     private var cachedDeviceId: String?
         get() = _deviceId.value
         set(value) {
@@ -764,6 +772,7 @@ class RomMConnectionManager @Inject constructor(
         biosRepository.setApi(newApi)
         saveSyncRepository.get().setCapabilities(capabilities)
         saveSyncRepository.get().setDeviceId(body.deviceId)
+        _registeredDeviceId.value = body.deviceId
         _connectionState.value = ConnectionState.Connected(version, capabilities)
         rememberSnapshots(base, capabilities)
 
@@ -963,6 +972,7 @@ class RomMConnectionManager @Inject constructor(
         if (trustStoredRegistration && existingDeviceId != null && existingClientVersion == clientVersion) {
             cachedDeviceId = existingDeviceId
             saveSyncRepository.get().setDeviceId(existingDeviceId)
+            _registeredDeviceId.value = existingDeviceId
             Logger.info(TAG, "Device already registered: $existingDeviceId")
             return
         }
@@ -985,6 +995,7 @@ class RomMConnectionManager @Inject constructor(
                         saveSyncRepository.get().setDeviceId(device.id)
                         userPreferencesRepository.setRommDeviceId(device.id, clientVersion)
                         rommAccountRepository.get().recordDeviceRegistration(device.id, clientVersion)
+                        _registeredDeviceId.value = device.id
                         Logger.info(TAG, "Device updated: ${device.id}")
                         return
                     }
@@ -999,6 +1010,7 @@ class RomMConnectionManager @Inject constructor(
                     saveSyncRepository.get().setDeviceId(device.deviceId)
                     userPreferencesRepository.setRommDeviceId(device.deviceId, clientVersion)
                     rommAccountRepository.get().recordDeviceRegistration(device.deviceId, clientVersion)
+                    _registeredDeviceId.value = device.deviceId
                     Logger.info(TAG, "Device registered: ${device.deviceId}")
                 }
             } else {

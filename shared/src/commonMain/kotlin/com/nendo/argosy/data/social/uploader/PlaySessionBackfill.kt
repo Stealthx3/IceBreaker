@@ -10,6 +10,8 @@ import com.nendo.argosy.util.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -47,8 +49,10 @@ class PlaySessionBackfill @Inject constructor(
 
     init {
         scope.launch {
-            connectionManager.connectionState.collect { state ->
-                if (state is ConnectionState.Connected) runOnceAfterConnect()
+            combine(connectionManager.connectionState, connectionManager.registeredDeviceId) { state, deviceId ->
+                state is ConnectionState.Connected && deviceId != null
+            }.distinctUntilChanged().collect { ready ->
+                if (ready) runOnceAfterConnect()
             }
         }
     }

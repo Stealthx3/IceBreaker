@@ -14,6 +14,7 @@ import com.nendo.argosy.data.preferences.PersistedSession
 import com.nendo.argosy.data.preferences.SessionStateStore
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.remote.romm.RomMRepository
+import com.nendo.argosy.data.social.uploader.PlaySessionBackfill
 import com.nendo.argosy.data.repository.GameUserOverlayWriter
 import com.nendo.argosy.data.repository.SaveCacheManager
 import com.nendo.argosy.data.sync.SaveRecoveryGate
@@ -69,6 +70,7 @@ actual class PlaySessionTracker @Inject constructor(
     private val saveRecoveryGate: SaveRecoveryGate,
     private val reconcileAchievementsOnSessionEndUseCase: dagger.Lazy<ReconcileAchievementsOnSessionEndUseCase>,
     private val sessionRecapFactsRecorder: SessionRecapFactsRecorder,
+    private val playSessionBackfill: PlaySessionBackfill,
     private val sessionSaveFinalizer: SessionSaveFinalizer,
     private val syncStatesOnSessionEndUseCase: dagger.Lazy<SyncStatesOnSessionEndUseCase>,
     private val notificationManager: NotificationManager,
@@ -303,6 +305,7 @@ actual class PlaySessionTracker @Inject constructor(
                 richPresenceAt = recapFacts.richPresenceAt
             )
         )
+        scope.launch { playSessionBackfill.uploadThenPull() }
         sessionRecapFactsRecorder.onSessionRecorded(
             scope, sessionId, session.gameId, session.emulatorPackage, recapFacts, session.startTime, endTime
         )

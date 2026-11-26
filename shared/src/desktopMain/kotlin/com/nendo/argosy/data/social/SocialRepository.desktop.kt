@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 @Singleton
-actual class SocialRepository @Inject constructor() {
+actual class SocialRepository @Inject constructor(
+    private val playSessionBackfill: PlaySessionBackfill
+) {
     actual data class FriendCode(actual val code: String, actual val url: String)
 
     actual companion object {}
@@ -122,7 +124,7 @@ actual class SocialRepository @Inject constructor() {
 
     actual fun addFriendByCode(code: String): Boolean = false
 
-    actual suspend fun backfillRomMPlaySessions(): PlaySessionBackfill.Summary = TODO("desktop: backfillRomMPlaySessions")
+    actual suspend fun backfillRomMPlaySessions(): PlaySessionBackfill.Summary = playSessionBackfill.run()
 
     actual suspend fun syncUnsharedAchievements() {
     }

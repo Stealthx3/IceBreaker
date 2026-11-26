@@ -36,6 +36,7 @@ class PlaySessionBackfillTest {
     private val connectionManager: RomMConnectionManager = mockk {
         every { connectionState } returns MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
         every { getDeviceId() } returns "dev-1"
+        every { registeredDeviceId } returns MutableStateFlow<String?>(null)
     }
     private val pull: PlaySessionPull = mockk {
         coEvery { run() } returns PlaySessionPull.Summary(0, 0)
