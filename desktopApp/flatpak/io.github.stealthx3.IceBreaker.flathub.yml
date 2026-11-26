@@ -160,7 +160,7 @@ modules:
       - install -Dm755 desktopApp/flatpak/icebreaker-jre.sh /app/bin/icebreaker
       - install -Dm644 desktopApp/flatpak/io.github.stealthx3.IceBreaker.desktop -t /app/share/applications
       - install -Dm644 desktopApp/flatpak/io.github.stealthx3.IceBreaker.metainfo.xml -t /app/share/metainfo
-      - mkdir -p /app/share/icons && cp -r icons/hicolor /app/share/icons/
+      - mkdir -p /app/share/icons && cp -r desktopApp/flatpak/icons/hicolor /app/share/icons/
     sources:
       - type: git
         path: ../..
