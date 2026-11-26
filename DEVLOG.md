@@ -1968,3 +1968,8 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Action:** a desktop-only `Credit` row in About (under the version info, gated on `PlatformFeatures.desktopWindow`, not focusable) with the required credit: "Based on Argosy by the RomM team. IceBreaker is an independent port and is not affiliated with or endorsed by rommapp." (`settings_about_desktop_credit`, with translator notes). The desktop brand filter skips that one string so the credit keeps naming Argosy. Desktop compile green; generated resource checked.
 - **Next (part 2):** the brand kit's About lockup and splash (`brand/deployment/app/`), desktop only.
 
+### 2026-11-26 — Rename unit 2b (part 2a): About lockup on desktop
+
+- **Action:** the brand kit's About lockup (`about-lockup-on-dark.svg` / `-on-light.svg`, copied unchanged into `shared/src/desktopMain/resources/brand/`) shows above the credit line in desktop About, chosen by the theme's `isDark`. Seam `BrandLockup` (`ui/common`): Android draws nothing, desktop loads the SVG with `loadSvgPainter`. Desktop and Android compile; `BrandLockupTest` loads both SVGs with a real size. Not yet seen on screen (a fresh IceBreaker install starts in the setup wizard).
+- **Next:** the splash (`brand/deployment/app/splash-1920x1080`) at desktop start-up.
+

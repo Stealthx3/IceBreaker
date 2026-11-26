@@ -2,6 +2,8 @@ package com.nendo.argosy.ui.screens.settings.sections
 
 import com.nendo.argosy.platform.PlatformFeatures
 import com.nendo.argosy.ui.components.InfoPreference
+import androidx.compose.foundation.layout.heightIn
+import com.nendo.argosy.ui.common.BrandLockup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -225,12 +227,15 @@ fun AboutSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                     onLicensesClick = { showLicensesDialog = true }
                 )
 
-                AboutItem.Credit -> InfoPreference(
-                    title = stringResource(R.string.settings_about_desktop_credit_title),
-                    value = "",
-                    isFocused = false,
-                    subtitle = stringResource(R.string.settings_about_desktop_credit)
-                )
+                AboutItem.Credit -> Column(verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm)) {
+                    BrandLockup(modifier = Modifier.fillMaxWidth().heightIn(max = Dimens.iconXl * 3))
+                    InfoPreference(
+                        title = stringResource(R.string.settings_about_desktop_credit_title),
+                        value = "",
+                        isFocused = false,
+                        subtitle = stringResource(R.string.settings_about_desktop_credit)
+                    )
+                }
 
                 AboutItem.CheckUpdates -> {
                     val checkTitle = stringResource(R.string.settings_about_update_title_check)
