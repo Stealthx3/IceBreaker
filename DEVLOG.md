@@ -2041,6 +2041,11 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Gotcha:** right after the rename, the CDN answered `summaries/<digest>.gz` with 404 for `Accept-Encoding: gzip` (which Flatpak sends) but 200 without it: a cached negative answer from the first request, gone within about two minutes (max-age 600). A tester updating in that window sees "Server returned status 404" and only needs to retry.
 - **Still open before the Flathub PR:** real Steam Add/Remove, Flatpak Steam, Game Mode and the wizard offer on screen (the owner's Steam was running throughout); the issue #4 reporter's confirmation.
 
+### 2026-11-26 — Step 5 closed (owner); Flathub submission started
+
+- **Owner:** "Begin Flathub" and "mark off 5.5". Step 5 is closed with units 5a and 5b (upstream v2.31.0 merged and verified, issue #4 fixed); units 5c–5h (catalog and Eden, RetroArch core installs, screenshot upload, hardware readings, the seat picker, games kept running and the Home combo) carry forward past the Flathub submission. The step's build is already published: IceBreaker 0.5.0 on icesuite-test.
+- **Flathub, first actions:** regenerate the offline Gradle sources (the 2.31 merge and today's work changed dependencies), build the from-source manifest offline and lint it; the build needs the source on GitHub, so the phase-close history rewrite and push of `main` (owner confirmation) come before the submission PR.
+
 ### 2026-11-26 — Add to Steam in the owner's real Steam (owner: "Do the steam test now. Close steam if it's open.")
 
 - Closed Steam with `steam -shutdown` (6 s); backed up the one existing `shortcuts.vdf` to `build/gamemode/shortcuts.vdf.6031.bak-20261126` (the other account had none).

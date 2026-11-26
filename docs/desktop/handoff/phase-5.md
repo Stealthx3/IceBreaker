@@ -2,7 +2,7 @@
 
 Rewritten (not appended) at the end of every work unit, so a fresh session can start from it alone. History and reasoning live in `DEVLOG.md` (Phase 5 section). Earlier phases: `phase-0.md` … `phase-4.md`.
 
-**Updated:** 2026-11-26. Steps 1–4 done; step 6 at the Flathub gate (owner go-ahead); step 5 units 5c–5h after it.
+**Updated:** 2026-11-26. Steps 1–5 done; step 6 in progress (Flathub submission started, owner go-ahead 2026-11-26).
 
 ## State
 
@@ -17,12 +17,12 @@ Owner decision 2026-10-27: Linux adaptation and compatibility, not a 1:1 clone. 
 
 Plan (`DEVLOG.md`, Phase 5 plan): 1 wizard wording, 2 Close Argosy, 3 thumbnails, 4 Linux desktop and Steam Game Mode compatibility (done); 5 upstream v2.31 merge and Linux adaptations (in progress); 6 Flathub submission with the IceBreaker rename.
 
-## Step 5: units
+## Step 5: closed 2026-11-26 (owner); units 5c–5h carried forward
 
 Triage of every upstream commit: `docs/desktop/upstream-2.31-triage.md` (uncommitted until owner says; read it first). Owner decisions: `DEVLOG.md`, 2026-11-21.
 
 - **5a/5b. Upstream v2.31.0 merged and verified (done 2026-11-21).** `main` contains it. Details and known desktop gaps: DEVLOG 2026-11-21 ("Units 5a and 5b done"). Merge helpers: `scripts/desktop/merge/` (README). After each upstream merge, regenerate desktop migrations: `python3 -I scripts/desktop/gen_desktop_migrations.py`. Worktrees `../argosy-desktop-merge` and `../argosy-upstream-2.31` can be removed once 5c starts.
-- **5c next. Catalog and Eden:**
+- **Carried forward (after the Flathub submission; owner closed step 5 on 2026-11-26).** 5c. Catalog and Eden:
   - Catalog (data, served from GitHub): Vita3K, ScummVM, PICO-8, xemu; Flycast VMU, Azahar/Lime3DS and PPSSPP save paths; m3u multi-disc launch per emulator.
   - Eden: Switch keys and firmware installed into Eden's folders.
 - **5d. RetroArch core installs:** fetch the core a launch needs from the libretro buildbot into the RetroArch Flatpak's `cores/` folder. Check the Flatpak folder grant first.
