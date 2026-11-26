@@ -1,4 +1,4 @@
-# Argosy Desktop
+# IceBreaker
 
 > [!IMPORTANT]
 > **Argosy Desktop is now IceBreaker.** The app id changed to `io.github.stealthx3.IceBreaker`, and new builds come from the [IceSuite test repository](https://stealthx3.github.io/icesuite-test/). The old `io.github.stealthx3.ArgosyDesktop` gets no more updates.
@@ -10,9 +10,9 @@
 >
 > Either way, your games folder `~/Games/Argosy` becomes `~/Games/IceBreaker` on the first start, and the saved paths follow it. Emulator saves are not touched.
 
-A Linux port of the [Argosy launcher](https://github.com/rommapp/argosy-launcher), shipped as a Flatpak. It runs Argosy's own interface on the Linux desktop and connects to a [RomM](https://github.com/rommapp/romm) server for your library, downloads and save sync. Play from a PC handheld, a mouse and keyboard, or from the couch.
+IceBreaker is a Linux port of the [Argosy launcher](https://github.com/rommapp/argosy-launcher), shipped as a Flatpak. Based on Argosy by the RomM team; an independent port, not affiliated with or endorsed by rommapp. It runs Argosy's own interface on the Linux desktop and connects to a [RomM](https://github.com/rommapp/romm) server for your library, downloads and save sync. Play from a PC handheld, a mouse and keyboard, or from the couch.
 
-> **Status: Beta (0.4.0).** Current version is considered feature-complete. Testing in production is now the current status, and if all goes well this app will be submitted to flathub by November 15th. 
+> **Status: Beta (0.5.0).** Feature-complete and in testing with beta users; the Flathub submission is being prepared.
 
 An independent fork of `rommapp/argosy-launcher`, licensed GPL-3.0 like upstream. Not an official rommapp release.
 
@@ -27,7 +27,7 @@ An independent fork of `rommapp/argosy-launcher`, licensed GPL-3.0 like upstream
 - **Save sync** for RetroArch and standalone emulators, in place, including EmuDeck layouts.
 - **Linux screens:** Flatpak Permissions, a read-only host GPU page, an Apps tab for desktop applications, Quick Settings for volume and rumble.
 - **Steam Game Mode:** emulator windows join Argosy's Steam launch, and Steam's controller settings reach the emulators.
-- **Close Argosy** in the left menu and Settings; Factory Reset restarts into setup.
+- **Close IceBreaker** in the left menu and Settings; Factory Reset restarts into setup.
 
 ### How it differs from Android
 
@@ -38,17 +38,17 @@ The desktop app aims at Linux adaptation, not a 1:1 copy. Every difference is a 
 - **Replaced:** Play Store suggestions → Flathub; APK installers → AppImage and Flathub management; GPU driver downloads → a host GPU page; Android permissions → Flatpak permissions.
 Details and dates: [`PORT_PLAN.md`](PORT_PLAN.md), "Desktop divergences".
 
-| GNOME | KDE Plasma |
+| Home | Game details |
 | --- | --- |
-| ![Argosy Desktop home screen in a window on Fedora GNOME](docs/desktop/screenshots/gnome-home.webp) | ![Argosy Desktop home screen in a window on Fedora KDE Plasma](docs/desktop/screenshots/kde-home.webp) |
+| ![IceBreaker home screen with recent games](docs/desktop/screenshots/icebreaker-home.png) | ![Game details with Play, Favorite, Per-Game Settings and Options](docs/desktop/screenshots/icebreaker-game-details.png) |
 
 What the desktop version adds:
 
-| Setup picks a display profile | Left menu replaces the shoulder-button switcher |
+| Left menu replaces the shoulder-button switcher | Add to Steam with the brand artwork |
 | --- | --- |
-| ![Setup wizard Display step with Handheld, Desktop and TV profiles, Start in Full Screen and UI Scale](docs/desktop/screenshots/setup-display-step.webp) | ![Left menu with Library Sync, Save Sync, Apps, Settings and Close Argosy](docs/desktop/screenshots/left-menu.webp) |
-| **Emulators manager for Linux emulators** | **Flatpak permissions, read live from the sandbox** |
-| ![Emulators screen listing installed Flatpak emulators for the NES](docs/desktop/screenshots/emulators-manager.webp) | ![Permissions screen showing the games folder, emulator save folders and emulator launch grants](docs/desktop/screenshots/flatpak-permissions.webp) |
+| ![Left menu with Library Sync, Save Sync, Apps, Running, Settings and Close IceBreaker](docs/desktop/screenshots/icebreaker-left-menu.png) | ![Add to Steam settings page with its Add to Steam action](docs/desktop/screenshots/icebreaker-add-to-steam.png) |
+| **Setup picks a display profile** | **Emulators manager for Linux emulators** |
+| ![Setup wizard Display step with Handheld, Desktop and TV profiles, Start in Full Screen and UI Scale](docs/desktop/screenshots/setup-display-step.webp) | ![Emulators screen listing installed Flatpak emulators for the NES](docs/desktop/screenshots/emulators-manager.webp) |
 
 - Same Compose UI as the Android app, through Compose Multiplatform, so themes, sounds and focus behaviour match.
 - Finds emulators installed as Flatpaks, AppImages, through EmuDeck or on `PATH`, launches them on the host and syncs their saves when the session ends.
@@ -70,7 +70,7 @@ flatpak install --user icesuite-test io.github.stealthx3.IceBreaker
 
 Beta testers who installed `io.github.stealthx3.ArgosyDesktop` from the old project repo: see the notice at the top of this page.
 
-The setup wizard asks for your RomM server, signs you in, picks a display profile and lists the emulators Argosy can manage. RetroArch is the usual first one:
+The setup wizard asks for your RomM server, signs you in, picks a display profile and lists the emulators IceBreaker can manage. RetroArch is the usual first one:
 
 ```bash
 flatpak install --user flathub org.libretro.RetroArch
@@ -80,13 +80,13 @@ flatpak install --user flathub org.libretro.RetroArch
 - **Updates:** `flatpak update` (the repository is signed; your data stays).
 - **Uninstall:** first use **Settings → Add to Steam → Remove from Steam** if you added it (Flatpak cannot remove the Steam shortcut on uninstall), then `flatpak uninstall --user io.github.stealthx3.IceBreaker` (add `--delete-data` to remove settings; games in `~/Games/IceBreaker` stay).
 
-This is a beta: back up emulator saves before turning on Save Sync. Report bugs in [Issues](https://github.com/Stealthx3/argosy-desktop/issues) with a log of a run that shows the problem:
+This is a beta: back up emulator saves before turning on Save Sync. Report bugs in [Issues](https://github.com/Stealthx3/IceBreaker/issues) with a log of a run that shows the problem:
 
 ```bash
 flatpak run io.github.stealthx3.IceBreaker > ~/icebreaker-run.log 2>&1
 ```
 
-Releases, including a single-file `.flatpak` bundle, are on the [Releases page](https://github.com/Stealthx3/argosy-desktop/releases).
+Releases, including a single-file `.flatpak` bundle, are on the [Releases page](https://github.com/Stealthx3/IceBreaker/releases).
 
 ## How it works
 
@@ -107,8 +107,8 @@ The restructure is scripted (`scripts/desktop/restructure/`) so it re-applies to
 JDK 21 is required; the Android SDK only for the Android app.
 
 ```bash
-git clone https://github.com/Stealthx3/argosy-desktop.git
-cd argosy-desktop
+git clone https://github.com/Stealthx3/IceBreaker.git
+cd IceBreaker
 git submodule update --init --recursive
 ./gradlew :desktopApp:run
 ```
@@ -125,4 +125,4 @@ Without the Android SDK: `ANDROID_HOME=$(mktemp -d) ./gradlew -Pargosy.desktopOn
 
 ## Credits and license
 
-Argosy is by the [rommapp](https://github.com/rommapp) team; upstream's README is kept as [`README.upstream.md`](README.upstream.md). Argosy Desktop is licensed under the [GNU GPL v3.0](LICENSE).
+Argosy is by the [rommapp](https://github.com/rommapp) team; upstream's README is kept as [`README.upstream.md`](README.upstream.md). IceBreaker is licensed under the [GNU GPL v3.0](LICENSE).

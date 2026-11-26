@@ -30,6 +30,24 @@
   <provides>
     <id>io.github.stealthx3.ArgosyDesktop</id>
   </provides>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/Stealthx3/IceBreaker/main/docs/desktop/screenshots/icebreaker-home.png</image>
+      <caption>Your RomM library on the home screen, driven by a controller</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/Stealthx3/IceBreaker/main/docs/desktop/screenshots/icebreaker-game-details.png</image>
+      <caption>Game details with Play, favorites and per-game settings</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/Stealthx3/IceBreaker/main/docs/desktop/screenshots/icebreaker-left-menu.png</image>
+      <caption>The left menu: collections, library, downloads, sync and settings</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/Stealthx3/IceBreaker/main/docs/desktop/screenshots/icebreaker-add-to-steam.png</image>
+      <caption>Add IceBreaker to Steam with its artwork, for Game Mode</caption>
+    </screenshot>
+  </screenshots>
   <url type="homepage">https://github.com/Stealthx3/IceBreaker</url>
   <url type="bugtracker">https://github.com/Stealthx3/IceBreaker/issues</url>
   <url type="vcs-browser">https://github.com/Stealthx3/IceBreaker</url>
@@ -54,6 +72,11 @@
   </supports>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.5.0" date="2026-11-26" type="development">
+      <description>
+        <p>Argosy Desktop is now IceBreaker: a new app id, name and artwork. Settings, sign-in and downloads move over on the first start, and the games folder becomes ~/Games/IceBreaker. New: Add to Steam with library artwork, upstream Argosy 2.31, and a start-up splash.</p>
+      </description>
+    </release>
     <release version="0.4.0" date="2026-11-08" type="development">
       <description>
         <p>Beta: Close Argosy in the drawer and Settings, mouse hover that matches gamepad focus, Reset to Defaults and Factory Reset, cover art cached during sync, an Emulators manager, desktop UI sounds, a setup wizard with Start as Next and Display options, the left menu in place of the shoulder-button switcher, and Steam Game Mode fixes (emulator windows and controllers).</p>
