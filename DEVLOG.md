@@ -1956,3 +1956,10 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Kept:** "Argosy Social" (Argosy's own service, hidden on desktop) and anything inside a path, URL or identifier (`~/Games/Argosy`, `argosy://`, `argosy-launcher`). Result: 963 "IceBreaker" across languages; the 44 "Argosy" left are those cases.
 - **Next (2b):** the desktop About credit line ("Based on Argosy by the RomM team…") and the brand kit's splash and About lockup.
 
+### 2026-11-26 — Owner decisions on open blockers
+
+- PR #2 on icesuite-test (CI fix) merged by Claude at the owner's request; PR #4 (IceBreaker catalog entry) rebased on it so its check reruns; the owner merges #4.
+- Default library folder renamed to `~/Games/IceBreaker` with a one-time move of `~/Games/Argosy` (and the stored paths that point into it); the Flatpak grant follows. Planned with unit 3 (moving users), since both move existing testers' data.
+- Add to Steam: Steam folder grants ship in the manifest (Steam Shortcut Standard §5), unit 4.
+- The upstream triage report stays an uncommitted local file.
+
