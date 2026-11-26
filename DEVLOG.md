@@ -2041,3 +2041,11 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Gotcha:** right after the rename, the CDN answered `summaries/<digest>.gz` with 404 for `Accept-Encoding: gzip` (which Flatpak sends) but 200 without it: a cached negative answer from the first request, gone within about two minutes (max-age 600). A tester updating in that window sees "Server returned status 404" and only needs to retry.
 - **Still open before the Flathub PR:** real Steam Add/Remove, Flatpak Steam, Game Mode and the wizard offer on screen (the owner's Steam was running throughout); the issue #4 reporter's confirmation.
 
+### 2026-11-26 — Add to Steam in the owner's real Steam (owner: "Do the steam test now. Close steam if it's open.")
+
+- Closed Steam with `steam -shutdown` (6 s); backed up the one existing `shortcuts.vdf` to `build/gamemode/shortcuts.vdf.6031.bak-20261126` (the other account had none).
+- **Add from the Flatpak's own Settings page** (walk on the dev data): A on Add to Steam, the confirm modal, A on "Steam is closed": "Added to Steam for 2 accounts. Start Steam to see it."; the page switched to Update art and Remove.
+- **Files** (read with the test's own VDF reader): one IceBreaker entry per account, `"/usr/bin/flatpak"` + `run io.github.stealthx3.IceBreaker`, tag `IceSuite`, all five art files in `grid/`; the 30 other shortcuts of the main account are identical to the backup.
+- **Steam:** started it, launched `steam://rungameid/<id>`: Steam started one IceBreaker Flatpak instance (stopped after 8 s); after a Steam shutdown the entry is still there with `LastPlayTime` set by Steam. Steam restarted, as it was.
+- **Not checked:** the tile, hero and logo by eye (no full-desktop screenshots; the files are in place), Flatpak Steam (not installed here), Game Mode, Remove in real Steam (the shortcut stays; Remove ran only on the fake root), and the wizard offer on screen (needs a fresh setup in the sandbox). The old test shortcut "Argosy Desktop (test)" is still in the owner's Steam.
+
