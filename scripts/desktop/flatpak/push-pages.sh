@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # usage: scripts/desktop/flatpak/push-pages.sh --phase-close <n> | --step-close <phase>.<step> | --end-of-life
-#   (a closed phase or a closed step only; after publish-repo.sh <pages-url>/repo/ <key>; single-commit gh-pages)
+#   --end-of-life: eol-old-repo.sh output to the user site Stealthx3/stealthx3.github.io, folder argosy-desktop/
 set -euo pipefail
 case "${1:-}" in
   --phase-close) [[ "${2:-}" =~ ^[0-9]+$ ]] && label="phase ${2} close" ;;
@@ -13,23 +13,39 @@ root="$(cd "$(dirname "$0")/../../.." && pwd)"
 cd "$root"
 app_id=io.github.stealthx3.ArgosyDesktop
 src=${src:-build/flatpak}
-site=build/flatpak-pages
-remote=$(git remote get-url origin)
 ssh_cmd=$(git config --get core.sshCommand || true)
+if [ "$1" = --end-of-life ]; then
+  site=build/user-site
+  dir=$site/argosy-desktop
+  remote=git@github.com:Stealthx3/stealthx3.github.io.git
+  branch=main
+else
+  site=build/flatpak-pages
+  dir=$site
+  remote=$(git remote get-url origin)
+  branch=gh-pages
+fi
 grep -q '^Url=https://stealthx3.github.io/argosy-desktop/repo/$' "$src/$app_id.flatpakref" \
   || { echo "flatpakref Url is not the Pages URL: rerun publish-repo.sh" >&2; exit 1; }
 rm -rf "$site"
-mkdir -p "$site"
-cp -a "$src/repo" "$site/repo"
-rm -rf "$site/repo/tmp" "$site/repo/.lock"
-cp "$src/argosy-desktop.flatpakrepo" "$src/$app_id.flatpakref" "$site/"
+mkdir -p "$dir"
+cp -a "$src/repo" "$dir/repo"
+rm -rf "$dir/repo/tmp" "$dir/repo/.lock"
+cp "$src/argosy-desktop.flatpakrepo" "$src/$app_id.flatpakref" "$dir/"
 touch "$site/.nojekyll"
 if [ "$1" = --end-of-life ]; then
-  cat > "$site/index.html" <<HTML
+  cat > "$dir/index.html" <<HTML
 <!doctype html><meta charset="utf-8"><title>Argosy Desktop is now IceBreaker</title>
 <h1>Argosy Desktop is now IceBreaker</h1>
 <p>This repository is closed. Already installed? Run <code>flatpak update --user</code> and accept the switch to <code>io.github.stealthx3.IceBreaker</code>; your settings and downloads come along.</p>
-<p>New installs: <a href="https://stealthx3.github.io/icesuite-test/">IceSuite test repository</a>. Source: <a href="https://github.com/Stealthx3/argosy-desktop">Stealthx3/argosy-desktop</a>.</p>
+<p>New installs: <a href="https://stealthx3.github.io/icesuite-test/">IceSuite test repository</a>. Source: <a href="https://github.com/Stealthx3/IceBreaker">Stealthx3/IceBreaker</a>.</p>
+HTML
+  cat > "$site/index.html" <<HTML
+<!doctype html><meta charset="utf-8"><title>Stealthx3</title>
+<h1>Stealthx3</h1>
+<p><a href="https://stealthx3.github.io/icesuite-test/">IceSuite test repository</a> ·
+<a href="https://github.com/Stealthx3/IceBreaker">IceBreaker</a> ·
+<a href="argosy-desktop/">Argosy Desktop (closed, now IceBreaker)</a></p>
 HTML
 else
   cat > "$site/index.html" <<HTML
@@ -41,9 +57,9 @@ Source: <a href="https://github.com/Stealthx3/argosy-desktop">Stealthx3/argosy-d
 HTML
 fi
 cd "$site"
-git init -q -b gh-pages
+git init -q -b "$branch"
 git add -A
 git -c user.name="$(git -C "$root" config user.name)" -c user.email="$(git -C "$root" config user.email)" \
   commit -q -m "Argosy Desktop Flatpak repo, $label ($(date -u +%Y-%m-%dT%H:%MZ))"
-GIT_SSH_COMMAND="${ssh_cmd:-ssh}" git push -q --force "$remote" gh-pages
-echo "pushed gh-pages: $(git rev-parse --short HEAD), $(du -sh . | cut -f1)"
+GIT_SSH_COMMAND="${ssh_cmd:-ssh}" git push -q --force "$remote" "$branch"
+echo "pushed $branch to $remote: $(git rev-parse --short HEAD), $(du -sh . | cut -f1)"

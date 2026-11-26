@@ -38,8 +38,8 @@ flatpak build-update-repo "${sign[@]}" --generate-static-deltas --prune --title=
 
 gpg_line=""
 [ -n "$key" ] && gpg_line="GPGKey=$(gpg ${GNUPGHOME:+--homedir "$GNUPGHOME"} --export "$key" | base64 -w0)"
-homepage=https://github.com/Stealthx3/argosy-desktop
-icon=https://raw.githubusercontent.com/Stealthx3/argosy-desktop/main/argosy_icon.svg
+homepage=https://github.com/Stealthx3/IceBreaker
+icon=https://raw.githubusercontent.com/Stealthx3/IceBreaker/main/desktopApp/flatpak/icons/hicolor/scalable/apps/io.github.stealthx3.IceBreaker.svg
 {
   echo "[Flatpak Repo]"
   echo "Title=Argosy Desktop"

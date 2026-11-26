@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   sync:
-    if: github.repository == 'Stealthx3/argosy-desktop'
+    if: github.repository == 'Stealthx3/IceBreaker'
     runs-on: ubuntu-latest
     steps:
       - name: Check out the upstream branch
