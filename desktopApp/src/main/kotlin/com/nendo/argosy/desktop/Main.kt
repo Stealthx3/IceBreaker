@@ -64,6 +64,7 @@ import com.nendo.argosy.platform.LocalPlatformContext
 import com.nendo.argosy.platform.image.installDesktopImageLoader
 import com.nendo.argosy.ui.ArgosyApp
 import com.nendo.argosy.ui.theme.ALauncherTheme
+import com.nendo.argosy.platform.BrandRelocation
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import kotlinx.coroutines.flow.first
@@ -75,6 +76,7 @@ fun main(args: Array<String>) {
         return
     }
     keepWindowClass()
+    runCatching { BrandRelocation.forThisMachine().run() }
     FactoryResetWipe.runIfPending()
     val options = ShellOptions.parse(args)
     val app = DesktopApplication()

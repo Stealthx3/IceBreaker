@@ -708,7 +708,7 @@
     <string name="settings_permissions_sandbox_unsandboxed">Argosy se ejecuta fuera del sandbox de Flatpak, así que nada está restringido.</string>
     <string name="settings_permissions_sandbox_fix">Para concederlo, ejecuta: %1$s</string>
     <string name="settings_permissions_sandbox_games_folder_title">Carpeta de juegos</string>
-    <string name="settings_permissions_sandbox_games_folder_description">Leer y escribir tu biblioteca en ~/Games/Argosy.</string>
+    <string name="settings_permissions_sandbox_games_folder_description">Leer y escribir tu biblioteca en ~/Games/IceBreaker.</string>
     <string name="settings_permissions_sandbox_emulator_folders_title">Carpetas de guardado de emuladores</string>
     <string name="settings_permissions_sandbox_emulator_folders_description">Sincronizar partidas en las carpetas de tus emuladores.</string>
     <string name="settings_permissions_sandbox_host_title">Iniciar emuladores</string>

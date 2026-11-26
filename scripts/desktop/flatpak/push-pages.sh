@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
-# usage: scripts/desktop/flatpak/push-pages.sh --phase-close <n> | --step-close <phase>.<step>
+# usage: scripts/desktop/flatpak/push-pages.sh --phase-close <n> | --step-close <phase>.<step> | --end-of-life
 #   (a closed phase or a closed step only; after publish-repo.sh <pages-url>/repo/ <key>; single-commit gh-pages)
 set -euo pipefail
 case "${1:-}" in
   --phase-close) [[ "${2:-}" =~ ^[0-9]+$ ]] && label="phase ${2} close" ;;
   --step-close) [[ "${2:-}" =~ ^[0-9]+\.[0-9]+$ ]] && label="step ${2} close" ;;
+  --end-of-life) label="end of life: moved to IceBreaker"; src=build/flatpak/eol ;;
 esac
 [ -n "${label:-}" ] \
   || { echo "refused: the Pages Flatpak repo is updated only at a closed step or phase: push-pages.sh --step-close <phase>.<step> | --phase-close <n>" >&2; exit 2; }
 root="$(cd "$(dirname "$0")/../../.." && pwd)"
 cd "$root"
 app_id=io.github.stealthx3.ArgosyDesktop
-src=build/flatpak
+src=${src:-build/flatpak}
 site=build/flatpak-pages
 remote=$(git remote get-url origin)
 ssh_cmd=$(git config --get core.sshCommand || true)
@@ -23,13 +24,22 @@ cp -a "$src/repo" "$site/repo"
 rm -rf "$site/repo/tmp" "$site/repo/.lock"
 cp "$src/argosy-desktop.flatpakrepo" "$src/$app_id.flatpakref" "$site/"
 touch "$site/.nojekyll"
-cat > "$site/index.html" <<HTML
+if [ "$1" = --end-of-life ]; then
+  cat > "$site/index.html" <<HTML
+<!doctype html><meta charset="utf-8"><title>Argosy Desktop is now IceBreaker</title>
+<h1>Argosy Desktop is now IceBreaker</h1>
+<p>This repository is closed. Already installed? Run <code>flatpak update --user</code> and accept the switch to <code>io.github.stealthx3.IceBreaker</code>; your settings and downloads come along.</p>
+<p>New installs: <a href="https://stealthx3.github.io/icesuite-test/">IceSuite test repository</a>. Source: <a href="https://github.com/Stealthx3/argosy-desktop">Stealthx3/argosy-desktop</a>.</p>
+HTML
+else
+  cat > "$site/index.html" <<HTML
 <!doctype html><meta charset="utf-8"><title>Argosy Desktop Flatpak repo</title>
 <h1>Argosy Desktop (beta)</h1>
 <p><code>flatpak install --user --from https://stealthx3.github.io/argosy-desktop/$app_id.flatpakref</code></p>
 <p>Or add the repo: <a href="argosy-desktop.flatpakrepo">argosy-desktop.flatpakrepo</a>.
 Source: <a href="https://github.com/Stealthx3/argosy-desktop">Stealthx3/argosy-desktop</a>.</p>
 HTML
+fi
 cd "$site"
 git init -q -b gh-pages
 git add -A

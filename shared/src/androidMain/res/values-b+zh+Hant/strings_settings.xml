@@ -639,7 +639,7 @@
     <string name="settings_permissions_sandbox_unsandboxed">Argosy 在 Flatpak 沙盒之外執行，沒有任何限制。</string>
     <string name="settings_permissions_sandbox_fix">如需授予，請執行：%1$s</string>
     <string name="settings_permissions_sandbox_games_folder_title">遊戲資料夾</string>
-    <string name="settings_permissions_sandbox_games_folder_description">讀寫 ~/Games/Argosy 中的遊戲庫。</string>
+    <string name="settings_permissions_sandbox_games_folder_description">讀寫 ~/Games/IceBreaker 中的遊戲庫。</string>
     <string name="settings_permissions_sandbox_emulator_folders_title">模擬器存檔資料夾</string>
     <string name="settings_permissions_sandbox_emulator_folders_description">在模擬器保存存檔的資料夾中同步存檔。</string>
     <string name="settings_permissions_sandbox_host_title">啟動模擬器</string>

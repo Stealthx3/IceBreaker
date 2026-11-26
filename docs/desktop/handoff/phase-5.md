@@ -35,7 +35,7 @@ Triage of every upstream commit: `docs/desktop/upstream-2.31-triage.md` (uncommi
 
 ## Step 6 (IceBreaker rename and Flathub)
 
-**Started 2026-11-21 (owner: "Begin branding conversion"), ahead of 5c–5h.** Unit 1 (identity) and 2a (desktop strings: `desktopBrand` filter in `shared/build.gradle.kts`) done. Unit 2b done: About credit row, About lockup and the start-up splash (JVM `-splash`, with `keepWindowClass()` keeping WM_CLASS; DEVLOG 2026-11-26). Next: unit 3, moving beta users and the library folder (`~/Games/Argosy` → `~/Games/IceBreaker`, owner 2026-11-26, with stored paths rewritten) (end-of-life rebase from the old Pages repo; test in a throwaway home folder), unit 4 Steam shortcut, unit 5 links and repo rename, unit 6 screenshots, lint and the first icesuite-test publish (PR #4 adds the catalog entry; the owner merges it).
+**Started 2026-11-21 (owner: "Begin branding conversion"), ahead of 5c–5h.** Unit 1 (identity) and 2a (desktop strings: `desktopBrand` filter in `shared/build.gradle.kts`) done. Units 2b and 3 done (DEVLOG 2026-11-26): splash, About credit and lockup; `BrandRelocation` moves the old Flatpak data and merges `~/Games/Argosy` into `~/Games/IceBreaker` with stored paths rewritten; the old-repo end-of-life build (`eol-old-repo.sh`) is tested but **not pushed: push it right after the first icesuite-test publish in unit 6** (recipe in `gotchas.md`). The README move notice must stay at the top when the README is rebuilt at the phase close. Next: unit 4 Steam shortcut, unit 5 links and repo rename, unit 6 screenshots, lint and the first icesuite-test publish (PR #4 adds the catalog entry; the owner merges it).
 
 - **Rename:**
   - App id `io.github.stealthx3.IceBreaker`; repo renamed to `Stealthx3/IceBreaker` (owner, 2026-11-21).
@@ -73,5 +73,5 @@ Before the Phase 5 push: `node scripts/pii-scan.mjs history --write-rewrite-file
 ## Where things are
 
 - Desktop code `shared/src/desktopMain`, app `desktopApp/`, Flatpak `desktopApp/flatpak/`, scripts `scripts/desktop/`; JDK `JAVA_HOME=~/.jdks/jdk-21.0.12.1+1`.
-- Desktop data `~/.local/share/argosy-desktop` (never delete without the owner); Flatpak data `~/.var/app/io.github.stealthx3.ArgosyDesktop`.
+- Desktop data `~/.local/share/icebreaker` (never delete without the owner; `alauncher.db.before-relocation` is the pre-move backup); Flatpak data `~/.var/app/io.github.stealthx3.IceBreaker`; library `~/Games/IceBreaker`.
 - Upstream refs: `origin/upstream` (v2.31.0), `rommapp/main` (fetched from rommapp; v3 betas).

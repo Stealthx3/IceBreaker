@@ -668,7 +668,7 @@
     <string name="settings_permissions_sandbox_unsandboxed">Argosy 在 Flatpak 沙盒之外运行，没有任何限制。</string>
     <string name="settings_permissions_sandbox_fix">如需授予，请运行：%1$s</string>
     <string name="settings_permissions_sandbox_games_folder_title">游戏文件夹</string>
-    <string name="settings_permissions_sandbox_games_folder_description">读写 ~/Games/Argosy 中的游戏库。</string>
+    <string name="settings_permissions_sandbox_games_folder_description">读写 ~/Games/IceBreaker 中的游戏库。</string>
     <string name="settings_permissions_sandbox_emulator_folders_title">模拟器存档文件夹</string>
     <string name="settings_permissions_sandbox_emulator_folders_description">在模拟器保存存档的文件夹中同步存档。</string>
     <string name="settings_permissions_sandbox_host_title">启动模拟器</string>

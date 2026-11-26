@@ -1,5 +1,15 @@
 # Argosy Desktop
 
+> [!IMPORTANT]
+> **Argosy Desktop is now IceBreaker.** The app id changed to `io.github.stealthx3.IceBreaker`, and new builds come from the [IceSuite test repository](https://stealthx3.github.io/icesuite-test/). The old `io.github.stealthx3.ArgosyDesktop` gets no more updates.
+>
+> **Already have Argosy Desktop?** Pick one:
+>
+> - **Update in place:** run `flatpak update --user` and answer **yes** when it offers to replace Argosy Desktop with `io.github.stealthx3.IceBreaker`. Settings, sign-in and downloads move with it.
+> - **Install fresh:** remove the old app with `flatpak uninstall --user io.github.stealthx3.ArgosyDesktop` (without `--delete-data`), then install IceBreaker as shown under [Install](#install). On its first start, IceBreaker moves the old app's settings and downloads over.
+>
+> Either way, your games folder `~/Games/Argosy` becomes `~/Games/IceBreaker` on the first start, and the saved paths follow it. Emulator saves are not touched.
+
 A Linux port of the [Argosy launcher](https://github.com/rommapp/argosy-launcher), shipped as a Flatpak. It runs Argosy's own interface on the Linux desktop and connects to a [RomM](https://github.com/rommapp/romm) server for your library, downloads and save sync. Play from a PC handheld, a mouse and keyboard, or from the couch.
 
 > **Status: Beta (0.4.0).** Current version is considered feature-complete. Testing in production is now the current status, and if all goes well this app will be submitted to flathub by November 15th. 
@@ -58,7 +68,7 @@ flatpak remote-add --user --if-not-exists icesuite-test https://stealthx3.github
 flatpak install --user icesuite-test io.github.stealthx3.IceBreaker
 ```
 
-Beta testers who installed `io.github.stealthx3.ArgosyDesktop` from the old project repo are moved to IceBreaker by `flatpak update`; their settings and library come along.
+Beta testers who installed `io.github.stealthx3.ArgosyDesktop` from the old project repo: see the notice at the top of this page.
 
 The setup wizard asks for your RomM server, signs you in, picks a display profile and lists the emulators Argosy can manage. RetroArch is the usual first one:
 
@@ -68,12 +78,12 @@ flatpak install --user flathub org.libretro.RetroArch
 
 - **Steam Deck:** install in Desktop Mode, add Argosy Desktop to Steam as a non-Steam game, then start it from Game Mode.
 - **Updates:** `flatpak update` (the repository is signed; your data stays).
-- **Uninstall:** `flatpak uninstall --user io.github.stealthx3.ArgosyDesktop` (add `--delete-data` to remove settings; games in `~/Games/Argosy` stay).
+- **Uninstall:** `flatpak uninstall --user io.github.stealthx3.IceBreaker` (add `--delete-data` to remove settings; games in `~/Games/IceBreaker` stay).
 
 This is a beta: back up emulator saves before turning on Save Sync. Report bugs in [Issues](https://github.com/Stealthx3/argosy-desktop/issues) with a log of a run that shows the problem:
 
 ```bash
-flatpak run io.github.stealthx3.ArgosyDesktop > ~/argosy-run.log 2>&1
+flatpak run io.github.stealthx3.IceBreaker > ~/icebreaker-run.log 2>&1
 ```
 
 Releases, including a single-file `.flatpak` bundle, are on the [Releases page](https://github.com/Stealthx3/argosy-desktop/releases).

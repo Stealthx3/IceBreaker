@@ -26,7 +26,7 @@ class FlatpakInfoTest {
         $bus
     """.trimIndent()
 
-    private val fullFilesystems = (listOf("~/Games/Argosy:create") + FlatpakInfo.EMULATOR_FOLDERS).joinToString(";") + ";"
+    private val fullFilesystems = (listOf("~/Games/IceBreaker:create") + FlatpakInfo.EMULATOR_FOLDERS).joinToString(";") + ";"
 
     @Test
     fun theShippedManifestGrantsEverything() {
@@ -73,14 +73,14 @@ class FlatpakInfoTest {
             .map { it.trim() }
             .filter { it.startsWith("- --filesystem=") }
             .map { it.removePrefix("- --filesystem=") }
-            .filterNot { it.startsWith("~/Games/Argosy") }
+            .filterNot { it.startsWith("~/Games/IceBreaker") }
         assertEquals(manifest - FlatpakInfo.REMOVABLE_MEDIA_FOLDERS.toSet(), FlatpakInfo.EMULATOR_FOLDERS)
         assertTrue(manifest.containsAll(FlatpakInfo.REMOVABLE_MEDIA_FOLDERS))
     }
 
     @Test
     fun theHostViewOfAGrantedOverrideReadsAsGranted() {
-        val hostView = info("~/Games/Argosy:create;", bus = "org.freedesktop.Flatpak=talk")
+        val hostView = info("~/Games/IceBreaker:create;", bus = "org.freedesktop.Flatpak=talk")
         assertTrue(FlatpakInfo.report(hostView, home).granted.getValue(SandboxPermission.HOST_ACCESS))
         assertEquals(
             listOf("flatpak", "override", "--user", "--device=all", SandboxPermission.APP_ID),

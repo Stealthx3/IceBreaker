@@ -16,7 +16,7 @@ finish-args:
   - --device=dri
   - --device=all
   - --socket=pulseaudio
-  - --filesystem=~/Games/Argosy:create
+  - --filesystem=~/Games/IceBreaker:create
   - --filesystem=/run/media
   - --filesystem=/media
   - --filesystem=/mnt

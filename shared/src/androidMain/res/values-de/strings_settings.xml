@@ -693,7 +693,7 @@
     <string name="settings_permissions_sandbox_unsandboxed">Argosy läuft außerhalb der Flatpak-Sandbox, nichts ist eingeschränkt.</string>
     <string name="settings_permissions_sandbox_fix">Zum Erteilen ausführen: %1$s</string>
     <string name="settings_permissions_sandbox_games_folder_title">Spieleordner</string>
-    <string name="settings_permissions_sandbox_games_folder_description">Deine Spielesammlung in ~/Games/Argosy lesen und schreiben.</string>
+    <string name="settings_permissions_sandbox_games_folder_description">Deine Spielesammlung in ~/Games/IceBreaker lesen und schreiben.</string>
     <string name="settings_permissions_sandbox_emulator_folders_title">Emulator-Speicherordner</string>
     <string name="settings_permissions_sandbox_emulator_folders_description">Spielstände in den Ordnern deiner Emulatoren synchronisieren.</string>
     <string name="settings_permissions_sandbox_host_title">Emulatoren starten</string>

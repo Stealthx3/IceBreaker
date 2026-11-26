@@ -79,7 +79,7 @@ object FlatpakInfo {
         val missingFolders = EMULATOR_FOLDERS.filterNot { hasFilesystem(filesystems, it, home) }
         val granted = SandboxPermission.entries.associateWith { permission ->
             when (permission) {
-                SandboxPermission.GAMES_FOLDER -> hasFilesystem(filesystems, "~/Games/Argosy", home)
+                SandboxPermission.GAMES_FOLDER -> hasFilesystem(filesystems, "~/Games/IceBreaker", home)
                 SandboxPermission.EMULATOR_FOLDERS -> missingFolders.isEmpty()
                 SandboxPermission.HOST_ACCESS -> sessionBus["org.freedesktop.Flatpak"] == "talk"
                 SandboxPermission.NOTIFICATIONS, SandboxPermission.SCREENSHOTS -> true

@@ -698,7 +698,7 @@
     <string name="settings_permissions_sandbox_unsandboxed">Argosy tourne hors du bac à sable Flatpak, rien n\'est restreint.</string>
     <string name="settings_permissions_sandbox_fix">Pour l\'accorder, lance : %1$s</string>
     <string name="settings_permissions_sandbox_games_folder_title">Dossier des jeux</string>
-    <string name="settings_permissions_sandbox_games_folder_description">Lire et écrire ta ludothèque dans ~/Games/Argosy.</string>
+    <string name="settings_permissions_sandbox_games_folder_description">Lire et écrire ta ludothèque dans ~/Games/IceBreaker.</string>
     <string name="settings_permissions_sandbox_emulator_folders_title">Dossiers de sauvegarde des émulateurs</string>
     <string name="settings_permissions_sandbox_emulator_folders_description">Synchroniser les sauvegardes dans les dossiers de tes émulateurs.</string>
     <string name="settings_permissions_sandbox_host_title">Lancer les émulateurs</string>

@@ -5,7 +5,7 @@ package com.nendo.argosy.data.model
  * grants it; portal permissions ([isPortal]) need no grant.
  */
 enum class SandboxPermission(val flag: String, val isPortal: Boolean = false) {
-    GAMES_FOLDER("--filesystem=~/Games/Argosy:create"),
+    GAMES_FOLDER("--filesystem=~/Games/IceBreaker:create"),
     EMULATOR_FOLDERS("--filesystem=~/Emulation"),
     HOST_ACCESS("--talk-name=org.freedesktop.Flatpak"),
     NOTIFICATIONS("org.freedesktop.portal.Notification", isPortal = true),

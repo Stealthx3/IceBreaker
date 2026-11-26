@@ -683,7 +683,7 @@
     <string name="settings_permissions_sandbox_unsandboxed">Argosy Flatpak सैंडबॉक्स के बाहर चल रहा है, कोई पाबंदी नहीं है।</string>
     <string name="settings_permissions_sandbox_fix">देने के लिए चलाएँ: %1$s</string>
     <string name="settings_permissions_sandbox_games_folder_title">गेम्स फ़ोल्डर</string>
-    <string name="settings_permissions_sandbox_games_folder_description">~/Games/Argosy में आपकी गेम लाइब्रेरी पढ़ें और लिखें।</string>
+    <string name="settings_permissions_sandbox_games_folder_description">~/Games/IceBreaker में आपकी गेम लाइब्रेरी पढ़ें और लिखें।</string>
     <string name="settings_permissions_sandbox_emulator_folders_title">एमुलेटर सेव फ़ोल्डर</string>
     <string name="settings_permissions_sandbox_emulator_folders_description">आपके एमुलेटर जिन फ़ोल्डरों में सेव रखते हैं, वहाँ सेव सिंक करें।</string>
     <string name="settings_permissions_sandbox_host_title">एमुलेटर चलाएँ</string>

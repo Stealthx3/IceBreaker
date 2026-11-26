@@ -712,7 +712,7 @@
     <string name="settings_permissions_sandbox_unsandboxed">Argosy работает вне песочницы Flatpak, ограничений нет.</string>
     <string name="settings_permissions_sandbox_fix">Чтобы выдать, выполните: %1$s</string>
     <string name="settings_permissions_sandbox_games_folder_title">Папка игр</string>
-    <string name="settings_permissions_sandbox_games_folder_description">Читать и записывать библиотеку в ~/Games/Argosy.</string>
+    <string name="settings_permissions_sandbox_games_folder_description">Читать и записывать библиотеку в ~/Games/IceBreaker.</string>
     <string name="settings_permissions_sandbox_emulator_folders_title">Папки сохранений эмуляторов</string>
     <string name="settings_permissions_sandbox_emulator_folders_description">Синхронизировать сохранения в папках эмуляторов.</string>
     <string name="settings_permissions_sandbox_host_title">Запуск эмуляторов</string>
