@@ -2108,157 +2108,143 @@
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media/media/1.7.0/media-1.7.0.module",
-    "sha256": "996f646284a2d981899cdac3282249e0e1f20ab82838a0875dc66bd264d24961",
-    "dest": "offline-repository/androidx/media/media/1.7.0",
-    "dest-filename": "media-1.7.0.module"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-common/1.9.4/media3-common-1.9.4.module",
+    "sha256": "54b9e7153db594900b211905450cf30fa8f41f5abd8717ca0028e134601057a4",
+    "dest": "offline-repository/androidx/media3/media3-common/1.9.4",
+    "dest-filename": "media3-common-1.9.4.module"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media/media/1.7.0/media-1.7.0.pom",
-    "sha256": "696656b7e3ebdeef216edb2d8bbaa0f395248864c2fc34b199fbc24f3266b8e1",
-    "dest": "offline-repository/androidx/media/media/1.7.0",
-    "dest-filename": "media-1.7.0.pom"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-common/1.9.4/media3-common-1.9.4.pom",
+    "sha256": "829e67a99759db1c52fbf7bc39acaf8219a6e68d327cc58f6d1fea72367565ee",
+    "dest": "offline-repository/androidx/media3/media3-common/1.9.4",
+    "dest-filename": "media3-common-1.9.4.pom"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-common/1.5.1/media3-common-1.5.1.module",
-    "sha256": "c01afb3a57e3d171e41d98d71220ef9cbb7a508118a189d0c79e55c6337fb796",
-    "dest": "offline-repository/androidx/media3/media3-common/1.5.1",
-    "dest-filename": "media3-common-1.5.1.module"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-container/1.9.4/media3-container-1.9.4.module",
+    "sha256": "1c67070d5b312389206abdd9c204f9c29f7e2608bc69a0019675c915b4ae7008",
+    "dest": "offline-repository/androidx/media3/media3-container/1.9.4",
+    "dest-filename": "media3-container-1.9.4.module"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-common/1.5.1/media3-common-1.5.1.pom",
-    "sha256": "30cf313224e9a199bd6ee03f9700ebd2e4e3473c6e76e7afcfa7329237ab0562",
-    "dest": "offline-repository/androidx/media3/media3-common/1.5.1",
-    "dest-filename": "media3-common-1.5.1.pom"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-container/1.9.4/media3-container-1.9.4.pom",
+    "sha256": "018173a35e7bf75d091ddb812f95fdfcae38f5c48b0789766cf645e03e46bee4",
+    "dest": "offline-repository/androidx/media3/media3-container/1.9.4",
+    "dest-filename": "media3-container-1.9.4.pom"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-container/1.5.1/media3-container-1.5.1.module",
-    "sha256": "369c92fe1ec4d80aa3bd9cbec4fe6757cc4bea24b3a4cddea328ad9629c56d5f",
-    "dest": "offline-repository/androidx/media3/media3-container/1.5.1",
-    "dest-filename": "media3-container-1.5.1.module"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-database/1.9.4/media3-database-1.9.4.module",
+    "sha256": "09bc36caef581b533e5c14b4bebd0450cd871a8ec61f0036dd5b9d77c6682a15",
+    "dest": "offline-repository/androidx/media3/media3-database/1.9.4",
+    "dest-filename": "media3-database-1.9.4.module"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-container/1.5.1/media3-container-1.5.1.pom",
-    "sha256": "87764108ed7530e8c08e53412a935f6ca3207b62b0d7a8bec0fa773661d738ee",
-    "dest": "offline-repository/androidx/media3/media3-container/1.5.1",
-    "dest-filename": "media3-container-1.5.1.pom"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-database/1.9.4/media3-database-1.9.4.pom",
+    "sha256": "bc0e6e32c29b80280d134f6c5c58cdba4a37b55c2ed3317f4f9be5fd533e411e",
+    "dest": "offline-repository/androidx/media3/media3-database/1.9.4",
+    "dest-filename": "media3-database-1.9.4.pom"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-database/1.5.1/media3-database-1.5.1.module",
-    "sha256": "21239585d06e7c673002e3da85ab6358ce427d64f8ab4253c932d2f4fbddb065",
-    "dest": "offline-repository/androidx/media3/media3-database/1.5.1",
-    "dest-filename": "media3-database-1.5.1.module"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-datasource-okhttp/1.9.4/media3-datasource-okhttp-1.9.4.module",
+    "sha256": "8d1e2184e01dd866507c88e9afa9f0e9ed117325166589d3d76dde64e71a3d96",
+    "dest": "offline-repository/androidx/media3/media3-datasource-okhttp/1.9.4",
+    "dest-filename": "media3-datasource-okhttp-1.9.4.module"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-database/1.5.1/media3-database-1.5.1.pom",
-    "sha256": "cb80a2dbf60e61996737e7b6642bdaacd58cfd12a345216efada70b7b9b9f9a3",
-    "dest": "offline-repository/androidx/media3/media3-database/1.5.1",
-    "dest-filename": "media3-database-1.5.1.pom"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-datasource-okhttp/1.9.4/media3-datasource-okhttp-1.9.4.pom",
+    "sha256": "b6ff3a98c57e6e67479dd0d2c65b264669bd00998b070c9190e34be897da50a6",
+    "dest": "offline-repository/androidx/media3/media3-datasource-okhttp/1.9.4",
+    "dest-filename": "media3-datasource-okhttp-1.9.4.pom"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-datasource-okhttp/1.5.1/media3-datasource-okhttp-1.5.1.module",
-    "sha256": "39f2c03eb7a0832872676e6d6cd0339a0118452528eefcef2d727cee9d6194f8",
-    "dest": "offline-repository/androidx/media3/media3-datasource-okhttp/1.5.1",
-    "dest-filename": "media3-datasource-okhttp-1.5.1.module"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-datasource/1.9.4/media3-datasource-1.9.4.module",
+    "sha256": "5971278bc721a0dd1232d34956ae075c59a9535388a3d700fdb16d22e00dda46",
+    "dest": "offline-repository/androidx/media3/media3-datasource/1.9.4",
+    "dest-filename": "media3-datasource-1.9.4.module"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-datasource-okhttp/1.5.1/media3-datasource-okhttp-1.5.1.pom",
-    "sha256": "25fd8b15fb16cf1a1bde6aa6612b78ca8be691e1f566997e919287d40657b53b",
-    "dest": "offline-repository/androidx/media3/media3-datasource-okhttp/1.5.1",
-    "dest-filename": "media3-datasource-okhttp-1.5.1.pom"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-datasource/1.9.4/media3-datasource-1.9.4.pom",
+    "sha256": "dcd0085b4e2566ea59f1b5904676c2e0479a8258d382edd8bad21ae67f256f8e",
+    "dest": "offline-repository/androidx/media3/media3-datasource/1.9.4",
+    "dest-filename": "media3-datasource-1.9.4.pom"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-datasource/1.5.1/media3-datasource-1.5.1.module",
-    "sha256": "a94825f509e053042c918b7e1b4b7752f5bafaf9ba2968c4c3350b6222c5af64",
-    "dest": "offline-repository/androidx/media3/media3-datasource/1.5.1",
-    "dest-filename": "media3-datasource-1.5.1.module"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-decoder/1.9.4/media3-decoder-1.9.4.module",
+    "sha256": "40c8cca010b16109f14718cf1b8f891b7924c8943deb37c6ecae12157adc584b",
+    "dest": "offline-repository/androidx/media3/media3-decoder/1.9.4",
+    "dest-filename": "media3-decoder-1.9.4.module"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-datasource/1.5.1/media3-datasource-1.5.1.pom",
-    "sha256": "2ea4ca87911495f4f50b6ef67ab66680a2ec01921536cd90a596e2be81c5979e",
-    "dest": "offline-repository/androidx/media3/media3-datasource/1.5.1",
-    "dest-filename": "media3-datasource-1.5.1.pom"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-decoder/1.9.4/media3-decoder-1.9.4.pom",
+    "sha256": "09fe0157e49401328228c01e23ff625948ed36bf2f378c6614cd46b4112c40b6",
+    "dest": "offline-repository/androidx/media3/media3-decoder/1.9.4",
+    "dest-filename": "media3-decoder-1.9.4.pom"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-decoder/1.5.1/media3-decoder-1.5.1.module",
-    "sha256": "fc9f6c7dde342308ec395d3db7c517fb089c22978e0465f1eb870ee0570ee88f",
-    "dest": "offline-repository/androidx/media3/media3-decoder/1.5.1",
-    "dest-filename": "media3-decoder-1.5.1.module"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-exoplayer-hls/1.9.4/media3-exoplayer-hls-1.9.4.module",
+    "sha256": "91d5c65d61f9953104723adefd5ff5b5d3c1ebf35ce3f252323a9f2ccbbd7903",
+    "dest": "offline-repository/androidx/media3/media3-exoplayer-hls/1.9.4",
+    "dest-filename": "media3-exoplayer-hls-1.9.4.module"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-decoder/1.5.1/media3-decoder-1.5.1.pom",
-    "sha256": "9b5188cff90964e5af9cd45926d680d00a4078df78190b554d76b100bb76dc92",
-    "dest": "offline-repository/androidx/media3/media3-decoder/1.5.1",
-    "dest-filename": "media3-decoder-1.5.1.pom"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-exoplayer-hls/1.9.4/media3-exoplayer-hls-1.9.4.pom",
+    "sha256": "44ccdf82f90c1844768b5882a0ce319323c96ecfb3a8f9fae2c8187731b6e6a2",
+    "dest": "offline-repository/androidx/media3/media3-exoplayer-hls/1.9.4",
+    "dest-filename": "media3-exoplayer-hls-1.9.4.pom"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-exoplayer-hls/1.5.1/media3-exoplayer-hls-1.5.1.module",
-    "sha256": "aab69d073aee899f391b61c04e6e4da91b41da78bdf08cfc2cb1774dde3038a9",
-    "dest": "offline-repository/androidx/media3/media3-exoplayer-hls/1.5.1",
-    "dest-filename": "media3-exoplayer-hls-1.5.1.module"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-exoplayer/1.9.4/media3-exoplayer-1.9.4.module",
+    "sha256": "87ade5f1ab6143d83adec160b7bead43aef7d9ed5bdf956212223ac0d686b703",
+    "dest": "offline-repository/androidx/media3/media3-exoplayer/1.9.4",
+    "dest-filename": "media3-exoplayer-1.9.4.module"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-exoplayer-hls/1.5.1/media3-exoplayer-hls-1.5.1.pom",
-    "sha256": "6fb5d0f8960d1922f70dc35299705552933debc516b690fba272b89e690f5e82",
-    "dest": "offline-repository/androidx/media3/media3-exoplayer-hls/1.5.1",
-    "dest-filename": "media3-exoplayer-hls-1.5.1.pom"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-exoplayer/1.9.4/media3-exoplayer-1.9.4.pom",
+    "sha256": "7a7553d8c15b1fa6daf86bd50e641d48062a21aacbdf602b45084578471ace78",
+    "dest": "offline-repository/androidx/media3/media3-exoplayer/1.9.4",
+    "dest-filename": "media3-exoplayer-1.9.4.pom"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-exoplayer/1.5.1/media3-exoplayer-1.5.1.module",
-    "sha256": "d7b09ec60b5eee17041c7b7cd7233e6964db598ec73ae2037661691454430a75",
-    "dest": "offline-repository/androidx/media3/media3-exoplayer/1.5.1",
-    "dest-filename": "media3-exoplayer-1.5.1.module"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-extractor/1.9.4/media3-extractor-1.9.4.module",
+    "sha256": "bb15c581ec21f161420daa734cf7e44b49a0e4bd972c0b94baa1a523861cd6e1",
+    "dest": "offline-repository/androidx/media3/media3-extractor/1.9.4",
+    "dest-filename": "media3-extractor-1.9.4.module"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-exoplayer/1.5.1/media3-exoplayer-1.5.1.pom",
-    "sha256": "846ceec396039626bf181451307829700a4f368a9339867670a88fe70217a0a6",
-    "dest": "offline-repository/androidx/media3/media3-exoplayer/1.5.1",
-    "dest-filename": "media3-exoplayer-1.5.1.pom"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-extractor/1.9.4/media3-extractor-1.9.4.pom",
+    "sha256": "34c9316330a7f077c46358c9323dfcfe8389f74cba6c1f2c52e15b10f40022da",
+    "dest": "offline-repository/androidx/media3/media3-extractor/1.9.4",
+    "dest-filename": "media3-extractor-1.9.4.pom"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-extractor/1.5.1/media3-extractor-1.5.1.module",
-    "sha256": "86b2a4e43762808d57f331c25b5f7967bc7fab3cffe580563108f9149afd3d9b",
-    "dest": "offline-repository/androidx/media3/media3-extractor/1.5.1",
-    "dest-filename": "media3-extractor-1.5.1.module"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-ui/1.9.4/media3-ui-1.9.4.module",
+    "sha256": "84cfecc89d70489c3f51af273b3665011ce2a0eca82660f877affa14e782f7c3",
+    "dest": "offline-repository/androidx/media3/media3-ui/1.9.4",
+    "dest-filename": "media3-ui-1.9.4.module"
   },
   {
     "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-extractor/1.5.1/media3-extractor-1.5.1.pom",
-    "sha256": "6e691121e610ee2c9be818b6954e3c4b5505fb01b198e73cc43259468e47e1d3",
-    "dest": "offline-repository/androidx/media3/media3-extractor/1.5.1",
-    "dest-filename": "media3-extractor-1.5.1.pom"
-  },
-  {
-    "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-ui/1.5.1/media3-ui-1.5.1.module",
-    "sha256": "67d598c80cd09c09919ad6822af8d285b5bdcaafc5f92656d729e6b8a35e0ee6",
-    "dest": "offline-repository/androidx/media3/media3-ui/1.5.1",
-    "dest-filename": "media3-ui-1.5.1.module"
-  },
-  {
-    "type": "file",
-    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-ui/1.5.1/media3-ui-1.5.1.pom",
-    "sha256": "95eb17471be541bef997da5a5001216cd31099a18b659774eb44b5d30fd60098",
-    "dest": "offline-repository/androidx/media3/media3-ui/1.5.1",
-    "dest-filename": "media3-ui-1.5.1.pom"
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-ui/1.9.4/media3-ui-1.9.4.pom",
+    "sha256": "220f1c7323757c6de70ae8311910afca3d4382b88bd27a5e1d51f6676db4c390",
+    "dest": "offline-repository/androidx/media3/media3-ui/1.9.4",
+    "dest-filename": "media3-ui-1.9.4.pom"
   },
   {
     "type": "file",
@@ -4964,20 +4950,6 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/3.16.0/okio-3.16.0.module",
-    "sha256": "b66f69b14ae14fbc6ad5de5df22e4e1c94fbc2082572aeb87c520be1449ca340",
-    "dest": "offline-repository/com/squareup/okio/okio/3.16.0",
-    "dest-filename": "okio-3.16.0.module"
-  },
-  {
-    "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/3.16.0/okio-3.16.0.pom",
-    "sha256": "b4972a6b8a865dce6bc47fafe6d8b93fe69289631fe73df87bb4b45c375c1ce6",
-    "dest": "offline-repository/com/squareup/okio/okio/3.16.0",
-    "dest-filename": "okio-3.16.0.pom"
-  },
-  {
-    "type": "file",
     "url": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/3.16.4/okio-3.16.4.module",
     "sha256": "c8441a8726db1a4f9d4f39e068ebb42df6a59d647e32a9c61c15b5390ed59252",
     "dest": "offline-repository/com/squareup/okio/okio/3.16.4",
@@ -5017,6 +4989,20 @@
     "sha256": "1f628c45283bdbab8ce03c07a6cfb76a478b8ddae180bd8f34abac273e48776e",
     "dest": "offline-repository/com/squareup/okio/okio/3.7.0",
     "dest-filename": "okio-3.7.0.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/3.9.0/okio-3.9.0.module",
+    "sha256": "68d1c879ff658931d02b3adbeafbb512e163c20a90cadf07d90c8dbea7e76210",
+    "dest": "offline-repository/com/squareup/okio/okio/3.9.0",
+    "dest-filename": "okio-3.9.0.module"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/3.9.0/okio-3.9.0.pom",
+    "sha256": "14f351da9b97b4369e3f6e8f696b0ad4036d14d21b0fd97aa5c8c6ec15be7d90",
+    "dest": "offline-repository/com/squareup/okio/okio/3.9.0",
+    "dest-filename": "okio-3.9.0.pom"
   },
   {
     "type": "file",
@@ -5262,6 +5248,62 @@
     "sha256": "c91ab5aa570d86f6fd07cc158ec6bc2c50080402972ee9179fe24100739fbb20",
     "dest": "offline-repository/commons-logging/commons-logging/1.2",
     "dest-filename": "commons-logging-1.2.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/dev/rikka/shizuku/aidl/13.1.5/aidl-13.1.5.module",
+    "sha256": "bdf6d47b95bf1ef005be66fa1d286e9875b0d9b8541fd3cbb7346781bc205514",
+    "dest": "offline-repository/dev/rikka/shizuku/aidl/13.1.5",
+    "dest-filename": "aidl-13.1.5.module"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/dev/rikka/shizuku/aidl/13.1.5/aidl-13.1.5.pom",
+    "sha256": "068afe284102d3629562e6807423f6d1c8a4eb3dfa62fe241c7163633daaef3a",
+    "dest": "offline-repository/dev/rikka/shizuku/aidl/13.1.5",
+    "dest-filename": "aidl-13.1.5.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/dev/rikka/shizuku/api/13.1.5/api-13.1.5.module",
+    "sha256": "2c58ad0be2666982b569057567413f7a1194e378366e0abcac2c77e94ca9043c",
+    "dest": "offline-repository/dev/rikka/shizuku/api/13.1.5",
+    "dest-filename": "api-13.1.5.module"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/dev/rikka/shizuku/api/13.1.5/api-13.1.5.pom",
+    "sha256": "1e9d3b6f3a9b95580433f0486f3debb84c42f250e1fdc43a9fdcf121e14bd751",
+    "dest": "offline-repository/dev/rikka/shizuku/api/13.1.5",
+    "dest-filename": "api-13.1.5.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/dev/rikka/shizuku/provider/13.1.5/provider-13.1.5.module",
+    "sha256": "727379df3bd7f30b34ec80a223d3012c3450c85e357ed0bc2495e1347827422a",
+    "dest": "offline-repository/dev/rikka/shizuku/provider/13.1.5",
+    "dest-filename": "provider-13.1.5.module"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/dev/rikka/shizuku/provider/13.1.5/provider-13.1.5.pom",
+    "sha256": "3413e9812ea3c3842212aa6eb04b8a785dfc25a2e114a972a0cead1ca003cd46",
+    "dest": "offline-repository/dev/rikka/shizuku/provider/13.1.5",
+    "dest-filename": "provider-13.1.5.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/dev/rikka/shizuku/shared/13.1.5/shared-13.1.5.module",
+    "sha256": "9d4e2790e3e639b7f5852ee7ed128ca695aeecb3dfa3c173cbf66564fe62232e",
+    "dest": "offline-repository/dev/rikka/shizuku/shared/13.1.5",
+    "dest-filename": "shared-13.1.5.module"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/dev/rikka/shizuku/shared/13.1.5/shared-13.1.5.pom",
+    "sha256": "90a416caf523964cec3e533c0f2e9a96ecd5edc0f66888758fd80c285a2f1f7e",
+    "dest": "offline-repository/dev/rikka/shizuku/shared/13.1.5",
+    "dest-filename": "shared-13.1.5.pom"
   },
   {
     "type": "file",
@@ -9668,27 +9710,6 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.9.0/kotlinx-serialization-json-jvm-1.9.0.jar",
-    "sha256": "d94cc34cae39246a1af74fda63f9c4812ce12216ef641d5fa3bbbb539a6922d8",
-    "dest": "offline-repository/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.9.0",
-    "dest-filename": "kotlinx-serialization-json-jvm-1.9.0.jar"
-  },
-  {
-    "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.9.0/kotlinx-serialization-json-jvm-1.9.0.module",
-    "sha256": "bbadf8c76bab3fcd88fce45b3bbb63dfb1487f38021e1bdd83bfb9310ef7e69a",
-    "dest": "offline-repository/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.9.0",
-    "dest-filename": "kotlinx-serialization-json-jvm-1.9.0.module"
-  },
-  {
-    "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.9.0/kotlinx-serialization-json-jvm-1.9.0.pom",
-    "sha256": "6b3433c2aa9eb26628dbabf16c96334caab30f6e07710d10ee7f87906ce730dd",
-    "dest": "offline-repository/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.9.0",
-    "dest-filename": "kotlinx-serialization-json-jvm-1.9.0.pom"
-  },
-  {
-    "type": "file",
     "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json/1.6.3/kotlinx-serialization-json-1.6.3.module",
     "sha256": "80d1d87fa0a63bff8395ea3910bda80d09f0f583504ddea8ed007bc7a86b4cd4",
     "dest": "offline-repository/org/jetbrains/kotlinx/kotlinx-serialization-json/1.6.3",
@@ -9700,20 +9721,6 @@
     "sha256": "29c2217618e531d7d832cc880aea6ed1a8f40773e437f5a41d70bd15468d3ce3",
     "dest": "offline-repository/org/jetbrains/kotlinx/kotlinx-serialization-json/1.6.3",
     "dest-filename": "kotlinx-serialization-json-1.6.3.pom"
-  },
-  {
-    "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json/1.9.0/kotlinx-serialization-json-1.9.0.module",
-    "sha256": "4fc13ec412b7b9a213a17dfdaa336457801be16fc165ad86b0b7314fd096e70c",
-    "dest": "offline-repository/org/jetbrains/kotlinx/kotlinx-serialization-json/1.9.0",
-    "dest-filename": "kotlinx-serialization-json-1.9.0.module"
-  },
-  {
-    "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json/1.9.0/kotlinx-serialization-json-1.9.0.pom",
-    "sha256": "994197dfd5aab9bf558556c2156fde2282ba6fc3ad47f466a08ce7935ccf4764",
-    "dest": "offline-repository/org/jetbrains/kotlinx/kotlinx-serialization-json/1.9.0",
-    "dest-filename": "kotlinx-serialization-json-1.9.0.pom"
   },
   {
     "type": "file",
