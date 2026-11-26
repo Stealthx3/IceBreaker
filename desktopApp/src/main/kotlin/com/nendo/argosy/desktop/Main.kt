@@ -74,6 +74,7 @@ fun main(args: Array<String>) {
         println(MpvProbe.run(it.removePrefix(PROBE_VIDEO_FLAG)))
         return
     }
+    keepWindowClass()
     FactoryResetWipe.runIfPending()
     val options = ShellOptions.parse(args)
     val app = DesktopApplication()
@@ -219,6 +220,20 @@ private fun shellExitCode(): Int =
     if (AppShutdown.factoryResetRequested.value) FactoryResetWipe.RESTART_EXIT_CODE else 0
 
 private const val SHUTDOWN_GRACE_MS = 3_000L
+
+/**
+ * Pins the X11 WM_CLASS that the desktop entry's StartupWMClass names. XToolkit derives it from the
+ * bottom frame of the thread that starts AWT, and the JVM splash screen moves main() onto a plain thread.
+ */
+private fun keepWindowClass() {
+    runCatching {
+        Toolkit.getDefaultToolkit().javaClass.getDeclaredField("awtAppClassName")
+            .apply { isAccessible = true }
+            .set(null, WINDOW_CLASS)
+    }
+}
+
+private const val WINDOW_CLASS = "com-nendo-argosy-desktop-MainKt"
 
 /**
  * Android TV's density rule: the screen is 540dp tall at any resolution (720p is 1.33, 1080p is 2.0,

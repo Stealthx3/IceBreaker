@@ -54,9 +54,12 @@ compose.desktop {
     application {
         mainClass = "com.nendo.argosy.desktop.MainKt"
         jvmArgs += packagedLibraryPath
+        jvmArgs += "-splash:\$APPDIR/resources/splash.png"
+        jvmArgs += "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED"
 
         nativeDistributions {
             packageName = "icebreaker"
+            appResourcesRootDir.set(project.layout.projectDirectory.dir("resources"))
             packageVersion = "0.4.0"
             modules(
                 "java.instrument",
