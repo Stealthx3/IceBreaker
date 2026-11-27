@@ -2119,3 +2119,8 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Steam:** started it, launched `steam://rungameid/<id>`: Steam started one IceBreaker Flatpak instance (stopped after 8 s); after a Steam shutdown the entry is still there with `LastPlayTime` set by Steam. Steam restarted, as it was.
 - **Not checked:** the tile, hero and logo by eye (no full-desktop screenshots; the files are in place), Flatpak Steam (not installed here), Game Mode, Remove in real Steam (the shortcut stays; Remove ran only on the fake root), and the wizard offer on screen (needs a fresh setup in the sandbox). The old test shortcut "Argosy Desktop (test)" is still in the owner's Steam.
 
+### 2026-11-27: tag icebreaker-v1.0.0
+
+- **Action:** after the owner's pause and resume, checked CI for `6e7234b8b`: Build, lint and Flatpak x86_64 and aarch64 all green on runtime 26.08 (aarch64 2 h 30 min). With the owner's OK ("Yes, tag it"), created the annotated tag `icebreaker-v1.0.0` at `6e7234b8b` and pushed only the tag. The metainfo screenshot URLs now resolve (200), and `appstreamcli validate` and `flatpak-builder-lint appstream` pass online.
+- **Why at `6e7234b8b`:** it is the commit CI built on both architectures; the later local commit is only the pause note in the handoff.
+- **Noted:** the weekly sync moved `upstream` to Argosy 3.1.1. A merge is later work, after the Flathub submission.
