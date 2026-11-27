@@ -25,7 +25,7 @@ if [ "${DRIVE_TARGET:-}" = flatpak ]; then
   fifo="$HOME/.var/app/$app_id/cache/key-pipe"
   mkdir -p "$(dirname "$fifo")"
   rm -f "$fifo"; mkfifo "$fifo"
-  # FLATPAK_RUN_ARGS: extra `flatpak run` options, e.g. a data folder for this run only.
+  # FLATPAK_RUN_ARGS: extra `flatpak run` options, not the data folders: flatpak run sets XDG_DATA_HOME and friends itself and ignores --env for them.
   # shellcheck disable=SC2086
   flatpak run ${FLATPAK_RUN_ARGS:-} --env=JAVA_TOOL_OPTIONS=-Dskiko.vsync.enabled=false "$app_id" --windowed --size="$size" --key-pipe="$fifo" > "$log" 2>&1 &
 else

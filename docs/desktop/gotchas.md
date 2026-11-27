@@ -4,6 +4,7 @@ Collected from the Phase 1 and 2 handoffs. Read the part that matches the work i
 
 
 - Never `pkill -f` a pattern that also appears in the same shell command: it kills the calling shell (exit 144). `desktop-drive.sh` stops the app itself.
+- A Flatpak run cannot be pointed at other data folders: `flatpak run --env=XDG_DATA_HOME=…` is ignored (flatpak sets the XDG folders to `~/.var/app/<id>/…` itself), so `desktop-drive.sh` with `DRIVE_TARGET=flatpak` always uses the installed app's real data. To test another build without replacing the installed one, install it under `FLATPAK_USER_DIR=<dir>` (runtimes resolve from the system installation); the data folder is still shared.
 - First-run pairing screen: Up/Down move focus, Left/Right do nothing; a code or URL field needs a confirm (pad South) before it takes text.
 
 - Timing in driven runs: `desktop-drive.sh` prints ms timestamps per key and shot; an EDT watchdog (a Swing timer heartbeat plus a thread that prints the AWT thread's stack when the heartbeat is >150 ms late) found the vsync stall where `jstack` was useless (about 5.7 s per sample here).

@@ -41,7 +41,7 @@ guide as "AI-assisted". So:
 | Host-dependent apps | ⚠️ | Launching emulators goes through `flatpak-spawn --host` (`HostShell.kt`). This is the biggest review risk: see "Review risks". |
 | Duplicate or conflicting submissions | ✅ | Argosy isn't on Flathub, and upstream ships no Flatpak. The icesuite-test build is your own. |
 | Emulation or translation layers (Wine and similar) | ✅ | Doesn't apply: IceBreaker is a native JVM app. It starts the user's emulators but isn't one itself. |
-| End-of-life runtime | ⚠️ | The repo's manifests use `25.08`. `26.08` is on Flathub, and new submissions must use the latest runtime. |
+| Latest runtime | ✅ | Moved to `26.08` (2026-11-27), and the repo's manifests and CI image follow. Tested: the Flathub-style offline build of 1.0.0 builds on 26.08 (17 min), starts into setup, and libmpv picks up the runtime's full codecs (`codecs-extra`, FFmpeg 8). Video playback itself wasn't exercised. |
 | Development history | ⚠️ | The port has existed since 2026-10-16, with 381 commits and one tag. Reviewers decide whether that's enough; upstream's long history helps. |
 | Generative AI disclosure | ⚠️ | [`AI-DISCLOSURE.md`](../../AI-DISCLOSURE.md) is drafted; you finish and confirm it. |
 
@@ -51,7 +51,7 @@ guide as "AI-assisted". So:
 |---|---|---|
 | App ID rules | ✅ | `io.github.stealthx3.IceBreaker` has 4 components, matches the metainfo, and maps to `https://github.com/stealthx3/IceBreaker`, which is reachable (GitHub ignores case in user names). Flathub verifies `io.github.` IDs through your GitHub sign-in. |
 | License declared | ✅ | `GPL-3.0-only` in the metainfo; `LICENSE` is the GPL v3 text. |
-| License files installed for every module | ⚠️ | The current build installs only libass's and libplacebo's. mpv, sigil (MPL-2.0), the Steam helper and IceBreaker itself install none. Your manifest must install each one under `/app/share/licenses/io.github.stealthx3.IceBreaker/<module>`. |
+| License files installed for every module | ⚠️ | The 26.08 test build installs libass's, libplacebo's and IceBreaker's. mpv, sigil (MPL-2.0) and the Steam helper install none. Your manifest must install each one under `/app/share/licenses/io.github.stealthx3.IceBreaker/<module>`. |
 | Metainfo passes validation | ✅ | `flatpak-builder-lint appstream` and `appstreamcli validate --pedantic` both pass. The only pedantic note is the capital letters in the ID, which is normal for GitHub IDs. |
 | Screenshots | ✅ | 4 screenshots with captions, pinned to the tag `icebreaker-v1.0.0`. The links work only once that tag is pushed. |
 | Desktop file | ✅ | `desktop-file-validate` passes. |
@@ -80,9 +80,7 @@ guide as "AI-assisted". So:
    `icebreaker-v0.5.0` doesn't have the aarch64 fix.
 2. **Translations: decided.** You chose to keep them and disclose them. Mention them in your PR; if a
    reviewer asks, the options are native-speaker review or an English-only desktop build.
-3. **Runtime 26.08.** The app has only been built on 25.08. Do a test build on 26.08 first. Claude can
-   do this: the 26.08 Platform and SDK are already installed here, and only the `openjdk21` 26.08
-   extension needs downloading.
+3. **Runtime 26.08: done.** Tested and adopted; see the checklist.
 4. **Permissions.** Each one needs a reason in your PR. See "Review risks" for the ones to rethink.
 
 ## Step by step

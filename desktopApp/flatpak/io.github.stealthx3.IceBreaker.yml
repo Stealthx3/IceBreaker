@@ -1,9 +1,9 @@
 # Beta manifest: packages the jlink distributable that `./gradlew :desktopApp:createDistributable`
 # builds on the host (scripts/desktop/flatpak/build-alpha.sh). The offline, from-source build
-# Flathub needs is Phase 5. SDL3, libdbus and libsecret come from the 25.08 runtime.
+# Flathub needs is Phase 5. SDL3, libdbus and libsecret come from the 26.08 runtime.
 app-id: io.github.stealthx3.IceBreaker
 runtime: org.freedesktop.Platform
-runtime-version: '25.08'
+runtime-version: '26.08'
 sdk: org.freedesktop.Sdk
 command: icebreaker
 finish-args:

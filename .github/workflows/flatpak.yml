@@ -1,7 +1,7 @@
 # IceBreaker: the Flathub from-source build, run offline the way Flathub runs it.
 #
 # Builds desktopApp/flatpak/io.github.stealthx3.IceBreaker.flathub.yml for x86_64 and aarch64
-# (aarch64 under QEMU) in the freedesktop 25.08 builder image, uploads each bundle, then lints the
+# (aarch64 under QEMU) in the freedesktop 26.08 builder image, uploads each bundle, then lints the
 # manifest. The manifest's Gradle dependencies come from generated/gradle-sources.json
 # (scripts/desktop/flatpak/regen-gradle-sources.sh), so the build itself needs no network.
 name: Flatpak (Flathub build)
@@ -29,7 +29,7 @@ jobs:
     name: Build (${{ matrix.arch }})
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-26.08
       options: --privileged
     strategy:
       fail-fast: false
@@ -67,7 +67,7 @@ jobs:
     if: github.repository == 'Stealthx3/IceBreaker'
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-26.08
       options: --privileged
     steps:
       - uses: actions/checkout@v4
