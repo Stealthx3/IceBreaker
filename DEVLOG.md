@@ -2041,6 +2041,14 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Gotcha:** right after the rename, the CDN answered `summaries/<digest>.gz` with 404 for `Accept-Encoding: gzip` (which Flatpak sends) but 200 without it: a cached negative answer from the first request, gone within about two minutes (max-age 600). A tester updating in that window sees "Server returned status 404" and only needs to retry.
 - **Still open before the Flathub PR:** real Steam Add/Remove, Flatpak Steam, Game Mode and the wizard offer on screen (the owner's Steam was running throughout); the issue #4 reporter's confirmation.
 
+### 2026-11-26 — CI on the rewritten main; owner submits to Flathub manually
+
+- **Owner decision:** "I'll submit to flathub manually". The owner writes the manifest, opens the PR and writes its description, review replies and the AI disclosure; Claude does no Flathub PR work.
+- **CI on `eaeab31a8` / `e3e6492b0`:** the earlier repairs hold: Android lint, the APK build, desktop tests under Xvfb, Flatpak lint and the x86_64 offline Flathub build all pass. Two failures remained, both fixed here:
+  - `SettingsBackupKeysTest` flagged `paths`, a fixture key in `BrandRelocationTest`. The port's scan of `shared/src` walked test sources too; upstream scans only main sources, so the shared scan now takes the `*Main` source sets.
+  - aarch64 Flatpak: `desktop-jvm-linux-arm64:1.7.3` not in the offline repository. The Gradle capture runs on x86_64, so the sources held only the `-linux-x64` Compose and Skiko files. `gradle-sources.py` now limits those to x86_64 and adds their `-linux-arm64` twins for aarch64 (POMs checked: the arm64 one depends on `skiko-awt-runtime-linux-arm64` the same way); applied to the committed JSON (1,452 sources) without a new capture.
+- **For the owner's submission:** tag `icebreaker-v0.5.0` (`eaeab31a8`) predates the aarch64 fix, and Flathub builds both architectures, so the submission has to pin a commit that has it.
+
 ### 2026-11-26 — Flathub submission stopped: Flathub's Generative AI policy
 
 - **Done before the stop:** `main` pushed to `Stealthx3/IceBreaker` (rewritten history, with lease), tag `icebreaker-v0.5.0` (plain `v0.5.0` is upstream's own tag), and a submission manifest generated from `.flathub.yml` (`scripts/desktop/flatpak/flathub-submission.py`) that builds offline from the GitHub sources (Gradle 11m 4s; the app source needs its submodules for the sigil bindings). Manifest lint clean; repo lint only flags the screenshots as external and not mirrored (local builds).

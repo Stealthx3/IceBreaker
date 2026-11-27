@@ -6,7 +6,8 @@ Input: a log of the build's `--debug` lines ("Performing HTTP GET: <url>" and "R
 and the Gradle home the build filled. Every fetched Maven file becomes a source laid out under
 `offline-repository/` with its repository path, so one local Maven repository replaces Google,
 Maven Central and the plugin portal for an `--offline` build. Each checksum is taken from the file
-Gradle cached; a file the cache does not hold is downloaded once to hash it.
+Gradle cached; a file the cache does not hold is downloaded once to hash it. The capture runs on
+x86_64, so each `-linux-x64` file is limited to x86_64 and gets its `-linux-arm64` twin for aarch64.
 
 usage: gradle-sources.py <capture.log> <gradle-home> <out.json>
 """
@@ -23,6 +24,8 @@ REPOSITORIES = (
     "https://plugins.gradle.org/m2/",
 )
 GET = re.compile(r"Performing HTTP GET: (\S+)")
+HOST_ARCH_MARK = "-linux-x64"
+ARM_ARCH_MARK = "-linux-arm64"
 MISSING = re.compile(r"Resource missing\. \[HTTP GET: (\S+)\]")
 
 
@@ -41,6 +44,27 @@ def cached(home: Path, relative: str) -> Path | None:
     group, module, version, name = ".".join(parts[:-3]), parts[-3], parts[-2], parts[-1]
     folder = home / "caches/modules-2/files-2.1" / group / module / version
     return next(folder.glob(f"*/{name}"), None)
+
+
+def with_arch_twins(sources: list[dict]) -> list[dict]:
+    result = []
+    for source in sources:
+        if HOST_ARCH_MARK not in source["url"]:
+            result.append(source)
+            continue
+        result.append({**source, "only-arches": ["x86_64"]})
+        url = source["url"].replace(HOST_ARCH_MARK, ARM_ARCH_MARK)
+        with urllib.request.urlopen(url) as response:
+            digest = hashlib.sha256(response.read()).hexdigest()
+        result.append({
+            **source,
+            "url": url,
+            "sha256": digest,
+            "dest": source["dest"].replace(HOST_ARCH_MARK, ARM_ARCH_MARK),
+            "dest-filename": source["dest-filename"].replace(HOST_ARCH_MARK, ARM_ARCH_MARK),
+            "only-arches": ["aarch64"],
+        })
+    return result
 
 
 def main(log: Path, home: Path, out: Path) -> None:
@@ -68,6 +92,7 @@ def main(log: Path, home: Path, out: Path) -> None:
             "dest": f"offline-repository/{folder}",
             "dest-filename": name,
         })
+    sources = with_arch_twins(sources)
     out.write_text(json.dumps(sources, indent=2) + "\n")
     print(f"{len(sources)} sources, {len(skipped)} skipped")
     for url in skipped:

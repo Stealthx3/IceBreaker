@@ -121,7 +121,9 @@ class SettingsBackupKeysTest {
         val roots = listOf(File("src/main/kotlin"), File("app/src/main/kotlin"))
         val root = roots.firstOrNull { it.isDirectory }
         assertTrue("Could not locate the main source tree", root != null)
-        val sharedRoots = listOf(File("../shared/src"), File("shared/src")).filter { it.isDirectory }
+        val sharedRoots = listOf(File("../shared/src"), File("shared/src"))
+            .filter { it.isDirectory }
+            .flatMap { src -> src.listFiles { dir -> dir.isDirectory && dir.name.endsWith("Main") }.orEmpty().toList() }
         return (listOf(root!!) + sharedRoots).asSequence()
             .flatMap { it.walkTopDown() }
             .filter { it.isFile && it.extension == "kt" }
