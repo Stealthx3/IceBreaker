@@ -2041,6 +2041,14 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Gotcha:** right after the rename, the CDN answered `summaries/<digest>.gz` with 404 for `Accept-Encoding: gzip` (which Flatpak sends) but 200 without it: a cached negative answer from the first request, gone within about two minutes (max-age 600). A tester updating in that window sees "Server returned status 404" and only needs to retry.
 - **Still open before the Flathub PR:** real Steam Add/Remove, Flatpak Steam, Game Mode and the wizard offer on screen (the owner's Steam was running throughout); the issue #4 reporter's confirmation.
 
+### 2026-11-27 — Community Gradle source-list plugin tried (owner: "Switch to a plugin"): incomplete
+
+- **Choice:** [jwharm/flatpak-gradle-generator](https://github.com/jwharm/flatpak-gradle-generator) 1.9.0 (LGPL-2.1, Gradle 8 and 9). The meshtastic plugin needs Gradle 9 (the build is on 8.9).
+- **Setup tried:** an opt-in init script applies the plugin to every desktop project, leaving out `:app` and `:graphics-shim-android`. It also writes an `aarch64`-only list from a `flatpakLinuxArm64` configuration (`desktop-jvm-linux-arm64`, with the runtime classpath's attributes copied, since without them Skiko's variants don't resolve). The script is kept at `build/flatpak-sources-trial/` (not in git).
+- **Coverage against the old list,** which records exactly what a real offline build downloads (1,452 files): leaving out Android, test and `*DependenciesMetadata` configurations, 369 files are missing (367 Android `.pom`/`.module` from `dl.google.com`, plus KSP's `symbol-processing-aa-embeddable` and Compose's `gradle-plugin-internal-jdk-version-probe`). With Android configurations included, `:shared` fails: `debugCompileClasspath` can't match `:graphics-shim-android` in desktop-only mode, and 481 files are missing (Room, Dagger and KSP processors among them).
+- **Cause:** a desktop-only build still configures `:app` and `:shared`'s Android target (`shared/build.gradle.kts` reads `:app`'s android extension), and reads Android metadata. Plugins also fetch tools through private configurations the plugin can't see.
+- **Left as is:** `gradle-sources.json` stays the capture script's list. Options for the owner: keep it, disclosed; or first make the desktop-only build skip Android entirely (a build change in upstream-shared files), then retry the plugin.
+
 ### 2026-11-27 — Runtime 26.08 tested and adopted (owner: "Yes, test 26.08")
 
 - **Build:** installed `org.freedesktop.Sdk.Extension.openjdk21//26.08` (user, 603 MB download; the 26.08 Platform and SDK were already installed). The Flathub-style manifest at HEAD `41019013c` (no `ffmpeg-full`), switched to 26.08 in a temporary copy, built offline in 17 min. A first try with `--sandbox` stopped at once: sandboxed builds refuse `path: ../..` sources (the submission uses GitHub URLs, so this only affects local tests).

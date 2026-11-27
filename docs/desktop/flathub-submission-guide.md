@@ -152,7 +152,15 @@ What the manifest has to describe, in the order of Flathub's key list:
 
 The build needs every Maven file listed as a source. You can:
 
-- **Write it with a community tool** (recommended under the AI policy):
+- **Tried 2026-11-27, not complete:** jwharm's plugin, applied through an opt-in init script, covered
+  only about 1,080 of the 1,452 files a real offline build needs. It missed:
+  - metadata of Android dependencies, which a desktop-only build reads because it still configures
+    the Android projects;
+  - tools that plugins (KSP, Room, Compose) fetch through private configurations.
+
+  The meshtastic plugin needs Gradle 9, and the build is on 8.9. A complete list from a community
+  tool would first need a desktop-only build that never configures Android.
+- **Write it with a community tool:**
   [jwharm/flatpak-gradle-generator](https://github.com/jwharm/flatpak-gradle-generator) or
   [meshtastic's gradle-flatpak-sources](https://plugins.gradle.org/plugin/org.meshtastic.flatpak.sources).
   Both are Gradle plugins, so the app's build would need the plugin added, an app-side change.
