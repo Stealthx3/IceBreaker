@@ -16,6 +16,8 @@ IceBreaker is a Linux port of the [Argosy launcher](https://github.com/rommapp/a
 
 An independent fork of `rommapp/argosy-launcher`, licensed GPL-3.0 like upstream. Not an official rommapp release.
 
+Most of the desktop port was written with an AI coding assistant (Claude), directed by the project's owner. [AI-DISCLOSURE.md](AI-DISCLOSURE.md) says what that covers and where it ends.
+
 ## At a glance
 
 ### Desktop features
