@@ -2041,6 +2041,12 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Gotcha:** right after the rename, the CDN answered `summaries/<digest>.gz` with 404 for `Accept-Encoding: gzip` (which Flatpak sends) but 200 without it: a cached negative answer from the first request, gone within about two minutes (max-age 600). A tester updating in that window sees "Server returned status 404" and only needs to retry.
 - **Still open before the Flathub PR:** real Steam Add/Remove, Flatpak Steam, Game Mode and the wizard offer on screen (the owner's Steam was running throughout); the issue #4 reporter's confirmation.
 
+### 2026-11-27 — Translations kept and disclosed (owner); dead ffmpeg-full extension removed
+
+- **Owner decision:** "Keep and disclose" for the 157 Claude-translated strings in 6 languages (pt-BR shows them in English). Recorded in the guide's checklist, with the risk spelled out (Flathub's localisation rule says machine and mixed translations "cannot be used", not left to reviewers' discretion) and the fallback (an English-only desktop build). `AI-DISCLOSURE.md` says the owner chose to ship them and invites native speakers' corrections.
+- **Found while checking 26.08:** neither `org.freedesktop.Platform.ffmpeg-full` nor `codecs-extra` has a `25.08` or `26.08` branch on Flathub. Since 25.08 the Platform declares its own `org.freedesktop.Platform.codecs-extra` extension (branch `25.08-extra`, on the library path), and inside the installed 0.5.0 sandbox it provides a full `libavcodec` with x264 and x265, while `/app/lib/ffmpeg` is empty. So the manifests' `ffmpeg-full` entry was dead. Removed it from both manifests, along with its `mkdir` cleanup command, and corrected the guide (nothing to add for codecs).
+- **Not verified:** a Flatpak build without the entry, and video playback itself. Both go into the 26.08 test build.
+
 ### 2026-11-27 — Version 1.0.0 for Flathub (owner: "1.0.0")
 
 - **Action:** `packageVersion` 1.0.0; metainfo release 1.0.0 (2026-11-27, stable, the default type) with a one-line note, since nothing users would notice changed after 0.5.0 (CI and packaging only); "This is a beta build." removed; screenshot URLs pinned to the tag `icebreaker-v1.0.0`; README status line; the guide's checklist updated.

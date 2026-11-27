@@ -49,14 +49,6 @@ finish-args:
   - --filesystem=xdg-data/Vita3K
   - --filesystem=xdg-data/dolphin-emu
   - --filesystem=~/.dolphin-emu
-add-extensions:
-  # Full codecs (H.264, HEVC, VP9, AV1) for libmpv: the runtime's own ffmpeg leaves them out.
-  org.freedesktop.Platform.ffmpeg-full:
-    directory: lib/ffmpeg
-    version: '25.08'
-    add-ld-path: .
-cleanup-commands:
-  - mkdir -p /app/lib/ffmpeg
 modules:
   # libmpv for video wallpaper and trailers (Phase 4 step 9), library only: no player, no Lua.
   - name: libass

@@ -49,7 +49,9 @@ written or changed by Claude. The rest is Argosy's own code (see "Upstream" belo
 - **Translations:** 157 of those strings were translated by Claude into Chinese (Simplified and
   Traditional), German, Spanish, French, Hindi and Russian. They are machine translations and have not
   been checked by native speakers. Brazilian Portuguese doesn't have them, so they show in English
-  there.
+  there. The rest of each translation is upstream Argosy's. The owner chose to ship these
+  translations rather than fall back to English; native speakers' corrections are welcome as issues
+  or pull requests.
 - **Screenshots:** the four store screenshots were captured by Claude from the running app. They show
   the real app and were not generated as images.
 

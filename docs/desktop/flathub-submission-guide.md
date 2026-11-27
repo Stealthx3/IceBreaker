@@ -59,7 +59,7 @@ guide as "AI-assisted". So:
 | Name and icon are distinct; no implied affiliation | ✅ | The description credits Argosy and the RomM team and says IceBreaker isn't affiliated with or endorsed by rommapp. |
 | Metadata lives in the app's own repo | ✅ | `desktopApp/flatpak/` (desktop file, metainfo, icons). |
 | Stable release | ✅ | 1.0.0 (owner, 2026-11-27) is a stable release in the metainfo, and the beta line is gone. Earlier releases stay marked `development`, as they were. |
-| Localisation | ⚠️ | Flathub bars machine-generated and mixed translations. 157 of the port's strings were translated by Claude into each of 6 languages, and Brazilian Portuguese shows those 157 in English. |
+| Localisation | ⚠️ | Flathub bars machine-generated and mixed translations. 157 of the port's strings were translated by Claude into each of 6 languages, and Brazilian Portuguese shows those 157 in English. **Owner decision 2026-11-27: keep them and disclose them** (`AI-DISCLOSURE.md` names them). Risk: this rule is worded as a ban, not left to reviewers' discretion. If a reviewer objects, the fallback is an English-only desktop build, which Claude can make. |
 
 ### Build and packaging
 
@@ -78,12 +78,11 @@ guide as "AI-assisted". So:
    the pinned screenshots are in the repo. Still to do: tag `icebreaker-v1.0.0` once the remaining
    app-side decisions below are settled and aarch64 builds, and point your manifest at that tag.
    `icebreaker-v0.5.0` doesn't have the aarch64 fix.
-2. **Translations.** The options:
-   - have the 157 strings in each language checked by people who speak it;
-   - ship the desktop build in English only;
-   - keep them, disclose them, and let reviewers decide.
-3. **Runtime 26.08.** The app has only been built on 25.08. Do a test build on 26.08 first (Claude can
-   do this; it downloads the 26.08 SDK).
+2. **Translations: decided.** You chose to keep them and disclose them. Mention them in your PR; if a
+   reviewer asks, the options are native-speaker review or an English-only desktop build.
+3. **Runtime 26.08.** The app has only been built on 25.08. Do a test build on 26.08 first. Claude can
+   do this: the 26.08 Platform and SDK are already installed here, and only the `openjdk21` 26.08
+   extension needs downloading.
 4. **Permissions.** Each one needs a reason in your PR. See "Review risks" for the ones to rethink.
 
 ## Step by step
@@ -116,9 +115,10 @@ What the manifest has to describe, in the order of Flathub's key list:
   - `docs/desktop/flathub-plan.md` explains each permission.
   - The save-folder list is in `HostSavePaths` / `RetroArchHostLayout` in
     `shared/src/desktopMain/`.
-- **Codec extension:** video wallpapers and trailers play through libmpv, which needs the
-  `org.freedesktop.Platform.ffmpeg-full` extension (H.264/HEVC/VP9/AV1) at the runtime's version.
-  Check on Flathub that it exists for the runtime you pick.
+- **Codecs: nothing to add.** Video wallpapers and trailers play through libmpv. Since 25.08 the
+  freedesktop Platform brings the full codecs itself, through its own `codecs-extra` extension
+  (branch `<version>-extra`). The old `ffmpeg-full` extension has no 25.08 or 26.08 branch, so don't
+  add it. The repo's manifests carried a dead `ffmpeg-full` entry until 2026-11-27.
 - **Modules, in build order:**
   1. **libass**: subtitle rendering, needed by mpv. Source: the libass release tarball (look up the
      latest release and its checksum).
