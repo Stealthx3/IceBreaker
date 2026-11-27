@@ -60,7 +60,7 @@ compose.desktop {
         nativeDistributions {
             packageName = "icebreaker"
             appResourcesRootDir.set(project.layout.projectDirectory.dir("resources"))
-            packageVersion = "0.5.0"
+            packageVersion = "1.0.0"
             modules(
                 "java.instrument",
                 "java.management",

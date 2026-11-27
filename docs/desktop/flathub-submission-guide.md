@@ -53,12 +53,12 @@ guide as "AI-assisted". So:
 | License declared | ✅ | `GPL-3.0-only` in the metainfo; `LICENSE` is the GPL v3 text. |
 | License files installed for every module | ⚠️ | The current build installs only libass's and libplacebo's. mpv, sigil (MPL-2.0), the Steam helper and IceBreaker itself install none. Your manifest must install each one under `/app/share/licenses/io.github.stealthx3.IceBreaker/<module>`. |
 | Metainfo passes validation | ✅ | `flatpak-builder-lint appstream` and `appstreamcli validate --pedantic` both pass. The only pedantic note is the capital letters in the ID, which is normal for GitHub IDs. |
-| Screenshots | ⚠️ | 4 screenshots with captions, but the URLs point at the `main` branch. Pin them to the release tag. |
+| Screenshots | ✅ | 4 screenshots with captions, pinned to the tag `icebreaker-v1.0.0`. The links work only once that tag is pushed. |
 | Desktop file | ✅ | `desktop-file-validate` passes. |
 | Icons | ✅ | Scalable SVG, PNGs up to 512×512, and a symbolic icon. |
 | Name and icon are distinct; no implied affiliation | ✅ | The description credits Argosy and the RomM team and says IceBreaker isn't affiliated with or endorsed by rommapp. |
 | Metadata lives in the app's own repo | ✅ | `desktopApp/flatpak/` (desktop file, metainfo, icons). |
-| Stable release | ⚠️ | The metainfo marks every release `type="development"` and says "This is a beta build." Flathub stable takes only stable software, and new apps can't go to the beta repo. |
+| Stable release | ✅ | 1.0.0 (owner, 2026-11-27) is a stable release in the metainfo, and the beta line is gone. Earlier releases stay marked `development`, as they were. |
 | Localisation | ⚠️ | Flathub bars machine-generated and mixed translations. 157 of the port's strings were translated by Claude into each of 6 languages, and Brazilian Portuguese shows those 157 in English. |
 
 ### Build and packaging
@@ -74,10 +74,10 @@ guide as "AI-assisted". So:
 
 ## Decide these before you write anything
 
-1. **Release version and status.** Pick the version you'll submit, mark it a stable release in the
-   metainfo, remove "This is a beta build.", and pin the screenshot URLs to its tag. The tag must point
-   at `577718149` or later, because `icebreaker-v0.5.0` doesn't have the aarch64 fix. Claude can make
-   these app-side changes once you choose the version.
+1. **Release version and status: done.** You chose 1.0.0. The version, the stable metainfo release and
+   the pinned screenshots are in the repo. Still to do: tag `icebreaker-v1.0.0` once the remaining
+   app-side decisions below are settled and aarch64 builds, and point your manifest at that tag.
+   `icebreaker-v0.5.0` doesn't have the aarch64 fix.
 2. **Translations.** The options:
    - have the 157 strings in each language checked by people who speak it;
    - ship the desktop build in English only;

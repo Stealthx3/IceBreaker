@@ -12,7 +12,7 @@
 
 IceBreaker is a Linux port of the [Argosy launcher](https://github.com/rommapp/argosy-launcher), shipped as a Flatpak. Based on Argosy by the RomM team; an independent port, not affiliated with or endorsed by rommapp. It runs Argosy's own interface on the Linux desktop and connects to a [RomM](https://github.com/rommapp/romm) server for your library, downloads and save sync. Play from a PC handheld, a mouse and keyboard, or from the couch.
 
-> **Status: Beta (0.5.0).** Feature-complete and in testing with beta users; the Flathub submission is being prepared.
+> **Status: 1.0.0, the first stable release.** The Flathub submission is being prepared.
 
 An independent fork of `rommapp/argosy-launcher`, licensed GPL-3.0 like upstream. Not an official rommapp release.
 

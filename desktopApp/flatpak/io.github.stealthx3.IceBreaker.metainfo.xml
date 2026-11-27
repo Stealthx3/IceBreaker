@@ -24,7 +24,6 @@
       Game launcher for RomM. A port of Argosy for desktop: based on Argosy by the RomM team.
       IceBreaker is an independent port and is not affiliated with or endorsed by rommapp.
     </p>
-    <p>This is a beta build.</p>
   </description>
   <launchable type="desktop-id">io.github.stealthx3.IceBreaker.desktop</launchable>
   <provides>
@@ -32,19 +31,19 @@
   </provides>
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/Stealthx3/IceBreaker/main/docs/desktop/screenshots/icebreaker-home.png</image>
+      <image>https://raw.githubusercontent.com/Stealthx3/IceBreaker/icebreaker-v1.0.0/docs/desktop/screenshots/icebreaker-home.png</image>
       <caption>Your RomM library on the home screen, driven by a controller</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/Stealthx3/IceBreaker/main/docs/desktop/screenshots/icebreaker-game-details.png</image>
+      <image>https://raw.githubusercontent.com/Stealthx3/IceBreaker/icebreaker-v1.0.0/docs/desktop/screenshots/icebreaker-game-details.png</image>
       <caption>Game details with Play, favorites and per-game settings</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/Stealthx3/IceBreaker/main/docs/desktop/screenshots/icebreaker-left-menu.png</image>
+      <image>https://raw.githubusercontent.com/Stealthx3/IceBreaker/icebreaker-v1.0.0/docs/desktop/screenshots/icebreaker-left-menu.png</image>
       <caption>The left menu: collections, library, downloads, sync and settings</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/Stealthx3/IceBreaker/main/docs/desktop/screenshots/icebreaker-add-to-steam.png</image>
+      <image>https://raw.githubusercontent.com/Stealthx3/IceBreaker/icebreaker-v1.0.0/docs/desktop/screenshots/icebreaker-add-to-steam.png</image>
       <caption>Add IceBreaker to Steam with its artwork, for Game Mode</caption>
     </screenshot>
   </screenshots>
@@ -72,6 +71,11 @@
   </supports>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="1.0.0" date="2026-11-27">
+      <description>
+        <p>The first stable release of IceBreaker, after beta testing as Argosy Desktop 0.3 to 0.5.</p>
+      </description>
+    </release>
     <release version="0.5.0" date="2026-11-26" type="development">
       <description>
         <p>Argosy Desktop is now IceBreaker: a new app id, name and artwork. Settings, sign-in and downloads move over on the first start, and the games folder becomes ~/Games/IceBreaker. New: Add to Steam with library artwork, upstream Argosy 2.31, and a start-up splash. Fixed: play sessions now reach RomM, so play time shows on your other devices.</p>

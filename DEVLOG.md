@@ -2041,6 +2041,12 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Gotcha:** right after the rename, the CDN answered `summaries/<digest>.gz` with 404 for `Accept-Encoding: gzip` (which Flatpak sends) but 200 without it: a cached negative answer from the first request, gone within about two minutes (max-age 600). A tester updating in that window sees "Server returned status 404" and only needs to retry.
 - **Still open before the Flathub PR:** real Steam Add/Remove, Flatpak Steam, Game Mode and the wizard offer on screen (the owner's Steam was running throughout); the issue #4 reporter's confirmation.
 
+### 2026-11-27 — Version 1.0.0 for Flathub (owner: "1.0.0")
+
+- **Action:** `packageVersion` 1.0.0; metainfo release 1.0.0 (2026-11-27, stable, the default type) with a one-line note, since nothing users would notice changed after 0.5.0 (CI and packaging only); "This is a beta build." removed; screenshot URLs pinned to the tag `icebreaker-v1.0.0`; README status line; the guide's checklist updated.
+- **Checked:** `appstreamcli validate --pedantic --no-net` passes. `flatpak-builder-lint appstream` warns `screenshot-image-not-found` ×4 until the tag is pushed (the URLs name it).
+- **Not done:** the tag itself. It waits for the other app-side decisions (translations, the 26.08 test build, the dependency-list tool) and a green aarch64 build, so the tag holds everything the submission builds.
+
 ### 2026-11-27 — Flathub submission prep: checklist, manual manifest guide, AI disclosure
 
 - **Owner request:** check the project against Flathub's Submission and Requirements pages, tick off what Claude can handle, write a guide for writing the manifests by hand, and write a disclosure of Claude's involvement.
