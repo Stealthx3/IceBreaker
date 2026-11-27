@@ -3,16 +3,21 @@
 # tracked files to a scratch folder, runs the desktop-only build there with an empty Gradle home and
 # an empty ANDROID_HOME (logging every download), then turns the downloads into flatpak sources.
 # Rerun after any dependency or plugin change. Downloads about 1.2 GB.
-# usage: scripts/desktop/flatpak/regen-gradle-sources.sh <scratch-dir>
+# usage: [JAVA_HOME=<jdk 21>] scripts/desktop/flatpak/regen-gradle-sources.sh <scratch-dir>
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../../.." && pwd)"
-work="$1"; copy="$work/src"
-rm -rf "$work"; mkdir -p "$copy" "$work/empty-sdk"
+work="${1:?usage: regen-gradle-sources.sh <scratch-dir>}"; copy="$work/src"
+jdk="${JAVA_HOME:-$HOME/.jdks/jdk-21.0.12.1+1}"
+"$jdk/bin/java" -version 2>&1 | grep -q 'version "21' || { echo "JAVA_HOME must be a JDK 21 (got: $jdk)"; exit 1; }
+if [ -d "$work" ] && [ -n "$(ls -A "$work")" ] && [ ! -f "$work/capture.log" ]; then
+  echo "$work is not empty and is not an earlier scratch folder of this script; pick a new folder"; exit 1
+fi
+rm -rf "${work:?}"; mkdir -p "$copy" "$work/empty-sdk"
 cd "$root" && git ls-files --recurse-submodules -z | rsync -a --from0 --files-from=- "$root/" "$copy/"
 cd "$copy"
 set +o pipefail
 env -u ANDROID_SDK_ROOT ANDROID_HOME="$work/empty-sdk" GRADLE_USER_HOME="$work/gradle-home" \
-  JAVA_HOME="$HOME/.jdks/jdk-21.0.12.1+1" ./gradlew --no-daemon --no-build-cache --console=plain --debug \
+  JAVA_HOME="$jdk" ./gradlew --no-daemon --no-build-cache --console=plain --debug \
   -Pargosy.desktopOnly=true :desktopApp:createDistributable 2>&1 \
   | grep -E "Performing HTTP GET|Resource missing|BUILD (SUCCESSFUL|FAILED)" > "$work/capture.log"
 set -o pipefail

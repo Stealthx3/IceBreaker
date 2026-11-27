@@ -59,11 +59,60 @@ written or changed by Claude. The rest is Argosy's own code (see "Upstream" belo
 
 - **This repository's Flatpak manifests**, used for test builds on the IceSuite test repository.
   These are not the Flathub manifest (see below).
-- The launcher scripts, the offline Gradle setup (`desktopApp/flatpak/offline.init.gradle.kts`),
-  and the generator for the Gradle dependency list together with its output
-  (`desktopApp/flatpak/generated/gradle-sources.json`).
+- The launcher scripts and the offline Gradle setup (`desktopApp/flatpak/offline.init.gradle.kts`).
+- The generator for the Gradle dependency list (see the next section).
 - CI workflow changes, build, test and release scripts (`scripts/desktop/`), and prototypes
   (`spikes/`, not part of the app).
+
+### The Gradle dependency list in the Flathub submission
+
+Flathub builds offline, so every Java library the build needs must be listed as a source, with its
+download URL and checksum. That list (`gradle-sources.json`, about 1,450 entries) is produced by two
+scripts **written by Claude**:
+
+- `scripts/desktop/flatpak/regen-gradle-sources.sh`: runs a normal desktop-only build in a scratch
+  copy of the repository, with an empty Gradle cache, and logs every file Gradle downloads.
+- `scripts/desktop/flatpak/gradle-sources.py`: turns that log into the source list, taking each
+  checksum from the file Gradle downloaded. Builds run on x86_64, so it also adds the arm64
+  counterparts of the three architecture-specific files (Compose Desktop and Skiko), checked against
+  the arm64 Compose POM.
+
+**What the list contains:** only URLs on Maven Central and Google's Maven repository, with checksums,
+recorded from a real build. Claude didn't write any entry by hand.
+
+**Who ran it:** **Owner to confirm.** For example: "The owner ran the generator by hand on the release
+tag to produce the list in the submission."
+
+**Why not an existing tool:** the owner asked for an existing tool first, and three were checked on
+2026-11-27:
+
+- **`flatpak-gradle-generator.py`** from Flathub's
+  [flatpak-builder-tools](https://github.com/flatpak/flatpak-builder-tools/tree/master/gradle) takes
+  the same approach: it reads the URLs from a real build's log. It doesn't fit this build, for three
+  reasons:
+  - it puts every file in one flat folder, but the build resolves libraries from a Maven-layout
+    repository;
+  - it keeps only `.jar` and `.pom` files, dropping Gradle's `.module` metadata. That's 400 of the
+    1,452 files, and Kotlin Multiplatform and Compose libraries need it to pick their JVM variant;
+  - its architecture handling matches only `linux-x86_64`-style `.exe` names, not Compose's
+    `linux-x64` / `linux-arm64` files.
+
+  Claude's two scripts are, in effect, that approach with those three gaps closed.
+
+- [meshtastic/gradle-flatpak-sources](https://github.com/meshtastic/gradle-flatpak-sources) needs
+  Gradle 9. This project builds with Gradle 8.9, which it shares with upstream Argosy.
+- [jwharm/flatpak-gradle-generator](https://github.com/jwharm/flatpak-gradle-generator) 1.9.0 was
+  tried. Its lists covered only about 1,080 of the 1,452 files a real offline build downloads. It
+  missed two kinds of file:
+  - metadata for the app's Android libraries. IceBreaker shares one Gradle build with the Android app,
+    so even a desktop-only build configures the Android projects and reads that metadata, but those
+    configurations can't be resolved without Android;
+  - tools that Gradle plugins (KSP, Room, Compose) fetch through their own private configurations.
+
+  Including the Android configurations made the gap larger. Making the plugin's list complete would
+  first need the desktop build separated from the Android build.
+
+Recording what a real build downloads, as these scripts do, covers all of these cases.
 
 ### Documentation
 
@@ -76,8 +125,8 @@ written or changed by Claude. The rest is Argosy's own code (see "Upstream" belo
   themself, with its description and all replies to reviewers. Claude didn't write or open any of it.
   The owner wrote the manifest with a Claude-written guide (`docs/desktop/flathub-submission-guide.md`)
   as reference; no text was copied from it or from this repository's manifests.
-  **Owner to confirm:** that this matches what you did. If you generated the Gradle dependency list with
-  a community tool instead of the repository's file, say which one.
+  **Owner to confirm:** that this matches what you did. The dependency list in the submission is the
+  output of the Claude-written generator described above.
 - **Upstream Argosy:** most of the app's code is Argosy's, written by its developers, and is not
   covered by the figures above. Upstream also uses AI tools: its repository has agent instructions
   (`AGENTS.md`, `.claude/`), and 98 of its 3,665 commits carry AI co-author trailers. We don't know how

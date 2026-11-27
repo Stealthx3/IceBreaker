@@ -2041,6 +2041,14 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Gotcha:** right after the rename, the CDN answered `summaries/<digest>.gz` with 404 for `Accept-Encoding: gzip` (which Flatpak sends) but 200 without it: a cached negative answer from the first request, gone within about two minutes (max-age 600). A tester updating in that window sees "Server returned status 404" and only needs to retry.
 - **Still open before the Flathub PR:** real Steam Add/Remove, Flatpak Steam, Game Mode and the wizard offer on screen (the owner's Steam was running throughout); the issue #4 reporter's confirmation.
 
+### 2026-11-27 — Gradle source-list generator kept, disclosed, run by the owner (owner decision)
+
+- **Owner request:** disclose that AI wrote the generator and why it's needed instead of an existing plugin, and add instructions for the owner to run it by hand.
+- **Found while writing the disclosure:** Flathub's `flatpak-builder-tools` does have a Gradle generator (`gradle/flatpak-gradle-generator.py`, MIT), which reads URLs from a build log, the same approach. It doesn't fit this build: it writes every file into one flat `dest` folder (the build resolves from a Maven layout), keeps only `.jar`/`.pom` (400 of our 1,452 entries are `.module` metadata that KMP and Compose need), and its architecture handling only covers `linux-x86_64`-style `.exe` names. A first draft of the disclosure said no such tool existed; checked and corrected before commit. The repo also refers to jwharm's plugin through that README.
+- **`AI-DISCLOSURE.md`:** a new section, "The Gradle dependency list": what the two scripts do, that the list is recorded from a real build (URLs on Maven Central and Google with checksums, no hand-written entries), why the three existing tools don't fit, and an "Owner to confirm" line for who ran it.
+- **`regen-gradle-sources.sh`, made safe to run by hand:** takes `JAVA_HOME` if set (default unchanged) and stops unless it is a JDK 21; refuses a scratch folder that is not empty and not one of its own (it deletes and recreates it); requires the folder argument. Guards checked (non-empty folder, wrong JDK, no argument); the capture itself is unchanged and was not rerun.
+- **Guide, step 4:** manual steps: clean clone of the release tag with submodules, run the generator into a new scratch folder, read the `sources / skipped` summary, check the diff against the committed list and the 6 `only-arches` entries, copy it into the submission, rerun on dependency changes.
+
 ### 2026-11-27 — Community Gradle source-list plugin tried (owner: "Switch to a plugin"): incomplete
 
 - **Choice:** [jwharm/flatpak-gradle-generator](https://github.com/jwharm/flatpak-gradle-generator) 1.9.0 (LGPL-2.1, Gradle 8 and 9). The meshtastic plugin needs Gradle 9 (the build is on 8.9).

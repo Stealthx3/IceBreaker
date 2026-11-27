@@ -68,7 +68,7 @@ guide as "AI-assisted". So:
 | No network during the build | ✅ | The offline Gradle build works (CI x86_64 green on `577718149`). |
 | aarch64 | ⚠️ | Fixed in `577718149` (arm64 Compose/Skiko files). The CI run was still going when this was written. If aarch64 can't be made to work, add `flathub.json` limiting the build to x86_64. |
 | Built from source | ✅ | The app, libass, libplacebo, mpv and sigil build from source. Java libraries come from Maven as jars, the usual practice for JVM apps. The JRE comes from the `openjdk21` SDK extension. |
-| Dependency sources file | ⚠️ | `desktopApp/flatpak/generated/gradle-sources.json` is produced by `scripts/desktop/flatpak/gradle-sources.py`, which Claude wrote. Its output goes into the submission, so consider regenerating it with a community tool (see step 4). |
+| Dependency sources file | ⚠️ | Produced by Claude-written scripts (`regen-gradle-sources.sh`, `gradle-sources.py`). No existing tool fits this build, so this was decided 2026-11-27 and is disclosed. You run the generator yourself (step 4). |
 | Patches | ✅ | None. |
 | Manifest, sources file, PR | ⬜ | Yours (steps below). |
 
@@ -148,27 +148,65 @@ What the manifest has to describe, in the order of Flathub's key list:
        - install the desktop file, metainfo and icons from `desktopApp/flatpak/`;
        - install `LICENSE`.
 
-### 4. The dependency sources file
+### 4. The dependency sources file: run the generator yourself
 
-The build needs every Maven file listed as a source. You can:
+The build needs every Maven file listed as a source. **Decided 2026-11-27:** the list comes from the
+repository's own generator, which Claude wrote. `AI-DISCLOSURE.md` says so and explains why no
+existing tool fits:
+- Flathub's own `flatpak-gradle-generator.py` produces a flat folder without Gradle's `.module`
+  metadata;
+- the meshtastic plugin needs Gradle 9;
+- jwharm's plugin missed about 370 of the 1,452 files.
 
-- **Tried 2026-11-27, not complete:** jwharm's plugin, applied through an opt-in init script, covered
-  only about 1,080 of the 1,452 files a real offline build needs. It missed:
-  - metadata of Android dependencies, which a desktop-only build reads because it still configures
-    the Android projects;
-  - tools that plugins (KSP, Room, Compose) fetch through private configurations.
+Run it yourself on the release you submit, so the list in your PR is one you produced.
 
-  The meshtastic plugin needs Gradle 9, and the build is on 8.9. A complete list from a community
-  tool would first need a desktop-only build that never configures Android.
-- **Write it with a community tool:**
-  [jwharm/flatpak-gradle-generator](https://github.com/jwharm/flatpak-gradle-generator) or
-  [meshtastic's gradle-flatpak-sources](https://plugins.gradle.org/plugin/org.meshtastic.flatpak.sources).
-  Both are Gradle plugins, so the app's build would need the plugin added, an app-side change.
-  Generate it for both x86_64 and aarch64: Compose Desktop and Skiko have per-architecture files
-  (`-linux-x64` / `-linux-arm64`).
-- **Use the repo's file**, `desktopApp/flatpak/generated/gradle-sources.json` (1,452 sources). It was
-  produced by a Claude-written script. If you use it, say so in the disclosure, and expect reviewers
-  to weigh it.
+**Before you start**
+- You need `git`, `rsync`, `python3`, a network connection, and JDK 21. The script uses
+  `~/.jdks/jdk-21.0.12.1+1`, or the JDK in `JAVA_HOME` if you set it. It stops if that isn't a JDK 21.
+- It downloads about 1.2 GB: a full desktop build from an empty Gradle cache, into a scratch folder.
+- The release tag must already be on GitHub.
+
+**Steps**
+
+1. Get a clean copy of the release. The script copies the files of the copy you run it in, uncommitted
+   changes included, so don't run it in a working copy with changes.
+
+   ```bash
+   git clone --recurse-submodules --branch icebreaker-v1.0.0 https://github.com/Stealthx3/IceBreaker.git ~/icebreaker-release
+   ```
+
+2. Run the generator from that copy. Give it a new folder for its scratch work; it deletes and
+   recreates that folder, and refuses one that holds anything else.
+
+   ```bash
+   cd ~/icebreaker-release && scripts/desktop/flatpak/regen-gradle-sources.sh ~/icebreaker-gradle-capture
+   ```
+
+   With your JDK 21 elsewhere, put `JAVA_HOME=/path/to/jdk-21` in front of the command.
+
+3. Read what it prints. The last lines say `<N> sources, <M> skipped`, then list each skipped URL.
+   Only `maven-metadata.xml` files should be skipped. Anything else comes from a repository the
+   generator doesn't know about, and needs fixing before you submit.
+
+4. Check the result, `desktopApp/flatpak/generated/gradle-sources.json`:
+
+   ```bash
+   git diff --stat -- desktopApp/flatpak/generated/gradle-sources.json
+   ```
+
+   ```bash
+   grep -c '"only-arches"' desktopApp/flatpak/generated/gradle-sources.json
+   ```
+
+   - **No diff:** the list matches the one committed for the release.
+   - **A diff:** expected only if dependencies changed. Look at what changed.
+   - **The count should be 6:** three x86_64 files and their three aarch64 counterparts.
+
+5. Copy the file into your submission next to your manifest, and list it as a source of the
+   IceBreaker module. Its entries download into `offline-repository/`, the folder the build's
+   `ARGOSY_OFFLINE_REPOSITORY` variable must point at.
+
+6. Rerun it for every update whose dependencies change, from that update's tag.
 
 Flathub allows a separate sources file because it's generated by a tool.
 
