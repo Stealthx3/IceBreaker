@@ -53,7 +53,7 @@ guide as "AI-assisted". So:
 | License declared | ✅ | `GPL-3.0-only` in the metainfo; `LICENSE` is the GPL v3 text. |
 | License files installed for every module | ⚠️ | The 26.08 test build installs libass's, libplacebo's and IceBreaker's. mpv, sigil (MPL-2.0) and the Steam helper install none. Your manifest must install each one under `/app/share/licenses/io.github.stealthx3.IceBreaker/<module>`. |
 | Metainfo passes validation | ✅ | `flatpak-builder-lint appstream` and `appstreamcli validate --pedantic` both pass. The only pedantic note is the capital letters in the ID, which is normal for GitHub IDs. |
-| Screenshots | ✅ | 4 screenshots with captions, pinned to the tag `icebreaker-v1.0.0`. The links work only once that tag is pushed. |
+| Screenshots | ✅ | 4 screenshots with captions, pinned to the tag `icebreaker-v1.0.0` (pushed 2026-11-27; all four links load). |
 | Desktop file | ✅ | `desktop-file-validate` passes. |
 | Icons | ✅ | Scalable SVG, PNGs up to 512×512, and a symbolic icon. |
 | Name and icon are distinct; no implied affiliation | ✅ | The description credits Argosy and the RomM team and says IceBreaker isn't affiliated with or endorsed by rommapp. |
@@ -65,8 +65,8 @@ guide as "AI-assisted". So:
 
 | Item | Status | Notes |
 |---|---|---|
-| No network during the build | ✅ | The offline Gradle build works (CI x86_64 green on `577718149`). |
-| aarch64 | ⚠️ | Fixed in `577718149` (arm64 Compose/Skiko files). The CI run was still going when this was written. If aarch64 can't be made to work, add `flathub.json` limiting the build to x86_64. |
+| No network during the build | ✅ | The offline Gradle build works (CI x86_64 and aarch64 green on `6e7234b8b`, runtime 26.08). |
+| aarch64 | ✅ | The arm64 Compose/Skiko files are in the sources list; the CI aarch64 build on 26.08 passed at `6e7234b8b` (2026-11-27). |
 | Built from source | ✅ | The app, libass, libplacebo, mpv and sigil build from source. Java libraries come from Maven as jars, the usual practice for JVM apps. The JRE comes from the `openjdk21` SDK extension. |
 | Dependency sources file | ⚠️ | Produced by Claude-written scripts (`regen-gradle-sources.sh`, `gradle-sources.py`). No existing tool fits this build, so this was decided 2026-11-27 and is disclosed. You run the generator yourself (step 4). |
 | Patches | ✅ | None. |
@@ -75,8 +75,8 @@ guide as "AI-assisted". So:
 ## Decide these before you write anything
 
 1. **Release version and status: done.** You chose 1.0.0. The version, the stable metainfo release and
-   the pinned screenshots are in the repo. Still to do: tag `icebreaker-v1.0.0` once the remaining
-   app-side decisions below are settled and aarch64 builds, and point your manifest at that tag.
+   the pinned screenshots are in the repo. The tag `icebreaker-v1.0.0` is pushed (2026-11-27, at
+   `6e7234b8b`, the commit CI built on both architectures); point your manifest at that tag.
    `icebreaker-v0.5.0` doesn't have the aarch64 fix.
 2. **Translations: decided.** You chose to keep them and disclose them. Mention them in your PR; if a
    reviewer asks, the options are native-speaker review or an English-only desktop build.
