@@ -8,7 +8,7 @@
 - **IceBreaker 1.0.0** is the first stable release: tag `icebreaker-v1.0.0`, runtime 26.08, CI green on x86_64 and aarch64. It's published on IceBreaker's own Pages Flatpak repo and as a GitHub Release (owner, 2026-11-28). icesuite-test still serves 0.5.0 until the owner reorganizes it into testing and stable branches.
 - **The repo is `Stealthx3/IceBreaker`.** Beta users on the old Argosy Desktop repo get the end-of-life rebase from the user site (`Stealthx3/stealthx3.github.io`, folder `argosy-desktop/`).
 - **The Flathub submission is the owner's** (Flathub's Generative AI policy): their own manifest, PR and replies. The help for it is in the repo: `docs/desktop/flathub-submission-guide.md`, `AI-DISCLOSURE.md` and the generator (`scripts/desktop/flatpak/regen-gradle-sources.sh`).
-- **History rewritten at the close** (owner, 2026-11-28), using the PII Redaction Standard. Commit hashes before the close changed; the tags point at the rewritten commits.
+- **History rewrite: not done.** The owner approved it (2026-11-28), but the generated rewrite inputs changed 1,154 current files: short fragments (2 to 4 characters) and version-like numbers matched inside ordinary code. Nothing was force-pushed; `main` was pushed normally. A curated rewrite waits for the owner (Phase 6 owner items).
 
 ## Not met from the exit criterion
 

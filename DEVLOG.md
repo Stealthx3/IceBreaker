@@ -2152,3 +2152,10 @@ Proposed at the Phase 5 close (2026-11-28); starts only on the owner's go-ahead,
 7. **Keep running, Resume and the Home combo (5h).**
 8. **Upstream 3.1.1 merge.** Triage first, like v2.31.
 
+### 2026-11-28: 1.0.0 published; history rewrite stopped; main pushed
+
+- **Published (owner: "Both"):** IceBreaker 1.0.0 on IceBreaker's own Pages Flatpak repo (`https://stealthx3.github.io/IceBreaker/`, signed with the Pages key; 242 MB repo, 484 MB site; built from the tag in a worktree and tested in a throwaway install), and the GitHub Release "IceBreaker 1.0.0" (latest, not a pre-release) on `icebreaker-v1.0.0` with the CI bundles for x86_64 and aarch64 (Flatpak run 45971953221, built from the tag's tree). A fresh throwaway install from the Pages flatpakref installs 1.0.0. The Pages scripts now target IceBreaker (`publish-repo.sh`, `push-pages.sh --release`).
+- **History rewrite stopped before any push.** In a fresh clone, `git filter-repo --refs main <our tags> ^upstream` kept upstream's commits intact, but the scanner's 290 literal replacements changed 1,154 current files (11,537 lines): 171 of them are version-like numbers matched as IPs, and some identity entries are 2 to 4 characters long and match inside ordinary words. A tree-safe subset (29 literals absent from the current tree) exists but leaves the short fragments in old commits. Reason to stop: a rewrite that changes current code is wrong by definition; choosing what to rewrite is the owner's. `git-filter-repo` came from Ubuntu's package (`apt-get download`, unpacked in the scratchpad; the sudo install timed out).
+- **`main` pushed normally** at the close (no new PII: every new commit passed the staged scan).
+- **Found:** Flathub already has `org.mattdm.icebreaker`, a game named "icebreaker". Guide checklist row now ⚠️; owner decides the store name.
+

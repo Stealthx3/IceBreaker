@@ -56,7 +56,7 @@ guide as "AI-assisted". So:
 | Screenshots | ✅ | 4 screenshots with captions, pinned to the tag `icebreaker-v1.0.0` (pushed 2026-11-27; all four links load). |
 | Desktop file | ✅ | `desktop-file-validate` passes. |
 | Icons | ✅ | Scalable SVG, PNGs up to 512×512, and a symbolic icon. |
-| Name and icon are distinct; no implied affiliation | ✅ | The description credits Argosy and the RomM team and says IceBreaker isn't affiliated with or endorsed by rommapp. |
+| Name and icon are distinct; no implied affiliation | ⚠️ | The description credits Argosy and the RomM team and says IceBreaker isn't affiliated with or endorsed by rommapp.  **Found 2026-11-28:** Flathub already has a game named "icebreaker" (`org.mattdm.icebreaker`). The app IDs differ, but reviewers may ask about the shared name; decide before you submit whether to keep "IceBreaker" or give the store name a qualifier, and mention it in your PR. |
 | Metadata lives in the app's own repo | ✅ | `desktopApp/flatpak/` (desktop file, metainfo, icons). |
 | Stable release | ✅ | 1.0.0 (owner, 2026-11-27) is a stable release in the metainfo, and the beta line is gone. Earlier releases stay marked `development`, as they were. |
 | Localisation | ⚠️ | Flathub bars machine-generated and mixed translations. 157 of the port's strings were translated by Claude into each of 6 languages, and Brazilian Portuguese shows those 157 in English. **Owner decision 2026-11-27: keep them and disclose them** (`AI-DISCLOSURE.md` names them). Risk: this rule is worded as a ban, not left to reviewers' discretion. If a reviewer objects, the fallback is an English-only desktop build, which Claude can make. |
