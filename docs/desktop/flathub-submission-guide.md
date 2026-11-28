@@ -238,8 +238,8 @@ Lint findings to expect:
 - **Host access (`--talk-name=org.freedesktop.Flatpak`).** Without it IceBreaker can't start
   emulators. Our notes say Lutris and Heroic Games Launcher ship with the same permission. Check that
   on their Flathub manifests before you cite them.
-- **`--device=all` with `--device=dri`.** `all` already covers `dri`. Controllers need `all`; drop
-  `dri` or explain both.
+- **`--device=all`.** It covers both the controllers and the GPU. The repo manifests dropped the
+  redundant `--device=dri` on 2026-11-28 (your decision); explain `all` in your PR.
 - **Broad file access:** `/mnt`, `/media` and `/run/media` (ROM libraries on other drives), the
   Steam folders (Add to Steam), and one path per emulator for save sync. Each needs a reason. File
   access through the portal can't cover save sync, which writes in place.

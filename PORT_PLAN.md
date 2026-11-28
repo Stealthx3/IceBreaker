@@ -136,7 +136,7 @@ Android → Flatpak permission mapping:
 | Screen capture | Screenshot / ScreenCast portals | Screenshots (portal) |
 | Display over other apps | none (no overlay concept) | not shown |
 | Live wallpaper | none | not shown |
-| (no Android row) | `--device=all` (gamepads), `--share=network`, `--socket=pulseaudio`, `--device=dri`, `--socket=wayland`/`x11` | Controllers, network, audio, GPU, display: shown for completeness |
+| (no Android row) | `--device=all` (gamepads and GPU), `--share=network`, `--socket=pulseaudio`, `--socket=wayland`/`x11` | Controllers, network, audio, GPU, display: shown for completeness |
 | (no Android row) | Steam client access for native Steam Input (`--filesystem=~/.steam:ro` and the Steam data folder, `--device=shm`), only if the native revisit runs it in the sandbox | "Steam Input (native)": shown only once that revisit lands, and only while Steam Input is available |
 
 The screen lists every permission the manifest requires (from `/.flatpak-info`, so user overrides and revocations show), each with its Flatpak name, its state and what Argosy uses it for, plus the optional grants Argosy can request (emulator save folders, Steam client access).
@@ -247,8 +247,7 @@ The package is one Flatpak holding a trimmed Java runtime, Argosy Desktop and it
 | --- | --- |
 | `--share=network` | RomM, artwork |
 | `--share=ipc`, `--socket=wayland`, `--socket=x11` | Display; Java's desktop toolkit runs on X11 or XWayland until native Wayland lands |
-| `--device=dri` | GPU acceleration |
-| `--device=all` | Gamepads in `/dev/input`; switch to `--device=input` once Flathub builders and target distros all run Flatpak 1.16+ |
+| `--device=all` | Gamepads in `/dev/input` and GPU acceleration (`/dev/dri`; the separate `--device=dri` was dropped as redundant on 2026-11-28). Switch to `--device=input` plus `--device=dri` once Flathub builders and target distros all run Flatpak 1.16+ |
 | `--socket=pulseaudio` | UI sounds, BGM, video |
 | `--filesystem=~/Games/Argosy:create` | Shared ROM and BIOS library at a host path both Argosy and emulators can see |
 | `--talk-name=org.freedesktop.Flatpak` | `flatpak-spawn --host` to start emulators and list installed Flatpaks |

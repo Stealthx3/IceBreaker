@@ -10,7 +10,6 @@ finish-args:
   - --share=network
   - --share=ipc
   - --socket=x11
-  - --device=dri
   - --device=all
   - --socket=pulseaudio
   - --filesystem=~/Games/IceBreaker:create

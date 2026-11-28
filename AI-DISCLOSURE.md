@@ -20,8 +20,8 @@ Figures are as of 2026-11-27. The port began on 2026-10-16.
   the app on test machines to check behaviour, and recorded the results.
 - **Checks:** automated tests (unit tests for the desktop code, upstream's Android tests, lint and
   CI), runs on a local RomM test server, and testing on real hardware by the owner and beta testers.
-- **Owner to confirm:** how much of the code you read and reviewed yourself, for example "spot
-  checks", "every change to save sync", or "all of it".
+- **Owner review:** the owner read the code in the riskiest areas (save sync, file access and the
+  Steam integration) and judged the rest by testing it. Not every line was read by a person.
 
 ## What Claude produced
 
@@ -114,6 +114,15 @@ tag to produce the list in the submission."
 
 Recording what a real build downloads, as these scripts do, covers all of these cases.
 
+### Artwork and the Steam helper (made with the owner)
+
+- **Artwork** (app icon, splash, About logo, Steam artwork) comes from the owner's IceBreaker brand
+  kit. The owner created the core assets: the first icons and drafts of the other pieces. Claude then
+  refined those and expanded them into the full kit, working from the owner's originals.
+- **Steam helper** (`packaging/steam/add_to_steam.py`) was written by the owner and Claude together,
+  for the owner's shared Steam shortcut standard, which the owner's other apps also use. IceBreaker
+  carries it unchanged. Claude wrote IceBreaker's integration of it.
+
 ### Documentation
 
 `README.md` (except the 2 web-editor edits), `PORT_PLAN.md`, `DEVLOG.md`, the `docs/desktop/` folder
@@ -133,11 +142,6 @@ Recording what a real build downloads, as these scripts do, covers all of these 
   much of Argosy is AI-written. Argosy's maintainers are the source for that.
 - **Third-party components** built into the Flatpak (libass, libplacebo, mpv, sigil, the Java
   libraries) are their projects' own work.
-- **Artwork** (app icon, splash, About logo, Steam artwork) comes from the owner's IceBreaker brand
-  kit. **Owner to confirm:** who made it, and whether any of it was made with AI image tools.
-- **Steam helper** (`packaging/steam/add_to_steam.py`) was copied unchanged from the owner's shared
-  Steam shortcut standard, which is also used by the owner's other apps. Claude wrote IceBreaker's
-  integration of it. **Owner to confirm:** who wrote the helper itself.
 - **Bug reports and one fix:** beta testers reported issues. One supplied a patch for play-session
   sync (issue #4), which Claude applied and extended.
 
