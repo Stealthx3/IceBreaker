@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # usage: scripts/desktop/flatpak/publish-repo.sh <repo-url> [gpg-key-id]  (unsigned without a key)
-# GNUPGHOME selects the keyring (the alpha key lives in ~/.local/share/argosy-desktop-signing/gnupg)
+# GNUPGHOME selects the keyring (the Pages key lives in ~/.local/share/argosy-desktop-signing/gnupg)
 set -euo pipefail
 url=${1:?usage: publish-repo.sh <repo-url> [gpg-key-id]}
 key=${2:-}
 case "$url" in */) ;; *) url="$url/" ;; esac
 root="$(cd "$(dirname "$0")/../../.." && pwd)"
 cd "$root"
-app_id=io.github.stealthx3.ArgosyDesktop
+app_id=io.github.stealthx3.IceBreaker
 out=build/flatpak
 repo=$out/repo
 [ -f "$repo/config" ] || { echo "no repo at $repo: run build-alpha.sh first" >&2; exit 1; }
@@ -20,26 +20,26 @@ if [ -n "$key" ]; then
   gpg_line="GPGKey=$(gpg --export "$key" | base64 -w0)"
 fi
 flatpak build-update-repo "${sign[@]}" --generate-static-deltas --prune \
-  --title="Argosy Desktop" "$repo"
-homepage=https://github.com/Stealthx3/argosy-desktop
-icon=https://raw.githubusercontent.com/Stealthx3/argosy-desktop/main/argosy_icon.svg
+  --title="IceBreaker" "$repo"
+homepage=https://github.com/Stealthx3/IceBreaker
+icon=https://raw.githubusercontent.com/Stealthx3/IceBreaker/main/desktopApp/flatpak/icons/hicolor/scalable/apps/$app_id.svg
 {
   echo "[Flatpak Repo]"
-  echo "Title=Argosy Desktop"
+  echo "Title=IceBreaker"
   echo "Url=$url"
   echo "Homepage=$homepage"
-  echo "Comment=Argosy Desktop beta builds"
-  echo "Description=Flatpak repository of Argosy Desktop, the Linux port of the Argosy launcher"
+  echo "Comment=IceBreaker releases"
+  echo "Description=Flatpak repository of IceBreaker, the Linux port of the Argosy launcher"
   echo "Icon=$icon"
   [ -n "$gpg_line" ] && echo "$gpg_line"
-} > "$out/argosy-desktop.flatpakrepo"
+} > "$out/icebreaker.flatpakrepo"
 {
   echo "[Flatpak Ref]"
-  echo "Title=Argosy Desktop"
+  echo "Title=IceBreaker"
   echo "Name=$app_id"
   echo "Branch=master"
   echo "Url=$url"
-  echo "SuggestRemoteName=argosy-desktop"
+  echo "SuggestRemoteName=icebreaker"
   echo "Homepage=$homepage"
   echo "Icon=$icon"
   echo "IsRuntime=false"
@@ -47,4 +47,4 @@ icon=https://raw.githubusercontent.com/Stealthx3/argosy-desktop/main/argosy_icon
   [ -n "$gpg_line" ] && echo "$gpg_line"
 } > "$out/$app_id.flatpakref"
 flatpak repo --branches "$repo"
-echo "wrote $out/argosy-desktop.flatpakrepo and $out/$app_id.flatpakref (Url=$url)"
+echo "wrote $out/icebreaker.flatpakrepo and $out/$app_id.flatpakref (Url=$url)"

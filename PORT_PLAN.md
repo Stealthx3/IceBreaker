@@ -289,8 +289,9 @@ Six phases over about 32 weeks; restructure first, then get every screen on the 
 | 3 · Linux services and alpha Flatpak | 14–19 | Emulator registry, host launch, save paths, Apps tab, Quick Settings; Flatpak from your own repo | Alpha: sync, download, play, save sync |
 | 4 · Linux adaptation | 20–28 | libmpv video wallpaper; Desktop removals (Steam / Jellyfin / Social / Android Settings); Linux emulator suggestions and managed installers; Host GPU screen; Flatpak permissions screen; Window title bar and full-screen setting; Controller input mode (Auto / Steam Input / SDL3); Navigation button mapping; Display profiles and wizard display setup | — |
 | 5 · Beta and Flathub | 29–32 | Linux desktop and Steam Game Mode compatibility (GNOME, KDE, SteamOS); upstream v2.31 merge and Linux adaptations; IceBreaker rename and Flathub submission | 1.0 live on Flathub |
+| 6 · After 1.0: Flathub and Linux depth | 33– | Flathub follow-through (owner's PR); carried units 5c–5h (catalog and Eden, RetroArch core installs, screenshot upload, live hardware readings, handheld seat picker, keep running and Resume); upstream 3.1.1 merge | Owner decides |
 
-Status (2026-11-21): Phases 0–4 are complete. In Phase 5, steps 1–4 are done (step 4 closed on beta users' test data, owner 2026-11-21); step 5 (upstream v2.31 merge and Linux adaptations) is in progress; step 6 (IceBreaker rename and Flathub submission) has its groundwork done. The current beta release is 0.4.0, the build on the Pages Flatpak repo (owner decision, 2026-11-09).
+Status (2026-11-28): Phases 0–5 are complete. Phase 5 closed on 2026-11-28 (owner) with IceBreaker 1.0.0 released (tag `icebreaker-v1.0.0`, runtime 26.08, CI green on x86_64 and aarch64) and the Flathub submission prepared; the owner submits it by hand under Flathub's Generative AI policy, so "Flathub PR merged" carries into Phase 6. Phase 6 is proposed and waits for the owner's go-ahead.
 
 Exit criteria per phase:
 
@@ -300,6 +301,7 @@ Exit criteria per phase:
 4. **Phase 3:** emulators detected on a clean Fedora and a SteamOS install; a game launches, exits and returns to Argosy; saves sync to RomM; alpha installs from your own Flatpak repo.
 5. **Phase 4:** every Port, Adapt and Linux row of the parity matrix works on the desktop; every Remove row has no entry point left on the desktop and the Android app is unchanged (A/B screenshots and unit tests); the display profiles and the wizard's Display setup step work on a handheld, a desktop monitor and a TV-sized screen.
 6. **Phase 5:** install, wizard, sync, downloads, launches, save sync and a clean exit work on GNOME, KDE and SteamOS (desktop and Game Mode); `flatpak-builder-lint` clean; offline build green in CI for x86_64 and aarch64; Flathub PR merged.
+7. **Phase 6 (proposed):** the Flathub listing is live; each carried unit is verified on the desktop and in Game Mode; upstream 3.1.1 merged with Android unchanged.
 
 ## Risks and mitigations
 

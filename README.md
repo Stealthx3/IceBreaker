@@ -1,7 +1,7 @@
 # IceBreaker
 
 > [!IMPORTANT]
-> **Argosy Desktop is now IceBreaker.** The app id changed to `io.github.stealthx3.IceBreaker`, and new builds come from the [IceSuite test repository](https://stealthx3.github.io/icesuite-test/). The old `io.github.stealthx3.ArgosyDesktop` gets no more updates.
+> **Argosy Desktop is now IceBreaker.** The app id changed to `io.github.stealthx3.IceBreaker`, and releases now come from [IceBreaker's own Flatpak repository](https://stealthx3.github.io/IceBreaker/) (test builds from the [IceSuite test repository](https://stealthx3.github.io/icesuite-test/)). The old `io.github.stealthx3.ArgosyDesktop` gets no more updates.
 >
 > **Already have Argosy Desktop?** Pick one:
 >
@@ -12,7 +12,7 @@
 
 IceBreaker is a Linux port of the [Argosy launcher](https://github.com/rommapp/argosy-launcher), shipped as a Flatpak. Based on Argosy by the RomM team; an independent port, not affiliated with or endorsed by rommapp. It runs Argosy's own interface on the Linux desktop and connects to a [RomM](https://github.com/rommapp/romm) server for your library, downloads and save sync. Play from a PC handheld, a mouse and keyboard, or from the couch.
 
-> **Status: 1.0.0, the first stable release.** The Flathub submission is being prepared.
+> **Status: 1.0.0, the first stable release.** A Flathub listing is in preparation.
 
 An independent fork of `rommapp/argosy-launcher`, licensed GPL-3.0 like upstream. Not an official rommapp release.
 
@@ -60,15 +60,23 @@ What the desktop version adds:
 
 You need Flatpak (preinstalled on Fedora, SteamOS, Bazzite and Linux Mint; on Ubuntu, `sudo apt install flatpak`).
 
-Test builds come from the IceSuite test repository ([Stealthx3/icesuite-test](https://github.com/Stealthx3/icesuite-test)), which serves every IceSuite app. Add its remote once, then install:
+Install the stable release from IceBreaker's own Flatpak repository (signed; `flatpak update` keeps it current):
 
 ```bash
-flatpak remote-add --user --if-not-exists icesuite-test https://stealthx3.github.io/icesuite-test/flatpak/icesuite-test.flatpakrepo
+flatpak install --user --from https://stealthx3.github.io/IceBreaker/io.github.stealthx3.IceBreaker.flatpakref
+```
+
+Or add the repository once and install from it:
+
+```bash
+flatpak remote-add --user --if-not-exists icebreaker https://stealthx3.github.io/IceBreaker/icebreaker.flatpakrepo
 ```
 
 ```bash
-flatpak install --user icesuite-test io.github.stealthx3.IceBreaker
+flatpak install --user icebreaker io.github.stealthx3.IceBreaker
 ```
+
+Test builds come from the IceSuite test repository ([Stealthx3/icesuite-test](https://github.com/Stealthx3/icesuite-test)), which serves every IceSuite app.
 
 Beta testers who installed `io.github.stealthx3.ArgosyDesktop` from the old project repo: see the notice at the top of this page.
 
@@ -82,13 +90,13 @@ flatpak install --user flathub org.libretro.RetroArch
 - **Updates:** `flatpak update` (the repository is signed; your data stays).
 - **Uninstall:** first use **Settings → Add to Steam → Remove from Steam** if you added it (Flatpak cannot remove the Steam shortcut on uninstall), then `flatpak uninstall --user io.github.stealthx3.IceBreaker` (add `--delete-data` to remove settings; games in `~/Games/IceBreaker` stay).
 
-This is a beta: back up emulator saves before turning on Save Sync. Report bugs in [Issues](https://github.com/Stealthx3/IceBreaker/issues) with a log of a run that shows the problem:
+Back up emulator saves before turning on Save Sync. Report bugs in [Issues](https://github.com/Stealthx3/IceBreaker/issues) with a log of a run that shows the problem:
 
 ```bash
 flatpak run io.github.stealthx3.IceBreaker > ~/icebreaker-run.log 2>&1
 ```
 
-Releases, including a single-file `.flatpak` bundle, are on the [Releases page](https://github.com/Stealthx3/IceBreaker/releases).
+Releases, including single-file `.flatpak` bundles for x86_64 and aarch64, are on the [Releases page](https://github.com/Stealthx3/IceBreaker/releases).
 
 ## How it works
 

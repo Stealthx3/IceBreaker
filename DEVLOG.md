@@ -2124,3 +2124,31 @@ The owner's tests are the step 5 side-by-side checklist and the alpha 5.4 Game M
 - **Action:** after the owner's pause and resume, checked CI for `6e7234b8b`: Build, lint and Flatpak x86_64 and aarch64 all green on runtime 26.08 (aarch64 2 h 30 min). With the owner's OK ("Yes, tag it"), created the annotated tag `icebreaker-v1.0.0` at `6e7234b8b` and pushed only the tag. The metainfo screenshot URLs now resolve (200), and `appstreamcli validate` and `flatpak-builder-lint appstream` pass online.
 - **Why at `6e7234b8b`:** it is the commit CI built on both architectures; the later local commit is only the pause note in the handoff.
 - **Noted:** the weekly sync moved `upstream` to Argosy 3.1.1. A merge is later work, after the Flathub submission.
+
+### 2026-11-28: owner decisions, Phase 5 closed
+
+- **Owner answers** (asked together, 2026-11-28):
+  - Disclosure: the owner read the key areas (save sync, file access, Steam) and judged the rest by testing; the owner made the core art assets and Claude refined and expanded them; the Steam helper was written by the owner and Claude together. Written into `AI-DISCLOSURE.md`; artwork and helper moved under "What Claude produced". Two lines stay open until after the submission (who ran the generator, and the PR).
+  - `--device=dri` dropped from both manifests: `--device=all` already exposes `/dev/dri` (checked in the sandbox with `--nodevice=dri`: `card1`, `renderD128` present) and the app's GPU check accepts `all`. `PORT_PLAN.md` and the guide updated.
+  - The old "Argosy Desktop (test)" Steam shortcut removed (Steam closed; one entry in one account; backup `shortcuts.vdf.bak-20261128-043943` beside the file; the other 30 entries unchanged; it had no art).
+  - **Close Phase 5 now**, without waiting for the Flathub merge, which the owner does by hand; it carries into Phase 6.
+  - **Publish 1.0.0 only on IceBreaker's GitHub page:** both the Pages Flatpak repo (`https://stealthx3.github.io/IceBreaker/`, replacing the leftover Argosy Desktop copy from 2026-11-13) and a GitHub Release with bundles. icesuite-test needs reorganizing into testing and stable branches first (owner).
+  - **Rewrite history now**, before the owner pins a commit in the Flathub manifest; the answer is the force-push OK. The owner installs `git-filter-repo` (Ubuntu package) with sudo.
+- **Phase 5 outcome:** steps 1–6 done; 1.0.0 released. Not met: Flathub PR merged (owner). Not checked on screen: Flatpak Steam, Game Mode, Remove in real Steam, the wizard's Steam offer. Summary: `docs/desktop/handoff/phase-5.md`.
+- **README:** the owner-requested short README (since 6ddef138e, 2026-11-09) replaces the old "intro plus full plan" rule; at this close its status and install sections point at the 1.0.0 release, and the move notice stays at the top.
+
+## Phase 6 · After 1.0: Flathub and Linux depth
+
+Proposed at the Phase 5 close (2026-11-28); starts only on the owner's go-ahead, and the owner may change the plan.
+
+**Phase 6 plan:**
+
+1. **Flathub follow-through.** The owner writes the manifest, runs the generator on `icebreaker-v1.0.0` and opens the PR. Claude fixes app-side review findings in this repo only; never on the PR, never in the manifest.
+2. **Catalog and Eden (5c).** Vita3K, ScummVM, PICO-8, xemu; Flycast VMU, Azahar and PPSSPP save paths; m3u multi-disc launch; Eden keys and firmware.
+3. **RetroArch core installs (5d).** Fetch a missing core from the libretro buildbot into the RetroArch Flatpak's `cores/`.
+4. **Screenshot upload (5e).** Watch each emulator's screenshot folder during the session; hand off to upstream's upload queue.
+5. **Live hardware readings (5f)** and the Connections page as status only.
+6. **Handheld seat picker (5g).** SDL3 built-in pad detection (Deck, Legion Go, ROG Ally, MSI Claw).
+7. **Keep running, Resume and the Home combo (5h).**
+8. **Upstream 3.1.1 merge.** Triage first, like v2.31.
+

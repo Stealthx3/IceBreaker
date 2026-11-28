@@ -1,79 +1,21 @@
-# Phase 5 · Beta and Flathub — handoff (current phase)
+# Phase 5 · Beta and Flathub — closed summary
 
-Rewritten (not appended) at the end of every work unit, so a fresh session can start from it alone. History and reasoning live in `DEVLOG.md` (Phase 5 section). Earlier phases: `phase-0.md` … `phase-4.md`.
+**Closed 2026-11-28** (owner: "Close now"). Details and reasoning: `DEVLOG.md`, Phase 5 section.
 
-**2026-11-27, after the resume (owner):** CI for `6e7234b8b` is green on 26.08 (Build, lint, Flatpak x86_64 and aarch64). Tag `icebreaker-v1.0.0` (annotated, at `6e7234b8b`) is pushed (owner: "Yes, tag it"); the four metainfo screenshot URLs return 200 and `appstreamcli` / `flatpak-builder-lint appstream` pass online (one pedantic note: uppercase in the app id, accepted by Flathub). **Next is the owner's:** fill in the "Owner to confirm" lines in `AI-DISCLOSURE.md`, run the generator on the tag (guide step 4), write the manifest and open the Flathub PR. Claude: phase close when the owner says (README rebuild with the move notice and disclosure link, history rewrite, push), then 5c–5h. Upstream released **3.1.1** (`origin/upstream` synced); a later merge, not part of step 6.
+## Outcome
 
-**Updated:** 2026-11-27. Steps 1–5 done; step 6 in progress. **Flathub submission stopped at the PR by Flathub's Generative AI policy** (no AI-written manifests, no AI-opened or AI-written submission PRs, disclosure of AI-generated app code; DEVLOG 2026-11-26). `main` and tag `icebreaker-v0.5.0` are on GitHub. **Owner decision 2026-11-26: the owner submits to Flathub manually** (their own manifest, PR, description, replies and AI disclosure); Claude does no Flathub PR work. CI: the last two failures (backup-keys test scanning test sources; aarch64 offline sources missing the `-linux-arm64` Compose/Skiko files) are fixed and pushed (`577718149`, owner: "Push now"); check that commit's Build and Flatpak runs (aarch64 takes over 2 hours). Tag `icebreaker-v0.5.0` predates the aarch64 fix: the submission must pin a later commit. **2026-11-27:** submission prep written: `docs/desktop/flathub-submission-guide.md` (checklist and manual manifest guide) and `AI-DISCLOSURE.md` (owner fills in the "Owner to confirm" lines). Version 1.0.0 (owner) is in: build, stable metainfo release, screenshots pinned to `icebreaker-v1.0.0` (the tag is not created yet; the linter warns about the screenshots until it's pushed). Translations: kept and disclosed (owner). The dead `ffmpeg-full` extension is out of both manifests (the codecs come from the Platform's own `codecs-extra`). Runtime 26.08 tested (offline build, start, libmpv finds the full codecs) and adopted in both manifests and CI. The community plugin (jwharm 1.9.0) was tried and gives an incomplete list (DEVLOG 2026-11-27; trial script in `build/flatpak-sources-trial/`). Owner decision: keep the generator, disclose it (`AI-DISCLOSURE.md`, with why Flathub's `flatpak-gradle-generator.py` and both plugins don't fit), and the owner runs it by hand (guide step 4; the script now checks for JDK 21 and a safe scratch folder). Pushed `6e7234b8b` (owner OK). Next: a green aarch64 run on 26.08, then the tag `icebreaker-v1.0.0` (the owner's generator run uses the tag). Then the tag (after a green aarch64 run). Next: those decisions, then the phase close (README rebuild keeping the move notice and the disclosure link, push), then 5c–5h.
+- **Steps 1–6 done.** Wizard wording, Close in Quick Settings, thumbnails from sync, Linux desktop and Steam Game Mode compatibility, the upstream v2.31.0 merge, and the IceBreaker rename with the Flathub preparation.
+- **IceBreaker 1.0.0** is the first stable release: tag `icebreaker-v1.0.0`, runtime 26.08, CI green on x86_64 and aarch64. It's published on IceBreaker's own Pages Flatpak repo and as a GitHub Release (owner, 2026-11-28). icesuite-test still serves 0.5.0 until the owner reorganizes it into testing and stable branches.
+- **The repo is `Stealthx3/IceBreaker`.** Beta users on the old Argosy Desktop repo get the end-of-life rebase from the user site (`Stealthx3/stealthx3.github.io`, folder `argosy-desktop/`).
+- **The Flathub submission is the owner's** (Flathub's Generative AI policy): their own manifest, PR and replies. The help for it is in the repo: `docs/desktop/flathub-submission-guide.md`, `AI-DISCLOSURE.md` and the generator (`scripts/desktop/flatpak/regen-gradle-sources.sh`).
+- **History rewritten at the close** (owner, 2026-11-28), using the PII Redaction Standard. Commit hashes before the close changed; the tags point at the rewritten commits.
 
-## State
+## Not met from the exit criterion
 
-- **Cowork pause is over:** the owner resumed development on 2026-11-21. Pacer state: `working`.
-- **Step 4 closed** on beta users' test data (owner, 2026-11-21). No republish: Pages already serves the build of `311679236` (issue #3 fix), and no code changed since.
-- **Git:** `main` is 1 commit ahead of `origin/main` before this unit's commit; push only at the phase close.
-- **Other sessions' uncommitted files:** `docs/desktop/flathub-plan.md` (app-id line from 2026-11-14), `scripts/desktop/vmlab/lab.sh`, `gm-define.sh`, `qemu-venus.sh`. Leave them alone.
+- **Flathub PR merged:** the owner submits by hand. Carried into Phase 6, step 1.
+- **Not checked on screen:** Flatpak Steam, Game Mode, Remove from Steam in real Steam, and the wizard's Steam offer.
+- **Carried from step 4 (not verified):** `HostGameProcess.stopAll` ending a Flatpak emulator on exit; EmuDeck detection on the owner's host; Assign BIOS with real RomM firmware; the folder picker's Back row; Snap emulators render black under the tagger; Steam Game Recording stalling audio in nested gamescope.
 
-## Scope and exit criterion
+## Carried forward to Phase 6
 
-Owner decision 2026-10-27: Linux adaptation and compatibility, not a 1:1 clone. Exit: install, wizard, sync, downloads, launches, save sync and a clean exit on GNOME, KDE and SteamOS (desktop and Game Mode); `flatpak-builder-lint` clean; offline CI build for x86_64 and aarch64; Flathub PR merged.
-
-Plan (`DEVLOG.md`, Phase 5 plan): 1 wizard wording, 2 Close Argosy, 3 thumbnails, 4 Linux desktop and Steam Game Mode compatibility (done); 5 upstream v2.31 merge and Linux adaptations (in progress); 6 Flathub submission with the IceBreaker rename.
-
-## Step 5: closed 2026-11-26 (owner); units 5c–5h carried forward
-
-Triage of every upstream commit: `docs/desktop/upstream-2.31-triage.md` (uncommitted until owner says; read it first). Owner decisions: `DEVLOG.md`, 2026-11-21.
-
-- **5a/5b. Upstream v2.31.0 merged and verified (done 2026-11-21).** `main` contains it. Details and known desktop gaps: DEVLOG 2026-11-21 ("Units 5a and 5b done"). Merge helpers: `scripts/desktop/merge/` (README). After each upstream merge, regenerate desktop migrations: `python3 -I scripts/desktop/gen_desktop_migrations.py`. Worktrees `../argosy-desktop-merge` and `../argosy-upstream-2.31` can be removed once 5c starts.
-- **Carried forward (after the Flathub submission; owner closed step 5 on 2026-11-26).** 5c. Catalog and Eden:
-  - Catalog (data, served from GitHub): Vita3K, ScummVM, PICO-8, xemu; Flycast VMU, Azahar/Lime3DS and PPSSPP save paths; m3u multi-disc launch per emulator.
-  - Eden: Switch keys and firmware installed into Eden's folders.
-- **5d. RetroArch core installs:** fetch the core a launch needs from the libretro buildbot into the RetroArch Flatpak's `cores/` folder. Check the Flatpak folder grant first.
-- **5e. Screenshot upload:** watch each emulator's screenshot folder (new catalog field) during the supervised session, then hand off to upstream's shared upload queue.
-- **5f. Live hardware readings** (`/proc`, `/sys/class/hwmon`, `power_supply`, `gpu_busy_percent`) and the **Connections page as status only**.
-- **5g. Handheld seat picker:** SDL3 built-in pad detection (Deck 28de:1205, Legion Go, ROG Ally, MSI Claw).
-- **5h. Games kept running and Resume, everywhere including Game Mode; the Home combo** (SDL3 combo raises the launcher and offers quit or keep).
-- **Not in step 5:** Brightness stays out. Connections control, Wayland overlays and v3.0 are not part of this step.
-- **Step close:** build, then publish to the IceSuite test repo (owner rule 2026-11-21; recipe in `gotchas.md`).
-
-## Step 6 (IceBreaker rename and Flathub)
-
-**Started 2026-11-21 (owner: "Begin branding conversion"), ahead of 5c–5h.** Unit 1 (identity) and 2a (desktop strings: `desktopBrand` filter in `shared/build.gradle.kts`) done. Units 2b and 3 done (DEVLOG 2026-11-26): splash, About credit and lockup; `BrandRelocation` moves the old Flatpak data and merges `~/Games/Argosy` into `~/Games/IceBreaker` with stored paths rewritten; the old-repo end-of-life build (`eol-old-repo.sh`) is tested but **not pushed: push it right after the first icesuite-test publish in unit 6** (recipe in `gotchas.md`). The README move notice must stay at the top when the README is rebuilt at the phase close. Units 1–6 done (DEVLOG 2026-11-26): IceBreaker 0.5.0 is on icesuite-test; the old Pages URL serves the end-of-life rebase from the user site `Stealthx3/stealthx3.github.io`; the repo is `Stealthx3/IceBreaker`. Issue #4 (play sessions to RomM) fixed and in 0.5.0; reply posted, waiting for the reporter. Add to Steam checked in the owner's real Steam (added for 2 accounts, other shortcuts unchanged, launch from Steam works, entry survives a Steam restart). **Not checked:** Flatpak Steam (not installed), Game Mode, Remove in real Steam, the wizard offer on screen; the old "Argosy Desktop (test)" shortcut is still there. **Then stop: the Flathub submission needs the owner's go-ahead.** Earlier plan text: unit 5 links and repo rename, unit 6 screenshots, lint and the first icesuite-test publish (PR #4 adds the catalog entry; the owner merges it).
-
-- **Rename:**
-  - App id `io.github.stealthx3.IceBreaker`; repo renamed to `Stealthx3/IceBreaker` (owner, 2026-11-21).
-  - Work list: `IceSuite/IceBreaker/rebrand/RENAME-CHECKLIST.md`. Art: `IceSuite/IceBreaker/brand/deployment/`.
-  - Update IceBreaker `DECISIONS.md` D-004 to decided when the rename starts.
-- **Order:**
-  1. Rename in code (desktop only).
-  2. Move beta users with an end-of-life rebase.
-  3. Update links.
-  4. **Add to Steam** (`docs/standards/STEAM-SHORTCUT-STANDARD.md`): vendor the helper unchanged, copy the five Steam PNGs, write `steam-shortcut.json`, add the manifest module and the three Steam `finish-args`, build the first-run offer and Settings rows in Compose, run the fake-root test, then test with real Steam in the VM lab and in Game Mode.
-  5. Screenshots, lint, `--step-close 5.6`, Flathub PR (owner go-ahead).
-- The test shortcut "Argosy Desktop (test)" in the owner's Steam (backup `build/gamemode/shortcuts.vdf.bak-20261108`) is removed or replaced once the real shortcut works; edit only with Steam closed.
-
-## Phase close: history rewrite (owner decision 2026-11-21)
-
-Before the Phase 5 push: `node scripts/pii-scan.mjs history --write-rewrite-files` (inputs go to the private config folder, never the repo); in a **fresh clone**, `git filter-repo --replace-text … --replace-message … --mailmap …` over all branches; re-run `history` in the clone until our commits are clean (upstream's own commits keep their content); force-push `main` once, with the owner's confirmation. Pages (`gh-pages`) is not rewritten. PII Redaction Standard: `docs/standards/PII-REDACTION-STANDARD.md`.
-
-## Carried from step 4 (not verified)
-
-- `HostGameProcess.stopAll` ending a Flatpak emulator on exit.
-- EmuDeck detection on the owner's host.
-- Assign BIOS with real RomM firmware.
-- The folder picker's Back row on screen.
-- Snap emulators render black under the tagger.
-- Steam Game Recording stalling audio in nested gamescope.
-
-## Gotchas
-
-- Never run two Gradle or bundle builds at once (they share `desktopApp/build`).
-- A filtered test run must target `:app:testDebugUnitTest`; `quiet.sh` can print exit 0 on a failed build. Check for BUILD SUCCESSFUL and the test XML.
-- Nested Game Mode: `gamescope -W 1920 -H 1080 -w 1920 -h 1080 -e -- steam -gamepadui`. Screenshots only through `gamescopectl screenshot`, never full-desktop captures.
-- Walks: `scripts/desktop/check/pad-walk.sh flatpak <out> ...`; run log `build/desktop-logs/*desktop-run.log`. Shots go through the key pipe now. On Home, A is Play (it launches the game); use X for Details.
-- VM lab (if reopened for IceBreaker): new guests and base volumes go in libvirt pool `VMDisks` (`LAB_POOL=VMDisks`), per the master VM lab standard (2026-11-21).
-
-## Where things are
-
-- Desktop code `shared/src/desktopMain`, app `desktopApp/`, Flatpak `desktopApp/flatpak/`, scripts `scripts/desktop/`; JDK `JAVA_HOME=~/.jdks/jdk-21.0.12.1+1`.
-- Desktop data `~/.local/share/icebreaker` (never delete without the owner; `alauncher.db.before-relocation` is the pre-move backup); Flatpak data `~/.var/app/io.github.stealthx3.IceBreaker`; library `~/Games/IceBreaker`.
-- Upstream refs: `origin/upstream` (v2.31.0), `rommapp/main` (fetched from rommapp; v3 betas).
+Units 5c–5h of step 5 (catalog and Eden, RetroArch core installs, screenshot upload, live hardware readings, the handheld seat picker, keep running and Resume), the upstream 3.1.1 merge, and the two open "Owner to confirm" lines in `AI-DISCLOSURE.md` (who ran the generator, and the submission). See `phase-6.md`.
